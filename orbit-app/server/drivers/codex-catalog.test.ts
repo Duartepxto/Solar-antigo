@@ -76,6 +76,7 @@ describe("readCodexModelCatalog", () => {
       options: [
         { id: "gpt-fake-default", label: "GPT Fake Default" },
         { id: "gpt-page-two", label: "GPT Page Two" },
+        ...STATIC_CODEX_MODELS.options.filter(row => ['gpt-6-astra','gpt-6.1-sol','gpt-6-luna'].includes(row.id)),
       ],
     });
   });

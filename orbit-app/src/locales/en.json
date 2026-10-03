@@ -4103,5 +4103,7 @@
   "jarvis.welcome.microphone": "Local Whisper transcription for dictation and calls. Installed system voices read the answers. You can enable the microphone later.",
   "jarvis.call.mode": "Call mode",
   "jarvis.call.microphoneError": "The microphone could not start. Allow microphone access in Windows or your browser, then try again.",
-  "jarvis.call.captureError": "Voice capture stopped. Check microphone access, then try again."
+  "jarvis.call.captureError": "Voice capture stopped. Check microphone access, then try again.",
+  "jarvis.phone.browserDetail": "Scan with your phone camera to open Solar in your browser. For a local connection, keep both devices on the same Wi-Fi and Solar running on your PC.",
+  "jarvis.phone.browserManual": "Use the QR link to connect this browser. Create a new QR on your PC if the link has expired."
 }

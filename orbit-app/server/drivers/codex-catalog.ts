@@ -12,12 +12,14 @@ import { qualifiedModelLabel } from "../contracts.ts";
 import { killCliTree, spawnCli } from "../procs.ts";
 import { codexHome } from "./codex-identity.ts";
 import { mergeLocalInject } from "./local-inject.ts";
+import { readCodexAccountCatalog } from './codex-account-catalog.ts';
 
 export const STATIC_CODEX_MODELS: ModelCatalog = {
   default: "gpt-5.6-sol",
   options: [
     // Only used when live discovery fails; these rows do not establish account access.
     { id: "gpt-6-astra", label: "GPT-6 Astra (availability unverified)" },
+    { id: "gpt-6.1-sol", label: "GPT-6.1 Sol (availability unverified)" },
     { id: "gpt-6-sol", label: "GPT-6 Sol (availability unverified)" },
     { id: "gpt-6-luna", label: "GPT-6 Luna (availability unverified)" },
     { id: "gpt-5.6-sol", label: "GPT-5.6 Sol" },
@@ -103,7 +105,7 @@ export function readCodexAppServerModelCatalog(
       }
     };
     const requestModels = (cursor: string | null) => {
-      request("model/list", { cursor, limit: 100 }, "models");
+      request("model/list", { cursor, limit: 100, refresh: true }, "models");
     };
     const timer = setTimeout(() => finish(null), timeoutMs);
     timer.unref?.();
@@ -357,13 +359,24 @@ async function probeProviderModels(
   }
 }
 
-/** Local slugs Codex already knows, plus the three official cloud rows. */
+/** Account-specific official rows, with CLI/offline fallback and local providers. */
 export async function readCodexModelCatalog(
   env: Record<string, string | undefined> = process.env,
   fetchImpl: typeof fetch = fetch,
   cli?: string,
 ): Promise<ModelCatalog> {
-  const official = (cli ? await readCodexAppServerModelCatalog(cli, env) : null) ?? STATIC_CODEX_MODELS;
+  const [account, cliCatalog] = await Promise.all([
+    readCodexAccountCatalog(env, fetchImpl),
+    cli ? readCodexAppServerModelCatalog(cli, env) : Promise.resolve(null),
+  ]);
+  // An older CLI can ship a usable but stale catalog. Keep its default and
+  // metadata; show newly published text models as explicitly unverified until
+  // the account endpoint is available. Never add them to an account-specific list.
+  const latest = STATIC_CODEX_MODELS.options.filter(row => ['gpt-6-astra','gpt-6.1-sol','gpt-6-luna'].includes(row.id));
+  const official = account
+    ? { ...account, options: account.options.map(row => ({ ...cliCatalog?.options.find(old => old.id === row.id), ...row })) }
+    : cliCatalog ? { ...cliCatalog, options: [...cliCatalog.options, ...latest.filter(row => !cliCatalog.options.some(old => old.id === row.id))] }
+    : STATIC_CODEX_MODELS;
   // Match the identity boundary: an explicitly relative CODEX_HOME or user
   // home must not load a catalog from a different directory.
   const home = codexHome(env);

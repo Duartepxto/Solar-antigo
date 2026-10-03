@@ -8320,7 +8320,9 @@
       "jarvis.welcome.microphone": "7abab9dbd7e4c1f2548b9cb3a60c2546ff585323b21f88bddc808d434d9c1de6",
       "jarvis.call.mode": "f187cabbab3f67f9873aea3284578de6ec553840c7ab3924241a2d47bb601486",
       "jarvis.call.microphoneError": "24efd7df6be428619cc93a4d2789b4c1287843c2bc3112ca2dd800a076d47bb7",
-      "jarvis.call.captureError": "116f1d938ceb43a738b31e6f3724307022beeb7c35a2255c4c2eb0edc723d475"
+      "jarvis.call.captureError": "116f1d938ceb43a738b31e6f3724307022beeb7c35a2255c4c2eb0edc723d475",
+      "jarvis.phone.browserDetail": "763c2b31bd10eddc96a967373f6e7286c5290be8a237a4a8ccb1d1f672ce30eb",
+      "jarvis.phone.browserManual": "5823c5825d9d0ed6859b39a33dc832890a867a87af4467d9fa03ebe52b2212fe"
     },
     "zh": {
       "noEngines.title": "af88855a5f80377de709995229ba3907df9e8fb3b940fbf7c0d9cbe6eea54afe",

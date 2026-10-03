@@ -22,6 +22,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import {
   companionPairingLink,
+  companionBrowserPairingLink,
   companionPairingRoute,
   companionPairingRoutePin,
   companionPairingRoutePinAvailable,
@@ -788,11 +789,12 @@ export function usePhoneSetupController(profileEmail = ""): PhoneSetupController
   );
   const pairingLink = useMemo(() => {
     if (!state?.pairing || !pairingRoute) return null;
-    return companionPairingLink({
+    const link = import.meta.env.VITE_JARVIS_SOLAR === 'true' ? companionBrowserPairingLink : companionPairingLink;
+    return link({
       ...pairingRoute,
       code: state.pairing.code,
       token: state.pairing.token,
-      name: state.discovery?.name,
+      name: import.meta.env.VITE_JARVIS_SOLAR === 'true' ? brand().name : state.discovery?.name,
       secretPublicKey: state.secretPublicKey,
     });
   }, [pairingRoute, state]);

@@ -17,6 +17,22 @@ interface CompanionPairingLinkOptions {
   secretPublicKey?: string;
 }
 
+/** A normal camera can open this on Android without a native URI handler.
+ * The credential remains in the fragment, outside HTTP requests and logs. */
+export function companionBrowserPairingLink(options: CompanionPairingLinkOptions): string | null {
+  const native = companionPairingLink(options);
+  if (!native) return null;
+  try {
+    const routes = qrEndpoints(options.endpoints);
+    const address = new URL(native).searchParams.get('address');
+    const base = new URL(routes[0]?.url ?? `http://${address}`);
+    if (base.username || base.password || base.pathname !== '/' || base.search || base.hash) return null;
+    base.pathname = '/solar';
+    base.hash = new URLSearchParams({ token: options.token }).toString();
+    return base.toString();
+  } catch { return null; }
+}
+
 export type CompanionEndpointKind = "hosted" | "tailnet" | "lan" | "bonjour";
 
 export interface CompanionEndpoint {

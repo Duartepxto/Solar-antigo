@@ -1494,5 +1494,7 @@
   "jarvis.welcome.microphone": "Transcrição local com Whisper para ditado e chamadas. As vozes instaladas leem as respostas. Podes ativar o microfone mais tarde.",
   "jarvis.call.mode": "Modo de chamada",
   "jarvis.call.microphoneError": "Não foi possível iniciar o microfone. Permite o acesso no Windows ou no navegador e tenta novamente.",
-  "jarvis.call.captureError": "A captura de voz parou. Verifica o acesso ao microfone e tenta novamente."
+  "jarvis.call.captureError": "A captura de voz parou. Verifica o acesso ao microfone e tenta novamente.",
+  "jarvis.phone.browserDetail": "Lê com a câmara do telemóvel para abrir o Solar no navegador. Para uma ligação local, mantém ambos na mesma rede Wi-Fi e o Solar aberto no PC.",
+  "jarvis.phone.browserManual": "Usa a ligação do QR para conectar este navegador. Cria um QR novo no PC se a ligação tiver expirado."
 }

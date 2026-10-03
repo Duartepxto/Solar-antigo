@@ -1797,8 +1797,8 @@ export class Store {
       kind: "text",
       // Windows has the quick bar (Alt+O) but no talk mode yet
       text: process.platform === "win32"
-        ? "Hi, I'm Orbit. I can change settings, find out why something isn't working, set up bots and teams, and help you on your screen. Press Alt+O anywhere to type to me."
-        : "Hi, I'm Orbit. I can change settings, find out why something isn't working, set up bots and teams, and help you on your screen. Press Option-O anywhere to type to me, or Option-T to talk.",
+        ? `Hi, I'm ${bot.name}. I can change settings, find out why something isn't working, set up bots and teams, and help you on your screen. Press Alt+O anywhere to type to me.`
+        : `Hi, I'm ${bot.name}. I can change settings, find out why something isn't working, set up bots and teams, and help you on your screen. Press Option-O anywhere to type to me, or Option-T to talk.`,
     });
     return bot;
   }

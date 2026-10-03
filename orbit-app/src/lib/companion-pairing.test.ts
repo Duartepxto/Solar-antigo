@@ -1,10 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
   companionPairingLink,
+  companionBrowserPairingLink,
   companionPairingRoute,
   companionPairingRoutePin,
   companionPairingRoutePinAvailable,
 } from "./companion-pairing";
+
+describe('Solar camera/browser pairing',()=>{
+  const options={address:'192.168.1.25',port:8810,code:'123456',token:'orbit_pair_'+'a'.repeat(43)};
+  it('opens a normal browser URL while keeping the secret outside HTTP requests',()=>{
+    const url=new URL(companionBrowserPairingLink(options)!);
+    expect(url.origin).toBe('http://192.168.1.25:8810');expect(url.pathname).toBe('/solar');expect(url.search).toBe('');
+    expect(new URLSearchParams(url.hash.slice(1)).get('token')).toBe(options.token);
+    expect(companionPairingLink(options)).toMatch(/^orbit:\/\/pair/);
+  });
+  it('uses a pinned protected endpoint and rejects invalid credentials',()=>{
+    expect(companionBrowserPairingLink({...options,endpoints:[{url:'https://solar.example',kind:'hosted',priority:0}]})).toMatch(/^https:\/\/solar.example\/solar#/);
+    expect(companionBrowserPairingLink({...options,token:'invalid'})).toBeNull();
+  });
+});
 
 describe("companionPairingLink", () => {
   const token = `orbit_pair_${"a".repeat(43)}`;

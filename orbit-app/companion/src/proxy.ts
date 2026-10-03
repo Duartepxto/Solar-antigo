@@ -24,9 +24,11 @@ import {
 import { denyReason, isCloudDesktopAccess, isMessageFileDownload } from "./routes.ts";
 import { CompanionViewerRelay } from "./viewer-relay.ts";
 import { createSseScrubber, isJson, scrub } from "./wire.ts";
+import { serveSolarBrowser, solarSameOrigin } from './solar-browser.ts';
 
 /** What the forwarding handler needs from the process around it. */
 export interface ProxyOptions {
+  solarBrowser?: boolean;
   /** Where the harness is listening on loopback. */
   harnessPort: number;
   /** Private Electron capability; null means bootstrap is not ready yet.
@@ -268,10 +270,11 @@ export function createProxyHandler(options: ProxyOptions) {
     const path = (req.url ?? "/").split("?")[0];
     const method = req.method ?? "GET";
 
-    // A native app sends no Origin. Anything that does is a browser that has
-    // found this port, and a browser has no business on it — refused before
-    // the token is even looked at, and regardless of what the origin says.
-    if (req.headers.origin) {
+    // Native clients send no Origin. Solar's browser companion additionally
+    // allows its exact same origin; every API still needs the ordinary device
+    // bearer and allowlist. No third-party origin or admin access is added.
+    if (options.solarBrowser && serveSolarBrowser(req, res)) return;
+    if (req.headers.origin && !(options.solarBrowser && solarSameOrigin(req.headers.origin, req.headers.host))) {
       return sendJson(res, 403, { error: "forbidden: cross-origin request" });
     }
 

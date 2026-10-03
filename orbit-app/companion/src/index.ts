@@ -103,7 +103,7 @@ const conflict = (name: string, port: number): string | null => {
 let cachedName = process.env.ORBIT_COMPANION_NAME?.trim() || "";
 
 /** What this computer is called on the phone. Never empty. */
-const machineName = (): string => cachedName || "Orbit";
+const machineName = (): string => cachedName || (process.env.SOLAR_APP === '1' ? 'Solar' : 'Orbit');
 
 /** Ask the harness whose computer this is, once, at startup. Every failure
  * is survivable: the name is a label, and no part of pairing depends on it. */
@@ -153,6 +153,7 @@ const service = (): ServiceInfo => ({
 
 const connectedDevices = createConnectedDeviceTracker();
 const proxy = createProxyHandler({
+    solarBrowser: process.env.SOLAR_APP === '1',
     harnessPort: HARNESS_PORT,
     mutationToken: parentPort ? () => mutationToken : undefined,
     // `authenticate` also stamps lastSeenAt, which is what makes the control

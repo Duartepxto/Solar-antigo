@@ -89,7 +89,14 @@ export function tFromServer(key: string | undefined, fallback: string | undefine
  * a placeholder without a matching param stays verbatim so a bad pack shows
  * its seams instead of dropping words. */
 export function t(key: LocaleKey, params?: Record<string, string | number>): string {
-  const template = activePack[key] ?? en[key];
+  let template = activePack[key] ?? en[key];
+  // Solar keeps the original translation keys, not the original product name.
+  // The iOS download remains a third-party compatibility link, not a Solar release.
+  if (import.meta.env.VITE_JARVIS_SOLAR === 'true' && key !== 'sidebar.menu.getIos') {
+    template = template.replace(/\bOrbit\b/g, 'Solar');
+    if (key === 'phone.code.detail') template = activePack['jarvis.phone.browserDetail'] ?? en['jarvis.phone.browserDetail'];
+    if (key === 'phone.code.manualIntro') template = activePack['jarvis.phone.browserManual'] ?? en['jarvis.phone.browserManual'];
+  }
   if (!params) return template;
   return template.replace(/\{(\w+)\}/g, (match, name: string) =>
     name in params ? String(params[name]) : match,

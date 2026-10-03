@@ -1,24 +1,14 @@
-// The exit beat: the seeded bot gets a name, a color, and one standing
-// instruction. This is the first touch of bot settings, so every field is
-// optional with a sensible default and Finish always works, even when the
-// save fails (the bot can be edited later from its settings).
-import { useEffect, useState } from "react";
+// The exit beat edits a seeded agent or creates the first real one. Finish
+// waits for the saved record; a failed write keeps the draft available to retry.
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import { MAUS_COLOR_NAMES, MAUS_COLORS, type MausColor } from "@/lib/mascot";
-import { api, type Bot } from "@/state/store";
+import { useStore, type Bot } from "@/state/store";
+import { saveWelcomeBot } from '@/lib/welcome-bot';
 import { inputClass, PrimaryButton, staggerIndex, type BeatProps } from "./shared";
 
 const SOUL_LINE_LIMIT = 200;
-
-/** The instruction line joins whatever SOUL the bot already has rather than
- * replacing it; a bot imported from a team keeps its playbook. */
-function soulWithLine(existing: string | undefined, line: string): string | undefined {
-  const trimmed = line.trim();
-  if (!trimmed) return undefined;
-  const current = existing?.trimEnd() ?? "";
-  return current ? `${current}\n\n${trimmed}` : trimmed;
-}
 
 export function MeetYourBotBeat({
   bot,
@@ -34,6 +24,8 @@ export function MeetYourBotBeat({
   const [line, setLine] = useState("");
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  const savingRef = useRef(false);
+  const { dispatch } = useStore();
 
   useEffect(() => {
     setMascot("celebrate");
@@ -44,29 +36,19 @@ export function MeetYourBotBeat({
   }, []);
 
   const save = async () => {
-    if (!bot) {
-      onFinish();
-      return;
-    }
-    const patch: Record<string, unknown> = {};
-    const trimmedName = name.trim();
-    if (trimmedName && trimmedName !== bot.name) patch.name = trimmedName;
-    if (color !== bot.color) patch.color = color;
-    const soul = soulWithLine(bot.soul, line);
-    if (soul !== undefined) patch.soul = soul;
-    if (!Object.keys(patch).length) {
-      onFinish();
-      return;
-    }
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setFailed(false);
     try {
-      await api(`/api/bots/${encodeURIComponent(bot.id)}`, { method: "PATCH", body: JSON.stringify(patch) });
+      const saved = await saveWelcomeBot(bot, name, color, line);
+      dispatch({ type: 'botAdded', bot: saved, preserveSelection: true });
       onFinish();
     } catch {
       setFailed(true);
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   };
 
