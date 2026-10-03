@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   defaultSpeechInputPrefs,
@@ -15,7 +16,7 @@ import {
 } from "./speech-input-prefs.mjs";
 
 // Scratch space inside the repo's ignored scratch folder, never /tmp.
-const scratchRoot = path.join(path.dirname(new URL(import.meta.url).pathname), "..", ".orbit-scratch", "node-tests");
+const scratchRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".orbit-scratch", "node-tests");
 function scratch() {
   fs.mkdirSync(scratchRoot, { recursive: true });
   return fs.mkdtempSync(path.join(scratchRoot, "speech-input-"));
@@ -53,7 +54,8 @@ test("preferences round-trip atomically and survive a damaged file", () => {
     assert.deepEqual(readSpeechInputPrefs(file), { inputUid: USB });
     assert.deepEqual(JSON.parse(fs.readFileSync(file, "utf8")), { version: 1, inputUid: USB });
     assert.deepEqual(fs.readdirSync(path.dirname(file)), ["speech-input.json"], "no temp file left behind");
-    assert.equal(fs.statSync(file).mode & 0o777, 0o600);
+    // Windows uses ACLs; Node's mode bits do not represent POSIX permissions.
+    if (process.platform !== 'win32') assert.equal(fs.statSync(file).mode & 0o777, 0o600);
     writeSpeechInputPrefs(file, { inputUid: null });
     assert.deepEqual(readSpeechInputPrefs(file), { inputUid: null });
     fs.writeFileSync(file, "{ half");

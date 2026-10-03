@@ -242,7 +242,8 @@ if (listening) {
     assert.equal(download.status, 200);
     const bytes = Buffer.from(await download.arrayBuffer());
     assert.equal(bytes.length, archive.bytes);
-    assert.equal(bytes.subarray(0, 16).toString(), "Orbit-WORKSPACE-1\n");
+    const backupMagic = Buffer.from("ORBIT-WORKSPACE-1\n");
+    assert(bytes.subarray(0, backupMagic.length).equals(backupMagic), "Unexpected encrypted backup header");
     backupReport = { ok: true, bytes: bytes.length };
   } catch (error) { backupReport = { error: String(error) }; }
 }
