@@ -6,6 +6,7 @@ export interface SolarWorldEngine {
   update(bodies: SolarRenderBody[], width: number, height: number, paused: boolean, settings?: SolarRenderSettings): void;
   pointAt(point: { x: number; y: number } | null): void;
   transfer(message:{from:string;to:string;at:number;result?:boolean}):void;
+  setFrameListener(listener: ((surface: HTMLCanvasElement, particles: HTMLCanvasElement) => void) | null): void;
   dispose(): void;
 }
 export function createSolarWorld(canvas: HTMLCanvasElement): Promise<SolarWorldEngine>;

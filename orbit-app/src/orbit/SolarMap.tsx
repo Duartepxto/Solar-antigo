@@ -12,6 +12,7 @@ import { solarState, solarActivity, type SolarSignal } from './solar-state';
 import { zoomSolarCamera, solarBodyDiameter, transitionSolarCamera } from './solar-camera';
 import './solar.css';
 import {useSolarAnimationPreview} from './useSolarAnimationPreview';
+import { publishSolarPortraits } from './solar-portraits';
 
 interface Camera { x: number; y: number; scale: number }
 interface Drag { id: string | null; x: number; y: number; start: Point; moved: boolean; layout: SolarLayout }
@@ -196,6 +197,7 @@ export function SolarMap({ model, onBot, onSettings, onAdd, active = true, focus
   const waiting = nodes.filter(node => node.bot?.waiting).length;
   const bodies = nodes.map(node => ({ id: node.id, parentId:node.parentId, kind: node.kind, skin: node.kind === 'moon' ? node.moonSkin : node.skin, ...screen(positions[node.id]), diameter: bodyDiameter(node.kind, viewCamera.scale,node.moonSkin), color: node.color, active: !!node.bot?.busy, grabbed: grabbedId !== null && (grabbedId === node.id || grabbedId === node.parentId),
     background:!!focusId&&node.id!==focusId,state:preview.states[node.id]?.state??solarState(node.bot,model.connected),tool:preview.states[node.id]?.activity?undefined:node.bot?.tool??undefined,activity:preview.states[node.id]?.activity??solarActivity(node.bot?.tool),signal:preview.states[node.id]?.signal??signals[node.id] }));
+  useEffect(() => { publishSolarPortraits(bodies, preferences, paused || preview.paused || !preferences.motion); }, [bodies, preferences, paused, preview.paused]);
 
   return <div ref={root} className="solar-map" data-focused={focusId||undefined} data-many={planets.length >= 5 || undefined} data-paused={paused || preview.paused || !preferences.motion || undefined} data-compact={size.w >= 500 && size.w < 650 ? 'wide' : undefined} role="region" aria-label={t('jarvis.solar.map')}
     onPointerDown={event => { if (event.target === event.currentTarget) start(event, null); }}

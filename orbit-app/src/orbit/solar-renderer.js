@@ -177,6 +177,7 @@ export async function createSolarWorld(canvas) {
   const resources = new Set(), objects = new Map(), samples = new Map();
   let disposed=false, frame=0, lastFrame=0, time=0, width=0, height=0, paused=false, pointer=null;
   let settings={interactive:true,debris:true,glow:1};
+  let frameListener=null;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const loader = new THREE.ImageLoader();
   try {
@@ -478,6 +479,7 @@ export async function createSolarWorld(canvas) {
     if(particleContext){const ratio=renderer.getPixelRatio();particleContext.setTransform(ratio,0,0,ratio,0,0);particleContext.clearRect(0,0,width,height);
       orbitParticles.draw(particleContext,[...objects.values()].map(o=>({id:o.id,x:o.root.position.x+width/2,y:height/2-o.root.position.y,radius:o.radius,color:o.profile.palette[3],colors:o.profile.palette,state:o.state,alpha:o.stageLight,signal:o.signal,signalAge:o.signalElapsed??10})),width,height,time,delta,moving,settings.debris,id=>{const target=objects.get(id);if(target){target.signal={kind:'receiving',at:Date.now()};target.signalElapsed=0;}});
     }
+    frameListener?.(canvas,particleCanvas);
   }
   function tick(ms) {
     frame=0; if(disposed||paused||document.hidden||reduced.matches)return;
@@ -490,6 +492,7 @@ export async function createSolarWorld(canvas) {
   function contextLost(event) { event.preventDefault(); paused=true; if(frame)cancelAnimationFrame(frame); canvas.dispatchEvent(new Event('solar-render-failed')); }
   canvas.addEventListener('webglcontextlost',contextLost); document.addEventListener('visibilitychange',wake); reduced.addEventListener('change',wake);
   return {
+    setFrameListener(listener){frameListener=listener;},
     update(bodies,w,h,nextPaused,preferences) {
       if(disposed)return;
       if(width!==w||height!==h) { width=w; height=h; renderer.setSize(w,h,false);particleCanvas.width=w*renderer.getPixelRatio();particleCanvas.height=h*renderer.getPixelRatio();
@@ -524,7 +527,7 @@ export async function createSolarWorld(canvas) {
       if(disposed)return; disposed=true; if(frame)cancelAnimationFrame(frame);
       document.removeEventListener('visibilitychange',wake); reduced.removeEventListener('change',wake); canvas.removeEventListener('webglcontextlost',contextLost);
       scene.traverse(child=>{ if(child.isInstancedMesh)child.dispose(); });
-      scene.clear(); objects.clear(); samples.clear(); for(const resource of resources)resource.dispose(); renderer.dispose(); renderer.forceContextLoss();
+      frameListener=null; scene.clear(); objects.clear(); samples.clear(); for(const resource of resources)resource.dispose(); renderer.dispose(); renderer.forceContextLoss();
       particleCanvas.remove();
     }
   };

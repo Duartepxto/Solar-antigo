@@ -25,10 +25,12 @@ O painel Computador está também acessível no espaço Desenvolvimento, junto d
 
 ## Verificação e limites
 
-- 112 testes selecionados passaram, incluindo política de caras, voz local, ficheiros/revisões, HTTP isolado, ofertas, computador, navegador e comportamento Solar. 28 testes Electron passaram e 3 casos de symlink foram ignorados no Windows.
+- 113 testes selecionados passaram, incluindo política de caras, retratos vivos, voz local, ficheiros/revisões, HTTP isolado, ofertas, computador, navegador e comportamento Solar. 28 testes Electron passaram e 3 casos de symlink foram ignorados no Windows.
 - TypeScript frontend/backend, lint dos ficheiros alterados, catálogos i18n e build foram verificados. O aviso de chunk Vite maior que 500 kB já existia.
 - No browser: ficheiros reais de uma fixture, guardar e recuperar rascunho; acesso ao painel Computador; convite de um agente fictício, abertura e conteúdo real do HTML servido pela conversa.
 - Na aplicação instalada: backend HTTP 200 e `/api/solar-voice/status` com `ready: true`. Transcrição real de áudio público pela API isolada. O microfone físico, uma chamada completa com IA e a transmissão de tela de um computador real não foram exercitados.
 - Estas verificações não afirmam que contas externas, modelos, cloud, MCP ou telefone estejam ligados. A demonstração identifica o motor como simulado; o Electron usa o workspace real separado.
 
 Evidência: `docs/verification-evidence/solar-agent-result.png`, captura do browser da fixture local. Conteúdo HTML criado por código apenas para verificação; sem dados pessoais ou imagens geradas.
+
+Revisão do retrato: `docs/verification-evidence/solar-live-identity.png` mostra a Lua Vulcânica real no editor e no chat. Os canvases são atualizados por um renderizador partilhado com os mesmos modelos, estados e preferências do mapa, incluindo piscar/olhar e sono, em vez do fallback de linhas que apareceu anteriormente. A miniatura estática também foi corrigida: o canvas agora tem um host antes de criar a cena.
