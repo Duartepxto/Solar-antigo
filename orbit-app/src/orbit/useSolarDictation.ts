@@ -1,7 +1,9 @@
+import { solarSpeechBridge, useSolarSpeechReady } from '@/lib/solar-voice';
 import {useEffect,useRef,useState} from 'react';
 import {beginDictation,browserRecognition} from './solar-dictation';
 
 export function useSolarDictation(text:string,onText:(text:string)=>void,recipient?:string) {
+  const solarReady=useSolarSpeechReady();
   const [listening,setListening]=useState(false),[error,setError]=useState<string|null>(null);
   const session=useRef<{stop:()=>void;dispose:()=>void}|null>(null),latest=useRef({text,onText});
   latest.current={text,onText};
@@ -10,8 +12,8 @@ export function useSolarDictation(text:string,onText:(text:string)=>void,recipie
   const toggle=()=>{
     if(listening){session.current?.stop();return;}
     session.current?.dispose();session.current=null;setError(null);
-    const bridge=window.ogb,base=latest.current.text.trimEnd();
-    if(bridge?.platform==='darwin'){
+    const bridge=solarSpeechBridge(),base=latest.current.text.trimEnd();
+    if(bridge&&(solarReady||window.ogb?.platform==='darwin')){
       setListening(true);
       const offText=bridge.onSpeechTranscript(line=>{if(typeof line.text==='string')latest.current.onText([base,line.text].filter(Boolean).join(' '));});
       const offEnd=bridge.onSpeechEnd(({code})=>{setListening(false);if(code)setError(code===1?'not-allowed':'audio-capture');});
@@ -22,5 +24,5 @@ export function useSolarDictation(text:string,onText:(text:string)=>void,recipie
     setListening(true);
     session.current=beginDictation(Recognition,base,navigator.language.startsWith('pt')?'pt-PT':navigator.language,{text:value=>latest.current.onText(value),error:setError,listening:setListening});
   };
-  return {listening,error,toggle,dismiss:()=>setError(null),native:window.ogb?.platform==='darwin',supported:window.ogb?.platform==='darwin'||!!browserRecognition()};
+  return {listening,error,toggle,dismiss:()=>setError(null),native:solarReady||window.ogb?.platform==='darwin',supported:solarReady||window.ogb?.platform==='darwin'||!!browserRecognition()};
 }

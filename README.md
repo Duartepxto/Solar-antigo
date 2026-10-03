@@ -17,7 +17,23 @@ Abrir http://127.0.0.1:5200. `preview` cria uma fixture temporária: Jarvis, oit
 
 Para o workspace persistente, usar `npm run dev`. Os dados ficam em `chatgpt-3.0/.data/`, excluídos do Git. Motores e ferramentas precisam da sua configuração; publicar o código não configura credenciais nem liga serviços.
 
-## Organização
+## Aplicação Windows
+
+O instalador local está em `orbit-app/release-solar/Solar-0.1.86-setup.exe`. A aplicação instala por utilizador em `%LOCALAPPDATA%/Programs/solar`, com dados em `%APPDATA%/Solar/workspace`. O Solar não recebe atualizações do repositório original Orbit.
+
+Para preparar voz local e compilar o instalador:
+
+```powershell
+cd orbit-app
+node scripts/prepare-solar-speech.mjs
+node scripts/build-solar.mjs
+```
+
+O reconhecimento usa Whisper.cpp e modelo base multilingue, descarregados de fontes oficiais com checksum. As respostas podem usar as vozes instaladas no Windows. O motor de IA e os serviços externos continuam a precisar de configuração.
+
+O espaço de desenvolvimento oferece ficheiros, edição e previews estáticos ao lado da conversa. A oferta de tela/resultado e os sistemas preservados estão documentados em [ORBIT-FUNCIONALIDADES.md](chatgpt-3.0/ORBIT-FUNCIONALIDADES.md).
+
+## Organização do código
 
 - `orbit-app/`: frontend React, backend e componentes funcionais da base Orbit, com o tema Solar.
 - `chatgpt-3.0/`: launcher, dados de demonstração, documentação de design e imagens das iterações.

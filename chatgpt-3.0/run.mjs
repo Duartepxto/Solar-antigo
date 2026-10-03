@@ -110,7 +110,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         });
       },
     }],
-    server: { host: '127.0.0.1', port: smoke ? 0 : uiPort, strictPort: true },
+    server: { host: '127.0.0.1', port: smoke ? 0 : uiPort, strictPort: true, watch: { ignored: ['**/dist-native/**', '**/release*/**', '**/electron/vendor/**'] } },
   });
   await web.listen();
   const address = web.httpServer.address();

@@ -2,7 +2,7 @@
 // artifact card). The pill follows its bot around the map, its arrow pointing
 // back at it (the scene places it every frame); View puts the file on the
 // canvas as a card in world units, beside the bot's team.
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { ArrowUp, FileCode2, FileText, Image as ImageIcon, Monitor, Navigation2, X } from "lucide-react";
 
 import { transitionComputerControlLease } from "@/lib/computer-control";
@@ -16,13 +16,14 @@ const KIND_ICON = { html: FileCode2, pdf: FileText, image: ImageIcon, screen: Mo
 const KIND_LABEL: Record<ArtifactKind, string> = { html: "HTML", pdf: "PDF", image: "IMAGE", screen: "LIVE SCREEN" };
 
 /** The pill beside a bot with a file to show. */
-export function OfferPill({ offer, name, color, pillRef, onFly, onView, onLater }: {
+export function OfferPill({ offer, name, color, pillRef, onFly, onView, onLater, solar = false }: {
   offer: ArtifactOffer; name: string; color: string; pillRef: RefObject<HTMLDivElement | null>;
   onFly: () => void; onView: () => void; onLater: () => void;
+  solar?: boolean;
 }) {
   const Icon = KIND_ICON[offer.kind];
   return (
-    <div ref={pillRef} data-orbit-offer className="absolute left-0 top-0 z-[21] will-change-transform" style={{ visibility: "hidden" }}>
+    <div ref={pillRef} data-orbit-offer className={solar ? "absolute bottom-24 left-6 z-[21]" : "absolute left-0 top-0 z-[21] will-change-transform"} style={{ visibility: solar ? "visible" : "hidden" }}>
       <div data-arrow className="pointer-events-none absolute left-1/2 top-1/2 size-0">
         <Navigation2 size={16} aria-hidden className="absolute -left-2 -top-2" fill={color} stroke={color}
           style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
@@ -51,11 +52,12 @@ export function OfferPill({ offer, name, color, pillRef, onFly, onView, onLater 
 /** A file a bot put on the canvas: its header (who is showing what) and the
  * file itself. Dragged by the header on the map; in the bot's view it fills
  * the stage beside the chat. */
-export function ArtifactCard({ art, name, color, shown, visible, onDrag, onTalk, onClose, onFront, onReply, onOpenDesktop }: {
+export function ArtifactCard({ art, name, color, shown, visible, onDrag, onTalk, onClose, onFront, onReply, onOpenDesktop, stageRect }: {
   art: Artifact; name: string; color: string;
   /** full size in the bot's view (not draggable, no Talk button) */
   shown: boolean;
   visible: boolean;
+  stageRect?: CSSProperties;
   onDrag: (dx: number, dy: number) => void;
   onTalk: () => void;
   onClose: () => void;
@@ -85,7 +87,7 @@ export function ArtifactCard({ art, name, color, shown, visible, onDrag, onTalk,
   const showing = t("orbit.offer.showing", { name: "\u0001" }).split("\u0001");
   return (
     <div data-art={art.key} className="absolute flex flex-col gap-3 transition-opacity duration-300"
-      style={{ left: art.x, top: art.y, width: art.w, height: art.h, opacity: op, pointerEvents: op ? "auto" : "none" }}>
+      style={{ left: art.x, top: art.y, width: art.w, height: art.h, ...stageRect, opacity: op, pointerEvents: op ? "auto" : "none" }}>
       <div onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}
         className="flex h-[34px] select-none items-center gap-2.5" style={{ cursor: shown ? "default" : "grab" }}>
         <OrbitFace id={art.botId} size={34} />
@@ -222,13 +224,20 @@ function LiveScreen({ art, name, color, onOpenDesktop }: { art: Artifact; name: 
 /** The file: fetched through the message it was shared in, then shown in a
  * sandboxed frame (HTML, PDF) or as an image. */
 function ArtifactBody({ art }: { art: Artifact }) {
-  const [src, setSrc] = useState<{ url: string } | { error: string } | null>(null);
+  const [src, setSrc] = useState<{ url: string; html?: string } | { error: string } | null>(null);
   useEffect(() => {
     const ctl = new AbortController();
     let url: string | null = null;
     setSrc(null);
     artifactUrl(art, ctl.signal)
-      .then((u) => { url = u; setSrc({ url: u }); })
+      .then(async (u) => {
+        url = u;
+        // An opaque sandbox cannot reliably navigate a parent-origin blob
+        // on every embedded browser. HTML remains in the same sandbox, but
+        // its actual shared bytes are supplied through srcdoc instead.
+        const html = art.kind === "html" ? await fetch(u, { signal: ctl.signal }).then(r => r.text()) : undefined;
+        if (!ctl.signal.aborted) setSrc({ url: u, html });
+      })
       .catch((error: unknown) => { if (!ctl.signal.aborted) setSrc({ error: error instanceof Error ? error.message : String(error) }); });
     return () => { ctl.abort(); if (url) URL.revokeObjectURL(url); };
   }, [art.threadId, art.messageId, art.href]);
@@ -237,7 +246,7 @@ function ArtifactBody({ art }: { art: Artifact }) {
   if (art.kind === "image") return <img src={src.url} alt={art.file} className="size-full object-contain" draggable={false} />;
   // no allow-same-origin: the page runs in its own opaque origin, away from Orbit's API
   return (
-    <iframe src={src.url} title={art.file} className="block size-full border-0 bg-white"
+    <iframe src={src.html === undefined ? src.url : undefined} srcDoc={src.html} title={art.file} className="block size-full border-0 bg-white"
       {...(art.kind === "html" ? { sandbox: "allow-scripts allow-popups" } : {})} />
   );
 }

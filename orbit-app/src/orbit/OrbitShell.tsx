@@ -4,7 +4,7 @@
 // every value on the map is read from the store.
 
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Plus, Search, WifiOff, X } from "lucide-react";
+import { Code2, Plus, Search, WifiOff, X } from "lucide-react";
 import { api, useStore, type Bot } from "@/state/store";
 import { MAUS_COLORS } from "@/lib/mascot";
 import { t, tCount } from "@/lib/i18n";
@@ -21,6 +21,7 @@ import { OrbitScene, type OrbitView, type SceneLabels } from "./scene";
 import { useSolarPreferences } from './solar-preferences';
 import { SolarMap } from './SolarMap';
 import { SolarFocus } from './SolarFocus';
+import { SolarDevelopmentWorkspace } from './SolarDevelopmentWorkspace';
 import { SolarIdentityProvider } from './SolarIdentity';
 import { SolarHeader, SolarComposer } from './SolarChrome';
 import { speaker } from "@/lib/tts";
@@ -167,7 +168,7 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
       onNewBot: (section) => cbRef.current.onNewBot(section),
     }, sceneLabels());
     sceneRef.current = scene;
-    scene.setWorldLayer(worldRef.current);
+    scene.setWorldLayer(JARVIS_SOLAR ? null : worldRef.current);
     const ro = new ResizeObserver(() => {
       const r = stageRef.current?.getBoundingClientRect();
       if (r) setSize({ w: r.width, h: r.height });
@@ -468,6 +469,7 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
   }, [overlayOpen, pill, view, setView, botPanel, state.appSettingsOpen, state.activeView, dispatch]);
 
   // ---- systems for the current view ------------------------------------
+  const [developmentOpen, setDevelopmentOpen] = useState(false);
   const focusedBot = view.kind === "bot" ? state.bots.find((b) => b.id === view.id) ?? null : null;
   const focusedGroup = view.kind === "channel" ? state.groups.find((g) => g.id === view.id) ?? null : null;
   const focusedTeam = view.kind === "team" ? model.teams.find((tm) => tm.key === view.key) ?? null : null;
@@ -475,10 +477,13 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
   const phone = usePhoneStatus();
   const appSections = useMemo(() => new Set(appSectionList.map((entry) => entry.id)), [appSectionList.map((entry) => entry.id).join()]);
   const systems: OrbitSystem[] = useMemo(() => {
-    if (focusedBot) return botSystems(focusedBot, state, (p) => {
+    if (focusedBot) { const result = botSystems(focusedBot, state, (p) => {
       if (remoteClient) { setRemoteSettings(true); return; }
       setBotPanel((cur) => (cur === p ? null : p));
     }, facts, botPanel);
+      if (JARVIS_SOLAR && canMake) result.push({key: "development", icon: Code2, label: t("jarvis.dev.title"), value: t("jarvis.dev.files"), status: t("jarvis.dev.code"), selected: developmentOpen, run: () => { setBotPanel(null); setDevelopmentOpen(true); }});
+      return result;
+    }
     if (view.kind === "you") return YOU_HUB
       .filter((h) => (h.section ? appSections.has(h.section) : !remoteClient))
       .map((h) => {
@@ -491,7 +496,7 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
       return { key: h.key, icon: h.icon, label: t(h.label as never), value, status, selected: teamPanel === h.key, run: () => setTeamPanel(h.key) };
     });
     return [];
-  }, [focusedBot, focusedTeam, view.kind, state, dispatch, focusBot, appSections, facts, botPanel, remoteClient, youPanel, teamPanel, teamComputers, teamInstructions, phone, solarPreferences.background]);
+  }, [focusedBot, focusedTeam, view.kind, state, dispatch, focusBot, appSections, facts, botPanel, remoteClient, youPanel, teamPanel, teamComputers, teamInstructions, phone, solarPreferences.background, developmentOpen, canMake]);
   const liveIdx = systems.flatMap((sys, i) => (sys.live ? [i] : []));
   const warnIdx = systems.flatMap((sys, i) => (sys.tone === "warning" ? [i] : []));
   // ---- "wants to show you" ---------------------------------------------
@@ -513,26 +518,28 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
   useEffect(() => { sceneRef.current?.setCards(cards.map((a) => ({ botId: a.botId, x: a.x, y: a.y, w: a.w, h: a.h }))); }, [cardsKey]);
   const liveOffer = offer && model.bots.some((b) => b.id === offer.botId) && state.connected ? offer : null;
   useLayoutEffect(() => {
+    if (JARVIS_SOLAR) return;
     sceneRef.current?.setOffer(liveOffer ? offerRef.current : null, liveOffer?.botId ?? null);
     if (liveOffer) sceneRef.current?.lookAtYou(liveOffer.botId);
   }, [liveOffer?.key]);
   const teamOf = (botId: string) => model.teams.find((tm) => tm.memberIds.includes(botId))?.key;
   const present = (o: ArtifactOffer) => {
     const scene = sceneRef.current;
-    if (!scene) return;
+    if (!scene && !JARVIS_SOLAR) return;
     settle(o.key);
     const id = `${o.botId}:${o.kind}`;
     const existing = artifacts.find((a) => a.id === id);
     const n = artifacts.filter((a) => a.id !== id && teamOf(a.botId) === teamOf(o.botId)).length;
-    const pos = existing ?? scene.artifactSpot(o.botId, n, ART_W, ART_H);
+    const pos = existing ?? (JARVIS_SOLAR ? { x: 0, y: 0 } : scene!.artifactSpot(o.botId, n, ART_W, ART_H));
     setArtifacts((list) => [...list.filter((a) => a.id !== id), { ...o, id, x: pos.x, y: pos.y, w: ART_W, h: ART_H }]);
+    if (JARVIS_SOLAR) { setDevelopmentOpen(false); focusBot(o.botId); setShowingId(id); return; }
     // in the bot's own view the card takes the stage beside the chat
     if (view.kind === "bot" && view.id === o.botId) { setShowingId(id); return; }
     setShowingId(null);
     if (view.kind !== "map") setView({ kind: "map" });
-    scene.present(o.botId, { x: pos.x + ART_W / 2, y: pos.y + 40 });
-    const b = scene.worldOf(o.botId) ?? pos;
-    scene.frameRect(Math.min(pos.x - 40, b.x - 300), Math.min(pos.y - 40, b.y - 280), Math.max(pos.x + ART_W + 40, b.x + 300), Math.max(pos.y + ART_H + 40, b.y + 280));
+    scene!.present(o.botId, { x: pos.x + ART_W / 2, y: pos.y + 40 });
+    const b = scene!.worldOf(o.botId) ?? pos;
+    scene!.frameRect(Math.min(pos.x - 40, b.x - 300), Math.min(pos.y - 40, b.y - 280), Math.max(pos.x + ART_W + 40, b.x + 300), Math.max(pos.y + ART_H + 40, b.y + 280));
   };
   // the chat's "open on the canvas" row
   const presentRef = useRef(present);
@@ -607,6 +614,7 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
   const sheetShown = sheetOpen && (view.kind === "you" || view.kind === "bot");
   // other screens that claim the stage (stage.ts): the image viewer, ...
   const [stageClaims, setStageClaims] = useState(0);
+  useEffect(() => { setDevelopmentOpen(false); }, [viewKey, focusedBot?.threadId]);
   useEffect(() => onStageClaim((delta) => setStageClaims((n) => Math.max(0, n + delta))), []);
   const claimShown = stageClaims > 0 && (view.kind === "you" || view.kind === "bot");
   useEffect(() => { if (stageClaims > 0) closeStage(); }, [viewKey]);
@@ -738,21 +746,24 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
 
       <div ref={stageRef} className="orbit-stage relative min-h-0 flex-1" data-orbit-stage-free={stageFree || undefined}>
         <canvas ref={canvasRef} data-orbit-canvas className="absolute inset-0 size-full touch-none" style={{ cursor: "grab", visibility: JARVIS_SOLAR ? 'hidden' : undefined }} />
-        {JARVIS_SOLAR && <div className="solar-map-layer absolute inset-0" style={{opacity:inFocus&&(size.w<760||view.kind==='new')?0:1,pointerEvents:inFocus?'none':undefined}} inert={inFocus} aria-hidden={inFocus||undefined}>
+        {JARVIS_SOLAR && <div className="solar-map-layer absolute inset-0" style={{opacity:developmentOpen?.06:inFocus&&(size.w<760||view.kind==='new')?0:1,pointerEvents:inFocus?'none':undefined}} inert={inFocus} aria-hidden={inFocus||undefined}>
           <SolarMap active={!covered&&!showing} focusId={inFocus&&size.w>=760&&view.kind!=='new'?(focusedBot?.id??focusedTeam?.chiefId??model.bots.find(b=>/^jarvis(?:\s|$)/i.test(b.name))?.id??model.orbitAgent?.id):undefined} focusWidth={Math.max(220,size.w-chatW-28)} model={model} onBot={focusBot} onSettings={() => setView({ kind: 'you' })} onAdd={() => setView({ kind: 'new', section: null })} />
         </div>}
         {JARVIS_SOLAR && inFocus && <SolarFocus creating={view.kind==='new'} model={model} id={focusedBot?.id??focusedTeam?.chiefId??undefined}
           name={focusedBot?.name??focusedGroup?.name??focusedTeam?.name??(view.kind==='new'?t('orbit.new.name'):'Jarvis')}
           systems={systems} width={size.w} height={size.h} chatWidth={chatW} covered={covered||!!showing} onBackground={()=>setView({kind:'map'})} />}
 
+        {developmentOpen && focusedBot && <SolarDevelopmentWorkspace key={`${focusedBot.id}:${focusedBot.threadId}`} bot={focusedBot} onClose={() => setDevelopmentOpen(false)} />}
+
         {/* Files the bots put on the canvas, in world units (the scene moves
             the layer with the camera) */}
-        <div ref={worldRef} className="pointer-events-none absolute left-0 top-0 size-0 origin-top-left" hidden={JARVIS_SOLAR && !inFocus}>
+        <div ref={worldRef} className={JARVIS_SOLAR ? "pointer-events-none absolute inset-0 z-[12]" : "pointer-events-none absolute left-0 top-0 size-0 origin-top-left"} hidden={JARVIS_SOLAR && !inFocus}>
           {cards.map((a) => {
             const b = state.bots.find((x) => x.id === a.botId);
             return (
               <ArtifactCard key={a.id} art={a} name={b?.name ?? ""} color={b ? MAUS_COLORS[b.color] : "#fcfcfc"}
-                shown={showing?.id === a.id} visible={view.kind === "map"}
+                shown={showing?.id === a.id} visible={!JARVIS_SOLAR && view.kind === "map"}
+                stageRect={JARVIS_SOLAR ? { left: 24, top: 148, width: Math.max(240, size.w - chatW - 72), height: Math.max(200, size.h - 172) } : undefined}
                 onDrag={(dx, dy) => {
                   const k = sceneRef.current?.scale() ?? 1;
                   setArtifacts((list) => list.map((x) => (x.id === a.id ? { ...x, x: x.x + dx / k, y: x.y + dy / k } : x)));
@@ -914,11 +925,11 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
             : <MapComposer onSent={(botId, rect) => sceneRef.current?.launch(rect.left + 40, rect.top + rect.height / 2, botId)} />
         )}
 
-        {liveOffer && (!JARVIS_SOLAR || inFocus) && (() => {
+        {liveOffer && (() => {
           const b = state.bots.find((x) => x.id === liveOffer.botId);
           return b ? (
-            <OfferPill key={liveOffer.key} offer={liveOffer} name={b.name} color={MAUS_COLORS[b.color]} pillRef={offerRef}
-              onFly={() => sceneRef.current?.flyTo(b.id)} onView={() => present(liveOffer)} onLater={() => settle(liveOffer.key)} />
+            <OfferPill key={liveOffer.key} offer={liveOffer} name={b.name} color={MAUS_COLORS[b.color]} pillRef={offerRef} solar={JARVIS_SOLAR}
+              onFly={() => JARVIS_SOLAR ? focusBot(b.id) : sceneRef.current?.flyTo(b.id)} onView={() => present(liveOffer)} onLater={() => settle(liveOffer.key)} />
           ) : null;
         })()}
 

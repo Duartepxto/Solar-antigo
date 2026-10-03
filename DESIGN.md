@@ -297,3 +297,7 @@ As definições rápidas incluem três fundos persistentes: Preto, Azul profundo
 ### Revisão: criação e foco
 
 Manter UI espacial baseada nas regras do Orbit. Retirar popover de quick settings e transferir escolhas solares para Aparência no hub completo. Ligações interplanetárias em foco: 7–12% de opacidade, sem movimento do tracejado. Ligações aos sistemas: traço pontilhado mais visível, destacado para sistema selecionado/ativo. Criação com preview à esquerda, ações reais à direita, pesquisa e pílulas Agentes/Equipas; manter visibilidade, validação, loading e erros do Orbit. Equipa aparece com opções abertas e separadores finos, sem cartões. Nenhuma nova reformulação de modelos/caras/partículas.
+
+### Desenvolvimento e apresentação — 3 outubro
+
+Modo Operate. Expandir o mundo aprovado: editor transparente no stage à esquerda da conversa, identidade Solar no cabeçalho, navegação compacta de pastas, pílulas e divisores finos. Ficheiros/Computador alternam a área de trabalho; não substituem o chat nem abrem modal. Preservar oferta de tela e resultados do Orbit; no Solar, apresentação usa enquadramento próprio da área livre, sem escala do mapa antigo. Cara normal ampliada 9% nos olhos/boca; dormir fecha os olhos, outros estados não deformam a expressão. Build Electron usa dados próprios do Solar e reconhecimento de voz local Windows. Evidência e limites em chatgpt-3.0/ORBIT-FUNCIONALIDADES.md.

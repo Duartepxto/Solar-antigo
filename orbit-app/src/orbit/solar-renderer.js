@@ -1,5 +1,6 @@
 // Distinct fragments retain a planetary volume. Each material has its own
 // carved face and recessed 3D eye lenses; pointer dents never disperse the shell.
+import { solarFaceEyeOpen } from './solar-face';
 import * as THREE from './vendor/three.module.js';
 import { POINTER_INDENT, POINTER_FALLOFF, pointerDent } from './solar-interaction.js';
 import { SURFACE_PRESETS, surfaceColor } from './solar-presets.js';
@@ -402,7 +403,6 @@ export async function createSolarWorld(canvas) {
       object.stageLight+=((object.background?.18:1)-object.stageLight)*blend;
       if(object.signal&&moving)object.signalElapsed=Math.min(10,(object.signalElapsed??0)+delta);
       const signalAge=object.signal?object.signalElapsed??10:10;
-      const speaking=signalAge<2.2&&(object.signal.kind==='receiving'||object.signal.kind==='sending');
       const arrival=moving&&object.signal?.kind==='receiving'?Math.max(0,1-signalAge/.7):0;
       const attention=object.state==='waiting'||object.state==='blocked';
       const ripple=moving&&object.signal?.kind==='receiving'&&signalAge<.8?signalAge/.8:attention?(moving?(time*.9)%1:.35):-1;
@@ -419,8 +419,8 @@ export async function createSolarWorld(canvas) {
       const pulse=moving&&signalAge<1?Math.sin(Math.max(0,signalAge)*Math.PI)*.18:0;
       object.root.scale.set(object.radius*(1-pulse*.12+arrival*.025),object.radius*(1+pulse*.12+arrival*.025),object.radius);
       for(const material of [object.surface.material,object.core.material]) {
-        const u=material.uniforms; u.stageLight.value=object.stageLight; u.mouthSmile.value=object.profile.smile+(moving&&object.signal?.kind==='settled'&&signalAge<1.6?Math.sin(signalAge/1.6*Math.PI)*.05:0)+arrival*.02; u.time.value=time; u.eyeOpen.value=blink*(sleeping?.4:1)*(object.state==='offline'?.65:1)*(1+arrival*.18); u.cursor.value.copy(object.cursor); u.interaction.value=object.interaction; u.gaze.value.copy(object.gaze); u.motionTrail.value.copy(object.trail); u.luminous.value=(object.profile.luminous+.018)*settings.glow; u.speaking.value=speaking&&moving?(.5+.5*Math.sin(time*9)):0;
-        for(const [key,target] of [['focus',object.state==='working'?1:0],['request',object.state==='waiting'?1:0],['concern',object.state==='blocked'?1:0]]) {
+        const u=material.uniforms; u.stageLight.value=object.stageLight; u.mouthSmile.value=object.profile.smile; u.time.value=time; u.eyeOpen.value+=(solarFaceEyeOpen(object.state,blink)-u.eyeOpen.value)*(moving?blend:1); u.cursor.value.copy(object.cursor); u.interaction.value=object.interaction; u.gaze.value.copy(object.gaze); u.motionTrail.value.copy(object.trail); u.luminous.value=(object.profile.luminous+.018)*settings.glow; u.speaking.value=0;
+        for(const [key,target] of [['focus',0],['request',0],['concern',0]]) {
           u[key].value+=(target-u[key].value)*blend;
         }
       }
@@ -445,7 +445,7 @@ export async function createSolarWorld(canvas) {
       }
       object.mouth.visible=!object.background;
       const mouthPositions=object.mouth.geometry.attributes.position;
-      const open=(thinking?.45:0)+u.speaking.value*.65+arrival*.6;
+      const open=0;
       for(let i=0;i<26;i++){
         const x=(i/25*2-1)*object.profile.mouthSpan*scale,t=x/(object.profile.mouthSpan*scale);
         const curve=(object.profile.mouthY+t*t*(u.mouthSmile.value-u.request.value*.04-u.concern.value*.09))*scale;
@@ -513,7 +513,7 @@ export async function createSolarWorld(canvas) {
         if(body.signal&&(body.signal.at!==object.signal?.at||body.signal.kind!==object.signal?.kind)){object.signal=body.signal;object.signalElapsed=0;}
         object.screenX=body.x; object.screenY=body.y; object.radius=body.diameter/2;
         for(const material of [object.surface.material,object.core.material]) {
-          material.uniforms.faceScale.value=body.kind==='moon'?Math.max(1.14,Math.min(1.35,62/body.diameter)):body.kind==='planet'?Math.max(1.08,Math.min(1.3,115/body.diameter)):1;
+          material.uniforms.faceScale.value=1.09*(body.kind==='moon'?Math.max(1.14,Math.min(1.35,62/body.diameter)):body.kind==='planet'?Math.max(1.08,Math.min(1.3,115/body.diameter)):1);
         }
       }
       paused=nextPaused; settings={interactive:true,debris:true,glow:1,...preferences}; wake();

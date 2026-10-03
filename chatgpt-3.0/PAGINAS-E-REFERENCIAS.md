@@ -8,7 +8,7 @@ A primeira página trabalhada é Criar agente/equipa: mantém as ações, papéi
 
 Vista própria de gestão, com responsáveis e membros, para arrastar luas entre equipas e uma alternativa por seletor para teclado. O mapa normal continua a arrastar apenas posições. Antes de guardar, mostrar origem e destino; usar as ações e validações existentes de equipa, respeitando o backend e permissões. Ainda não implementado nesta revisão.
 
-## Pesquisa OpenDots (candidato, aguarda confirmação do link)
+## Pesquisa OpenDots (projeto público da CopilotKit)
 
 Fontes primárias: https://github.com/CopilotKit/OpenDots e https://www.copilotkit.ai/opendots . A aplicação oficial Dots é distinta: https://openai.com/index/introducing-dots/ . Existem vários projetos com o nome OpenDots; a identidade do vídeo do utilizador ainda não foi confirmada.
 
@@ -20,7 +20,7 @@ Fontes primárias: https://github.com/CopilotKit/OpenDots e https://www.copilotk
 | Espaços com documentos editáveis e revisões | Artefactos e apresentações existentes; sem editor de espaços equivalente | Projetar persistência, revisões e permissões antes de implementar |
 | Conversa e chamadas | Chat, ditado e voz existentes, conforme configuração | Preservar contexto e ações reais; não ligar serviços fictícios |
 
-Não importar o runtime do candidato nem ligar contas externas antes de confirmar o projeto. Não apresentar documentos, chamadas ou agendamento como implementados se dependem de serviços ainda não configurados.
+Com a autorização seguinte, adaptámos o editor junto da conversa e a proteção de rascunhos/revisões. O runtime e as contas externas não foram importados. Ver [OPENDOTS-E-DESENVOLVIMENTO.md](OPENDOTS-E-DESENVOLVIMENTO.md) para a implementação e os limites.
 
 ## Verificação desta revisão
 

@@ -9,6 +9,7 @@
 import { useSyncExternalStore } from "react";
 
 import { speaker } from "./tts";
+import { solarSpeechBridge } from "./solar-voice";
 
 let current: string | null = null;
 const watchers = new Set<() => void>();
@@ -27,7 +28,7 @@ export function startCall(targetId: string) {
   // Switching calls must silence both halves before ownership changes; the
   // old overlay may not unmount until React's next render.
   speaker.stop();
-  void window.ogb?.speechStop();
+  void solarSpeechBridge()?.speechStop();
   current = targetId;
   notify();
 }
@@ -39,7 +40,7 @@ export function endCall(targetId?: string): boolean {
   if (current === null) return false;
   current = null;
   speaker.stop();
-  void window.ogb?.speechStop();
+  void solarSpeechBridge()?.speechStop();
   notify();
   return true;
 }

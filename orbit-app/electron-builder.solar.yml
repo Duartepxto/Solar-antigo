@@ -1,0 +1,26 @@
+extends: ./electron-builder.yml
+appId: com.solar.workspace
+productName: Solar
+artifactName: Solar-${version}-${arch}.${ext}
+extraMetadata:
+  name: solar
+  productName: Solar
+publish: null
+directories:
+  output: release-solar
+win:
+  target:
+    - target: nsis
+      arch: x64
+  icon: build/solar.ico
+  extraResources:
+    # The parent already supplies computer, browser and tunnel resources.
+    # Builder concatenates this array; repeating them races copies on Windows.
+    - from: dist-native/solar-speech
+      to: solar-speech
+      filter: ["whisper-cli.exe", "*.dll", "ggml-base.bin", "LICENSE.txt", "manifest.json"]
+nsis:
+  oneClick: true
+  perMachine: false
+  shortcutName: Solar
+  artifactName: Solar-${version}-setup.${ext}

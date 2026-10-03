@@ -1,3 +1,4 @@
+import { solarSpeechBridge, useSolarSpeechReady } from '@/lib/solar-voice';
 // Call mode — the bot on the line.
 //
 // The loop is deliberately HALF-DUPLEX: the microphone is live only when
@@ -77,10 +78,11 @@ export function CallTargetButton({
   const { state, dispatch } = useStore();
   const { capabilities, ready: capabilitiesReady } = useDesktopCapabilities();
   const active = useOnCall() === targetId;
-  const capabilityHelp = capabilitiesReady
+  const solarReady = useSolarSpeechReady();
+  const capabilityHelp = solarReady ? null : capabilitiesReady
     ? callCapabilityHelp(capabilities, Boolean(window.ogb?.speechStart))
     : null;
-  const supported = capabilitiesReady && !capabilityHelp;
+  const supported = (capabilitiesReady || solarReady) && !capabilityHelp;
   const localVoice = localSystemVoiceActive();
   const configured = localVoice || Boolean(state.config?.tts?.configured);
   const everyTargetHasVoice = voices.length > 0 && voices.every((voice) => Boolean(voice));
@@ -280,7 +282,7 @@ function Call({ bot }: { bot: Bot }) {
   }, []);
 
   const hush = useCallback(() => {
-    void window.ogb?.speechStop();
+    void solarSpeechBridge()?.speechStop();
   }, []);
 
   const listen = useCallback(() => {
@@ -288,7 +290,7 @@ function Call({ bot }: { bot: Bot }) {
     move("listening");
     setHeard("");
     setNote(null);
-    void window.ogb?.speechStart({ endpointMs: CALL_ENDPOINT_MS }).catch(() => {
+    void solarSpeechBridge()?.speechStart({ endpointMs: CALL_ENDPOINT_MS }).catch(() => {
       if (alive.current && currentCall() === bot.id) {
         setNote("The microphone couldn't start. Check Microphone and Speech Recognition access.");
       }
@@ -336,7 +338,7 @@ function Call({ bot }: { bot: Bot }) {
 
   // ── the microphone ───────────────────────────────────────────────────
   useEffect(() => {
-    const bridge = window.ogb;
+    const bridge = solarSpeechBridge();
     if (!bridge) return;
     const offTranscript = bridge.onSpeechTranscript((line) => {
       if (!alive.current || currentCall() !== bot.id || phaseRef.current !== "listening") return;
@@ -420,6 +422,7 @@ function Call({ bot }: { bot: Bot }) {
         setNote("Calls need macOS dictation, which isn't available here yet.");
         return;
       }
+      if (code === 1 && import.meta.env.VITE_JARVIS_SOLAR === "true" && window.ogb?.platform !== "darwin") { setNote(reason ?? "Microphone capture failed"); return; }
       if (code === 1) {
         setNote(
           reason === "helper-build-failed"
@@ -437,7 +440,7 @@ function Call({ bot }: { bot: Bot }) {
     return () => {
       offTranscript();
       offEnd();
-      void window.ogb?.speechStop();
+      void solarSpeechBridge()?.speechStop();
     };
     // busy/approval are intentionally initial snapshots. Their live changes
     // are handled below without tearing down native event listeners.

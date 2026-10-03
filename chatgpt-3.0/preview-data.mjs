@@ -1,5 +1,7 @@
 // This function is called only for the fixture just created by run.mjs.
 // It never seeds the persistent backend or discovers a server from a port.
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 export async function seedSolarPreview(fixture, control) {
   const url = fixture.info.url;
   async function request(path, method = 'GET', body) {
@@ -34,6 +36,14 @@ export async function seedSolarPreview(fixture, control) {
     const created = await control(['new-bot', '--url', url, '--name', name, '--title', title, '--section', section]);
     if (!created.success || !created.bot?.id) throw new Error(`Não foi possível criar ${name} na fixture.`);
     await request(`/api/bots/${created.bot.id}`, 'PATCH', { color, chiefOfStaff });
+    if (name === 'Lua Vulcânica') {
+      const cwd = join(fixture.info.dataDir, 'solar-demo-project');
+      mkdirSync(join(cwd, 'src'), { recursive: true });
+      writeFileSync(join(cwd, 'README.md'), '# Solar workspace\n\nThis project is an isolated demonstration.\n\n- Chat stays beside the editor.\n- Save checks the file revision.\n- HTML previews do not execute scripts.\n');
+      writeFileSync(join(cwd, 'src', 'agent.ts'), 'export const agent = {\n  name: "Solar",\n  role: "development",\n  parent: "Ares",\n};\n');
+      writeFileSync(join(cwd, 'preview.html'), '<style>body{background:#0a1019;color:#e9eef6;padding:40px}h1{font-size:46px;font-weight:400}p{color:#99abc1}</style><h1>Solar</h1><p>A quiet place to build alongside your agent.</p>');
+      await request(`/api/bots/${created.bot.id}`, 'PATCH', { cwd });
+    }
   }
   console.log('Pré-visualização solar: Jarvis, oito planetas e cinco luas temporárias, com motor simulado.');
 }

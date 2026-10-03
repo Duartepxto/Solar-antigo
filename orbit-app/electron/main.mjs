@@ -1,4 +1,6 @@
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, globalShortcut, Tray, WebContentsView, clipboard, desktopCapturer, dialog, ipcMain, Menu, nativeImage, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess } from "electron";
+const solarApplication = process.env.SOLAR_APP === "1" || ["Solar", "solar"].includes(app.getName());
+if (solarApplication) { app.setName("Solar"); process.env.SOLAR_APP = "1"; }
 import { readBuildInfo } from "./source-updater.mjs";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -359,7 +361,7 @@ function desktopDataDir() {
   // then pass this exact resolved path to the utility child. server/config.ts
   // intentionally treats an empty ORBIT_DATA_DIR differently, so inheriting it
   // without normalization would lease one directory and write another.
-  return process.env.ORBIT_DATA_DIR || path.join(app.getPath("home"), ".orbit");
+  return process.env.ORBIT_DATA_DIR || (solarApplication ? path.join(app.getPath("userData"), "workspace") : path.join(app.getPath("home"), ".orbit"));
 }
 
 async function stopUtilityServer(proc, timeoutMs = UTILITY_SERVER_STOP_TIMEOUT_MS) {
@@ -1238,6 +1240,7 @@ async function startServerOn(port) {
     // owner; fallback-port children must not race to replace the parent lease.
     ...desktopDataDirLease.utilityServerLeaseEnvironment(),
     ORBIT_DATA_DIR: desktopDataDir(),
+    ...(solarApplication ? { SOLAR_SPEECH_DIR: app.isPackaged ? path.join(process.resourcesPath, "solar-speech") : path.join(__dirname, "..", "dist-native", "solar-speech") } : {}),
     // A packaged utility child must never fall back to a descriptor inherited
     // from the launching shell. It starts fail-closed until this exact main
     // process sends the private in-memory connection after spawn.
@@ -3163,7 +3166,7 @@ app.whenReady().then(async () => {
   if (hostedAccount) void hostedAccount.restore().catch(() => {});
   // in-app auto-update (packaged only) — checks GitHub releases, downloads on
   // the user's click, installs on "Restart to update"
-  startUpdater();
+  if (!solarApplication) startUpdater();
   refreshApplicationMenu();
   app.on("activate", () => {
     if (desktopTray?.show()) return;

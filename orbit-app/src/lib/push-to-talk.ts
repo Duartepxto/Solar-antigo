@@ -1,3 +1,4 @@
+import { solarSpeechBridge } from './solar-voice';
 import { useEffect, useRef, useState } from "react";
 
 import { currentCall } from "./call";
@@ -30,7 +31,7 @@ export function usePushToTalk(targetId: string, enabled: boolean, onError: () =>
   }, [enabled]);
 
   useEffect(() => {
-    const bridge = window.ogb;
+    const bridge = solarSpeechBridge();
     if (!bridge?.speechFinish) return;
 
     const finish = () => {

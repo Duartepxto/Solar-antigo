@@ -39,9 +39,19 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("paired desktop voice preferences", () => {
+  it("offers installed system voices on a Solar Windows desktop without a remote Mac", () => {
+    vi.stubEnv('VITE_JARVIS_SOLAR', 'true');
+    vi.stubGlobal('window', {
+      ogb: { platform: 'win32' },
+      SpeechSynthesisUtterance: class {},
+      speechSynthesis: { getVoices: () => voices },
+    });
+    expect(localSystemVoiceActive()).toBe(true);
+    expect(listLocalSystemVoices()).toHaveLength(2);
+  });
   it("defaults a paired Mac to its local installed voices", () => {
     expect(localSystemVoicesAvailable()).toBe(true);
     expect(remoteVoiceProvider()).toBe("system");

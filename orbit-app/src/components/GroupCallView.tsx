@@ -1,3 +1,4 @@
+import { solarSpeechBridge } from '@/lib/solar-voice';
 // Conference call mode — one microphone, several room members.
 //
 // Capture stays half-duplex for the same reason as one-to-one calls: the
@@ -109,7 +110,7 @@ function GroupCall({ group, members }: { group: Group; members: Bot[] }) {
   }, []);
 
   const hush = useCallback(() => {
-    void window.ogb?.speechStop();
+    void solarSpeechBridge()?.speechStop();
   }, []);
 
   const listen = useCallback(() => {
@@ -118,7 +119,7 @@ function GroupCall({ group, members }: { group: Group; members: Bot[] }) {
     setSpeakingMemberId(null);
     setHeard("");
     setNote(null);
-    void window.ogb?.speechStart({ endpointMs: CALL_ENDPOINT_MS }).catch(() => {
+    void solarSpeechBridge()?.speechStart({ endpointMs: CALL_ENDPOINT_MS }).catch(() => {
       if (alive.current && currentCall() === group.id) {
         setNote("The microphone couldn't start. Check Microphone and Speech Recognition access.");
       }
@@ -201,7 +202,7 @@ function GroupCall({ group, members }: { group: Group; members: Bot[] }) {
   }, [group.id]);
 
   useEffect(() => {
-    const bridge = window.ogb;
+    const bridge = solarSpeechBridge();
     if (!bridge) return;
     const offTranscript = bridge.onSpeechTranscript((line) => {
       if (!alive.current || currentCall() !== group.id || phaseRef.current !== "listening") return;
@@ -305,6 +306,7 @@ function GroupCall({ group, members }: { group: Group; members: Bot[] }) {
         setNote("Calls need macOS dictation, which isn't available here yet.");
         return;
       }
+      if (code === 1 && import.meta.env.VITE_JARVIS_SOLAR === "true" && window.ogb?.platform !== "darwin") { setNote(reason ?? "Microphone capture failed"); return; }
       if (code === 1) {
         setNote(
           reason === "helper-build-failed"
@@ -320,7 +322,7 @@ function GroupCall({ group, members }: { group: Group; members: Bot[] }) {
     return () => {
       offTranscript();
       offEnd();
-      void window.ogb?.speechStop();
+      void solarSpeechBridge()?.speechStop();
     };
     // Live busy/card changes are handled below without restarting native capture.
     // eslint-disable-next-line react-hooks/exhaustive-deps

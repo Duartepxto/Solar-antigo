@@ -41,8 +41,8 @@ function write(next: Preferences): void {
 export function localSystemVoicesAvailable(): boolean {
   return (
     typeof window !== "undefined" &&
-    window.ogb?.remoteClient?.active === true &&
-    window.ogb?.platform === "darwin" &&
+    ((import.meta.env.VITE_JARVIS_SOLAR === 'true') ||
+      (window.ogb?.remoteClient?.active === true && window.ogb?.platform === "darwin")) &&
     typeof window.speechSynthesis !== "undefined" &&
     typeof window.SpeechSynthesisUtterance !== "undefined"
   );

@@ -1,3 +1,5 @@
+import { solarSpeechReady, transcribeSolarVoice } from "./solar-speech.ts";
+import { SolarWorkspace } from "./solar-workspace.ts";
 // Orbit server — the harness host. Clients hold no transports
 // (upstream rule): the React app dispatches typed commands over HTTP and
 // folds one SSE event stream; every provider process runs here.
@@ -19304,6 +19306,28 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (!bot) return json(res, 404, { error: "no such bot" });
       return json(res, 200, previewSystemPrompt(bot));
     }
+    if (path === "/api/solar-voice/status" && method === "GET") return json(res, 200, { ready: solarSpeechReady(), local: true });
+    if (path === "/api/solar-voice/transcribe" && method === "POST") {
+      const body = await readBody(req, 1_500_000);
+      return json(res, 200, await transcribeSolarVoice(body?.audio, body?.language));
+    }
+    m = path.match(/^\/api\/bots\/([\w-]+)\/solar-workspace$/);
+    if (m && (method === "GET" || method === "PUT")) {
+      // Not in CLIENT_ALLOW: project source is available to owners/admins only.
+      const bot = requestedTaskBot(m[1], url.searchParams.get("threadId") ?? undefined);
+      const task = store.taskByThread(bot.id, bot.threadId);
+      const place = task?.surface ?? bot.computer;
+      if (place === "cloud" || place === "vm") return json(res, 409, { error: "This workspace currently supports local project files only" });
+      const workspace = new SolarWorkspace(task?.cwd ?? bot.cwd ?? join(realpathSync(DATA_DIR), "task-workspaces", bot.id, bot.threadId));
+      const file = url.searchParams.get("file");
+      if (method === "GET") return json(res, 200, file !== null ? workspace.read(file) : workspace.list(url.searchParams.get("directory") ?? ""));
+      requirePinnedClientThread(bot.id, bot.threadId);
+      const body = await readBody(req);
+      if (!body || typeof body !== "object" || Array.isArray(body)) return json(res, 400, { error: "Invalid file update" });
+      if (file === null) return json(res, 400, { error: "A file path is required" });
+      return json(res, 200, workspace.save(file, body.content, body.revision));
+    }
+
     m = path.match(/^\/api\/bots\/([\w-]+)\/overview$/);
     if (m && method === "GET") {
       if (!store.bot(m[1])) return json(res, 404, { error: "no such bot" });
