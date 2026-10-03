@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#050506">
+  <title>OpenMausBot — Team map</title>
+  <link rel="stylesheet" href="./reference.css">
+  <script src="./reference.js" defer></script>
+</head>
+<body>
+  <main class="window" aria-label="OpenMausBot design implementation">
+    <header class="chrome">
+      <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div id="windowTitle" class="window-title">OpenMausBot — Team map</div>
+      <button id="searchButton" class="search-button" type="button" aria-label="Search or jump"><span class="search-icon">⌕</span>Search or jump · ⌘K</button>
+    </header>
+    <section id="stage" class="stage" aria-label="Team map">
+      <canvas id="world" aria-label="Interactive team map"></canvas>
+      <button id="back" class="back hidden" type="button">‹ <span>Team map</span><kbd>esc</kbd></button>
+      <div id="caps" class="caps hidden"></div>
+      <aside id="panel" class="panel hidden" aria-live="polite"></aside>
+      <button id="digest" class="digest" type="button"><b>23 runs</b> while you were away</button>
+      <button id="attention" class="attention" type="button"><span class="attention-faces">● ●</span><b>2 things</b> waiting on you</button>
+      <section id="attentionPopover" class="attention-popover hidden" aria-label="Waiting on you"></section>
+      <section id="digestPopover" class="digest-popover hidden" aria-label="While you were away"></section>
+      <div id="composer" class="overview-composer">
+        <div class="recipient-wrap"><button id="recipient" class="recipient" type="button"><span class="recipient-dot"></span><span id="recipientName">Atlas</span><span class="chevron">⌄</span></button><div id="recipientMenu" class="recipient-menu hidden"></div></div>
+        <input id="overviewInput" type="text" placeholder="Tell Atlas what you want done" autocomplete="off">
+        <button id="overviewSend" class="send" type="button" aria-label="Send message">↑</button>
+      </div>
+      <div id="mapControls" class="map-controls"><div id="legend" class="legend hidden"><span class="legend-label">LINES</span><span><i class="line neutral"></i>Reports to you</span><span><i class="line green"></i>Team · Chief hands work down</span><span><i class="line violet"></i>Can talk · you drew it</span><span><i class="line orange"></i>Waiting on you</span><hr><span class="legend-label">GESTURES</span><span>Click a bot to talk to it</span><span>Drag a Chief to move its team</span><span>Drag from a bot’s + to connect two bots</span><span>Drag empty space to pan, scroll to zoom</span><span>Click You or a team name for settings</span></div><div class="control-row"><button id="keyButton" type="button">⌗ &nbsp; Key</button><em></em><button id="zoomOut" type="button" aria-label="Zoom out">−</button><button id="zoomIn" type="button" aria-label="Zoom in">+</button><button id="fit" type="button">Fit</button></div></div>
+      <div id="palette" class="modal-backdrop hidden"><section class="palette" role="dialog" aria-modal="true" aria-label="Search bots, threads, settings and actions"><div class="palette-input"><span>⌕</span><input id="paletteInput" type="text" placeholder="Search bots, threads, settings and actions" autocomplete="off"><kbd>esc</kbd></div><div id="paletteResults" class="palette-results"></div><footer>↑↓ move &nbsp;&nbsp; ↵ open &nbsp;&nbsp; esc close</footer></section></div>
+      <div id="toast" class="toast hidden" role="status"></div>
+    </section>
+  </main>
+</body>
+</html>

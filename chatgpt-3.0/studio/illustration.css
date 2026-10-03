@@ -1,0 +1,47 @@
+.drawing-stage{position:absolute;inset:165px 24px 106px;display:flex;align-items:center;justify-content:center}
+.character-wrap{width:min(390px,100%);height:100%;display:flex;align-items:center;justify-content:center}
+.robot-drawing{display:block;max-width:100%;width:390px;height:100%;max-height:440px;overflow:visible}
+.scene-caption{position:absolute;bottom:90px;left:0;right:0;text-align:center;display:flex;flex-direction:column;gap:7px;font-size:14px}
+#scene-state{color:#aaa;font-size:11px}
+.drawing-stage.team{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;inset:160px 24px 95px}
+.team .character-wrap{width:100%;position:relative;min-height:0;padding-bottom:23px}
+.team .robot-drawing{max-height:230px;width:230px}
+.team-label{position:absolute;bottom:0;left:0;right:0;text-align:center;border:0;padding:4px 8px;font-size:11px}
+.team-label[aria-pressed=true]{background:transparent;color:#ffe0b6}
+.world-footer span{max-width:270px;line-height:1.6}
+.model-details .export+.export{margin-top:6px}
+.robot-character{transform-origin:192px 348px}
+.robot-head{transform-origin:192px 234px}
+.robot-sprout{transform-origin:192px 102px}
+.robot-eyes{transform-origin:192px 167px}
+.left-arm{transform-origin:147px 261px}
+.right-arm{transform-origin:238px 261px}
+.robot-mouth{transform-origin:192px 201px}
+.state-mark{transform-origin:290px 108px}
+.is-animated .robot-character{animation:breathe 4s ease-in-out infinite}
+.is-animated .robot-sprout{animation:leaf-sway 4s ease-in-out infinite}
+.is-animated .robot-eyes{animation:blink 5.2s linear infinite}
+.is-animated [data-expression=thinking] .robot-head{animation:consider 3s ease-in-out infinite}
+.is-animated [data-expression=working] .robot-head{animation:read-screen 2.7s ease-in-out infinite}
+.is-animated [data-expression=working] .robot-arm{animation:type-keys .7s ease-in-out infinite alternate}
+.is-animated [data-expression=working] .right-arm{animation-delay:-.35s}
+.is-animated [data-expression=talking] .right-arm{animation:explain 1.8s ease-in-out infinite}
+.is-animated [data-expression=talking] .robot-mouth{animation:speak .42s ease-in-out infinite alternate}
+.is-animated [data-expression=happy] .robot-character{animation:celebrate 1.5s ease-in-out infinite}
+.is-animated [data-expression=happy] .robot-eyes,.is-animated [data-expression=error] .robot-eyes{animation:none}
+.is-animated [data-expression=waiting] .state-mark{animation:wait-dot 2.4s ease-in-out infinite}
+.is-animated [data-expression=error] .robot-head{animation:shake 2.6s ease-in-out infinite}
+.drawing-stage:not(.is-animated) *{animation:none!important}
+@keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes leaf-sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(5deg)}}
+@keyframes blink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.08)}}
+@keyframes consider{0%,100%{transform:rotate(0)}40%,65%{transform:rotate(-7deg)}}
+@keyframes read-screen{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg) translateY(2px)}}
+@keyframes type-keys{from{transform:rotate(-3deg)}to{transform:rotate(4deg)}}
+@keyframes explain{0%,100%{transform:rotate(0)}35%{transform:rotate(-15deg)}65%{transform:rotate(8deg)}}
+@keyframes speak{from{transform:scaleY(.4)}to{transform:scaleY(1.12)}}
+@keyframes celebrate{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-9px) rotate(-2deg)}65%{transform:translateY(-3px) rotate(2deg)}}
+@keyframes wait-dot{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes shake{0%,60%,100%{transform:rotate(0)}68%,82%{transform:rotate(-4deg)}75%,89%{transform:rotate(4deg)}}
+@media(max-width:850px){.world{height:70dvh;min-height:500px}.drawing-stage{inset:140px 20px 110px}.drawing-stage.team{inset:140px 16px 105px;gap:8px}.world-footer span{max-width:190px;font-size:10px}.states{grid-template-columns:1fr 1fr}.scene-caption{bottom:91px}.robot-drawing{max-height:340px}}
+@media(prefers-reduced-motion:reduce){.robot-drawing *{animation:none!important}}

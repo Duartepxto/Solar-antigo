@@ -1,0 +1,200 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+:root {
+  --orbit-bg: #ffffff;
+  --orbit-raised: #f7f8f8;
+  --orbit-ink: #0a0a0b;
+  --orbit-muted: #5f6570;
+  --orbit-line: #e5e7ea;
+  --orbit-accent: #009957;
+  --orbit-accent-soft: #eaf8f1;
+
+  --color-fd-background: var(--orbit-bg);
+  --color-fd-foreground: var(--orbit-ink);
+  --color-fd-muted: var(--orbit-raised);
+  --color-fd-muted-foreground: var(--orbit-muted);
+  --color-fd-border: var(--orbit-line);
+  --color-fd-primary: var(--orbit-accent);
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-card: var(--orbit-bg);
+  --color-fd-card-foreground: var(--orbit-ink);
+  --color-fd-secondary: var(--orbit-raised);
+  --color-fd-secondary-foreground: var(--orbit-ink);
+  --color-fd-accent: var(--orbit-accent-soft);
+  --color-fd-accent-foreground: #006b3d;
+}
+
+.dark {
+  --orbit-bg: #070708;
+  --orbit-raised: #131315;
+  --orbit-ink: #f4f4f5;
+  --orbit-muted: #9a9aa4;
+  --orbit-line: #232327;
+  --orbit-accent: #3fae6e;
+  --orbit-accent-soft: #10271a;
+
+  --color-fd-primary-foreground: #07130c;
+  --color-fd-accent-foreground: #7bd69e;
+}
+
+html {
+  scrollbar-gutter: stable;
+  background: var(--orbit-bg);
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0 !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+body {
+  background:
+    radial-gradient(circle at 75% -20%, color-mix(in srgb, var(--orbit-accent) 8%, transparent), transparent 32rem),
+    var(--orbit-bg);
+  color: var(--orbit-ink);
+  letter-spacing: -0.012em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--orbit-accent) 24%, transparent);
+}
+
+.orbit-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+}
+
+.orbit-brand img {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 0.5rem;
+}
+
+.orbit-brand-docs {
+  border-left: 1px solid var(--orbit-line);
+  color: var(--orbit-muted);
+  font-size: 0.78rem;
+  font-weight: 520;
+  letter-spacing: 0;
+  margin-left: 0.1rem;
+  padding-left: 0.7rem;
+}
+
+.orbit-product-shot {
+  margin: 2rem 0;
+}
+
+.orbit-product-shot-frame {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--orbit-line) 88%, transparent);
+  border-radius: 1.25rem;
+  background: #0a0a0b;
+  box-shadow:
+    0 1px 1px color-mix(in srgb, var(--orbit-ink) 5%, transparent),
+    0 22px 60px color-mix(in srgb, var(--orbit-ink) 10%, transparent);
+}
+
+.orbit-product-shot img {
+  display: block;
+  width: 100%;
+  max-height: 38rem;
+  object-fit: cover;
+}
+
+.orbit-product-shot figcaption {
+  color: var(--orbit-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin-top: 0.65rem;
+  text-align: center;
+}
+
+.orbit-kicker {
+  color: var(--orbit-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.orbit-lede {
+  color: var(--orbit-muted);
+  font-size: 1.08rem;
+  line-height: 1.75;
+  max-width: 44rem;
+}
+
+.orbit-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.75rem 0;
+}
+
+.orbit-stat {
+  border: 1px solid var(--orbit-line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--orbit-raised) 78%, transparent);
+  padding: 1rem;
+}
+
+.orbit-stat strong,
+.orbit-stat span {
+  display: block;
+}
+
+.orbit-stat strong {
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.orbit-stat span {
+  color: var(--orbit-muted);
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+}
+
+#nd-sidebar,
+#nd-subnav {
+  background: color-mix(in srgb, var(--orbit-bg) 92%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+#nd-sidebar {
+  border-right-color: var(--orbit-line);
+}
+
+#nd-subnav {
+  border-bottom-color: var(--orbit-line);
+}
+
+.prose :where(h2, h3, h4) {
+  letter-spacing: -0.035em;
+}
+
+.prose :where(a:not([data-card])) {
+  text-decoration-color: color-mix(in srgb, var(--orbit-accent) 45%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.prose :where(table) {
+  overflow: hidden;
+  border: 1px solid var(--orbit-line);
+  border-radius: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .orbit-stat-row {
+    grid-template-columns: 1fr;
+  }
+
+  .orbit-product-shot-frame {
+    border-radius: 0.9rem;
+  }
+}

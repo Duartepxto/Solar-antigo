@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#050506">
+  <title>Jarvis — Mapa da equipa</title>
+  <link rel="stylesheet" href="./base.css">
+  <link rel="stylesheet" href="./jarvis.css">
+  <script src="./base.js" defer></script>
+  <script src="./experience.js" defer></script>
+</head>
+<body>
+  <main class="window" aria-label="Jarvis">
+    <header class="chrome">
+      <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div id="windowTitle" class="window-title">Jarvis — Mapa da equipa</div>
+      <button id="searchButton" class="search-button" type="button" aria-label="Search or jump"><span class="search-icon">⌕</span>Search or jump · ⌘K</button>
+    </header>
+    <section id="stage" class="stage" aria-label="Team map">
+      <canvas id="world" aria-label="Mapa interativo da equipa"></canvas>
+      <canvas id="signals" aria-hidden="true"></canvas>
+      <div id="mapStatus" class="map-status" aria-live="polite"><span class="status-pulse"></span><span id="statusText">Equipa em atividade</span></div>
+      <button id="back" class="back hidden" type="button">‹ <span>Team map</span><kbd>esc</kbd></button>
+      <div id="caps" class="caps hidden"></div>
+      <aside id="panel" class="panel hidden" aria-live="polite"></aside>
+      <button id="digest" class="digest" type="button"><b>23 runs</b> while you were away</button>
+      <button id="attention" class="attention" type="button"><span class="attention-faces">● ●</span><b>2 things</b> waiting on you</button>
+      <section id="attentionPopover" class="attention-popover hidden" aria-label="Waiting on you"></section>
+      <section id="digestPopover" class="digest-popover hidden" aria-label="While you were away"></section>
+      <div id="composer" class="overview-composer">
+        <div class="recipient-wrap"><span id="recipient" class="recipient"><span class="recipient-dot"></span><span id="recipientName">Jarvis</span></span><div id="recipientMenu" class="recipient-menu hidden"></div></div>
+        <input id="overviewInput" type="text" placeholder="Fala com o Jarvis" autocomplete="off">
+        <button id="overviewCall" class="overview-call call-start-pill" type="button" aria-label="Iniciar chamada com Jarvis" title="Iniciar chamada com Jarvis"><svg class="call-pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.5 9.2 6l-1.6 2.2c1.3 2.8 3.4 4.9 6.2 6.2l2.2-1.6 2.5 2.6-1.5 3.3c-.3.6-1 .9-1.7.7C9.4 17.9 6.1 14.6 4.6 8.7c-.2-.7.1-1.4.7-1.7l1.3-.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Chamada</button>
+        <button id="overviewSend" class="send" type="button" aria-label="Send message">↑</button>
+      </div>
+      <div id="mapControls" class="map-controls"><div id="legend" class="legend hidden"><span class="legend-label">LINES</span><span><i class="line neutral"></i>Reports to you</span><span><i class="line green"></i>Team · Chief hands work down</span><span><i class="line violet"></i>Can talk · you drew it</span><span><i class="line orange"></i>Waiting on you</span><hr><span class="legend-label">GESTURES</span><span>Click a bot to talk to it</span><span>Drag a Chief to move its team</span><span>Drag from a bot’s + to connect two bots</span><span>Drag empty space to pan, scroll to zoom</span><span>Click You or a team name for settings</span></div><div class="control-row"><button id="keyButton" type="button">⌗ &nbsp; Key</button><em></em><button id="zoomOut" type="button" aria-label="Zoom out">−</button><button id="zoomIn" type="button" aria-label="Zoom in">+</button><button id="fit" type="button">Fit</button></div></div>
+      <div id="palette" class="modal-backdrop hidden"><section class="palette" role="dialog" aria-modal="true" aria-label="Search bots, threads, settings and actions"><div class="palette-input"><span>⌕</span><input id="paletteInput" type="text" placeholder="Search bots, threads, settings and actions" autocomplete="off"><kbd>esc</kbd></div><div id="paletteResults" class="palette-results"></div><footer>↑↓ move &nbsp;&nbsp; ↵ open &nbsp;&nbsp; esc close</footer></section></div>
+      <div id="toast" class="toast hidden" role="status"></div>
+    </section>
+  </main>
+</body>
+</html>

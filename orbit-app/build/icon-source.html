@@ -1,0 +1,89 @@
+<!doctype html>
+<!-- The app icon, drawn by Orbit's own character renderer: You at the centre
+     with a bot on its orbit. Regenerate with pnpm dev running:
+     node scripts/make-app-icons.mjs --render (saves each mode below, then
+     writes every platform's icons).
+     ?mode=tile (default): the macOS tile, a rounded body on a clear canvas.
+     ?mode=bleed: the art filling the square, opaque (iOS masks it itself).
+     ?mode=foreground: the art alone on clear, inside Android's safe zone. -->
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#222}canvas{width:512px;height:512px}</style>
+<canvas id="icon" width="1024" height="1024"></canvas>
+<script type="module">
+import { drawChar, drawYou, hexRgb } from "/src/orbit/characters.ts";
+
+const S = 1024;
+const ctx = document.getElementById("icon").getContext("2d");
+const mode = new URLSearchParams(location.search).get("mode") ?? "tile";
+// how large the art sits: the tile's own proportion, bigger when it fills
+// the square, smaller inside Android's adaptive-icon safe zone
+const artScale = mode === "bleed" ? 1.12 : mode === "foreground" ? 0.8 : 1;
+
+// macOS icon grid: an 824px body on the 1024px canvas
+const inset = 100, size = S - inset * 2, radius = 186;
+function body() {
+  ctx.beginPath();
+  ctx.roundRect(inset, inset, size, size, radius);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, S, S);
+  if (mode === "tile") {
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 28; ctx.shadowOffsetY = 12;
+    body(); ctx.fillStyle = "#050506"; ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.save();
+  if (mode === "tile") { body(); ctx.clip(); }
+  if (mode !== "foreground") {
+    const bg = ctx.createRadialGradient(S / 2, S * 0.48, 0, S / 2, S / 2, (mode === "bleed" ? S : size) * 0.72);
+    bg.addColorStop(0, "#15161c"); bg.addColorStop(1, "#050506");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S);
+  }
+  ctx.translate(S / 2, S / 2); ctx.scale(artScale, artScale); ctx.translate(-S / 2, -S / 2);
+
+  const cx = S / 2, cy = S / 2 + 18;
+  // the orbit: a tilted ring around You
+  const rx = 340, ry = 126, tilt = -0.36;
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(tilt);
+  ctx.strokeStyle = "rgba(255,255,255,.16)"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, Math.PI, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+
+  // a soft pearl body under the particles, so the orb holds at 16px
+  const pearl = ctx.createRadialGradient(cx - 55, cy - 65, 10, cx, cy, 238);
+  pearl.addColorStop(0, "rgba(236,238,244,.20)"); pearl.addColorStop(0.7, "rgba(236,238,244,.07)"); pearl.addColorStop(1, "rgba(236,238,244,0)");
+  ctx.fillStyle = pearl; ctx.beginPath(); ctx.arc(cx, cy, 238, 0, Math.PI * 2); ctx.fill();
+
+  const you = { rot: 1.2, seed: 3, rgb: [236, 238, 244], gx: 0.35, gy: -0.25, blink: 99, flash: -9, kick: -9, vx: 0, vy: 0 };
+  drawYou(ctx, you, cx, cy, 210, 1, 0, 0, [{ a: -0.6, rgb: hexRgb("#3ee09a"), w: 0.18 }], { big: true, quality: 1 });
+
+  // the near half of the orbit passes in front of You
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(tilt);
+  ctx.strokeStyle = "rgba(255,255,255,.2)"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI); ctx.stroke();
+  ctx.restore();
+
+  // a bot on the orbit, upper right
+  const a = -0.95;
+  const bx = cx + Math.cos(tilt) * rx * Math.cos(a) - Math.sin(tilt) * ry * Math.sin(a);
+  const by = cy + Math.sin(tilt) * rx * Math.cos(a) + Math.cos(tilt) * ry * Math.sin(a);
+  const bot = { rot: 0.4, seed: 7, rgb: hexRgb("#3ee09a"), gx: -0.5, gy: 0.3, blink: 99, flash: -9, kick: -9, vx: 0, vy: 0 };
+  drawChar(ctx, bot, "happy", bx, by, 70, 0.85, 0, 0, { big: true, quality: 1, noRing: true });
+  ctx.restore();
+
+  // a hairline edge, as on the app window
+  if (mode === "tile") {
+    ctx.save();
+    body(); ctx.strokeStyle = "rgba(255,255,255,.09)"; ctx.lineWidth = 3; ctx.stroke();
+    ctx.restore();
+  }
+}
+
+draw();
+window.iconPng = () => document.getElementById("icon").toDataURL("image/png");
+</script>

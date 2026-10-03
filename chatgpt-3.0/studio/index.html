@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Personagem 2D — ChatGPT 3.0</title>
+  <link rel="stylesheet" href="/robot-studio/style.css">
+  <link rel="stylesheet" href="/robot-studio/illustration.css">
+</head>
+<body>
+  <header><a class="brand" href="/">ChatGPT <span>3.0</span></a><span class="page-name">Estúdio de agentes</span><a class="return" href="/">Abrir aplicação <span aria-hidden="true">↗</span></a></header>
+  <main>
+    <section class="world" aria-label="Pré-visualização do desenho animado">
+      <div class="world-heading"><h1>Um desenho com vida.</h1><p>Personagem 2D · cores planas · animação por peças</p></div>
+      <div class="view-switch" role="group" aria-label="Composição"><button id="single-view" aria-pressed="true">Personagem</button><button id="map-view" aria-pressed="false">Equipa</button></div>
+      <div id="stage" class="drawing-stage"></div>
+      <div class="scene-caption"><span id="scene-name">Jarvis</span><span id="scene-state">Repouso</span></div>
+      <div class="world-footer"><span>Primeiro estudo de personagem · animações de demonstração</span><button id="sequence" aria-pressed="false">Ver sequência</button></div>
+    </section>
+    <aside aria-label="Configuração da personagem">
+      <div class="profile"><span class="dot" id="profile-dot"></span><h2 id="agent-name">Jarvis</h2><p id="agent-role">Coordenação · desenho 2D</p></div>
+      <section><h3>Personagem</h3><div id="agents" class="agent-list"></div></section>
+      <section><h3>Expressão e movimento</h3><div id="states" class="states"></div><label class="check"><input id="motion" type="checkbox" checked> Animar personagem</label><p class="note">Escolhe um estado ou vê a sequência. As expressões ainda não representam a atividade real dos agentes.</p></section>
+      <section class="model-details"><h3>Como é animado</h3><p>O desenho tem peças independentes: cabeça, olhos, boca, braços e antena. Cada estado combina uma expressão com um gesto.</p><p>Sem rotação 3D, texturas ou partículas.</p><button id="export" class="export">Guardar desenho PNG <span aria-hidden="true">↓</span></button><button id="export-svg" class="export">Guardar desenho SVG <span aria-hidden="true">↓</span></button><p id="export-status" role="status" class="note"></p></section>
+      <section class="connection"><span id="connection-dot" class="dot"></span><p id="connection">A verificar ligação ao Orbit…</p><button id="refresh">Verificar ligação</button></section>
+    </aside>
+  </main>
+  <script type="module" src="/robot-studio/illustration-main.js"></script>
+</body></html>

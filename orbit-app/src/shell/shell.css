@@ -1,0 +1,58 @@
+/* The shell's floating windows are transparent: the quick bar sits on the
+   window's own vibrancy, the talk character and the overlay on nothing. */
+html:has(body.orbit-shell),
+body.orbit-shell {
+  background: transparent !important;
+}
+
+@keyframes orbit-border-breathe {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.35); }
+}
+
+/* Listening: a soft ring breathes round the character. */
+.orbit-listening {
+  box-shadow: 0 0 0 0 rgb(62 224 154 / 0.5);
+  animation: orbit-listening 1.6s ease-out infinite;
+}
+@keyframes orbit-listening {
+  0% { box-shadow: 0 0 0 0 rgb(62 224 154 / 0.45); }
+  100% { box-shadow: 0 0 0 18px rgb(62 224 154 / 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-listening { animation: none; box-shadow: 0 0 0 3px rgb(62 224 154 / 0.5); }
+}
+
+/* Talk mode's island: it grows out of the notch and springs between sizes,
+   like the iPhone's Dynamic Island. Its box's transition is set inline
+   from Coucou's springs (island-motion.ts); these are its contents. */
+.orbit-island-in {
+  animation: orbit-island-in var(--orbit-in-ms, 600ms) var(--orbit-in-ease, ease-out) var(--orbit-in-delay, 160ms) both;
+}
+@keyframes orbit-island-in {
+  from { opacity: 0; filter: blur(8px); transform: scale(0.97); }
+  to { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+.orbit-island-out {
+  pointer-events: none;
+  animation: orbit-island-out var(--orbit-out-ms, 160ms) ease-in both;
+}
+@keyframes orbit-island-out {
+  from { opacity: 1; filter: blur(0); transform: scale(1); }
+  to { opacity: 0; filter: blur(8px); transform: scale(0.97); }
+}
+.orbit-island-bar { animation: orbit-island-bar 900ms ease-in-out infinite alternate; }
+@keyframes orbit-island-bar {
+  0% { transform: scaleY(0.25); }
+  50% { transform: scaleY(0.9); }
+  100% { transform: scaleY(0.4); }
+}
+.orbit-island-think { animation: orbit-island-think 1.1s ease-in-out infinite; }
+@keyframes orbit-island-think {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-island-bar, .orbit-island-think { animation: none; }
+  .orbit-island-in, .orbit-island-out { animation-duration: 1ms; animation-delay: 0ms; }
+}

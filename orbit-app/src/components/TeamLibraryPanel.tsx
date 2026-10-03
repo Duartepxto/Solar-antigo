@@ -1,0 +1,1000 @@
+import { cn } from "@/lib/cn";
+import { OrbitSheet } from "@/orbit/OrbitSheet";
+import { t } from "@/lib/i18n";
+import { teamImportPreview, type PendingTeamImport } from "@/lib/team-import";
+import { TEAM_TEMPLATES, type TeamTemplate } from "@/lib/team-templates";
+import { orbitNavigate } from "@/orbit/events";
+import type { Routine } from "@/lib/routines";
+import { api, createTeamFromTemplate, useStore, type Bot, type Group } from "@/state/store";
+import {
+  ArrowLeft,
+  BookOpen,
+  CalendarClock,
+  NotebookPen,
+  Check,
+  Compass,
+  Crown,
+  ExternalLink,
+  FolderOpen,
+  Github,
+  Loader2,
+  MessageSquare,
+  Plug,
+  Search,
+  Share2,
+  UploadCloud,
+  Users,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { ShareTeamDialog } from "./ShareTeamDialog";
+import { MAX_TEAM_BACKUP_BYTES, TEAM_BACKUP_EXCLUSIONS } from "../../shared/team-backup";
+import { takeImportName } from "../../shared/import-name";
+const COMMUNITY_TEAMS_REPOSITORY = "https://github.com/milind-soni/openmausbot-teams";
+
+interface TeamCatalogEntry {
+  slug: string;
+  name: string;
+  summary: string;
+  category: string;
+  outcome?: string;
+  setupMinutes?: number;
+  featured?: boolean;
+  package?: string;
+  manifest: string;
+  readme: string;
+  members: number;
+  skills: string[];
+  requires: { apps: string[] };
+}
+
+interface TeamCatalog {
+  repositoryUrl: string;
+  teams: TeamCatalogEntry[];
+}
+
+export interface TeamImportResult {
+  name: string;
+  members: number;
+  /** Connection slots created switched off, waiting for their values. */
+  connections?: number;
+}
+
+type ImportSource = "library" | "file" | "github";
+type TeamTab = "explore" | "import" | "scout" | "share";
+
+/** the scout endpoint's answer, as far as this panel renders it — the
+ * manifest itself stays opaque and goes back to the server verbatim */
+interface ScoutResult {
+  profile: { name: string; summary: string; stacks: string[] };
+  suggestion: {
+    roomName: string;
+    manifest: {
+      team: { members: Array<{ key: string; name: string; title: string; description: string; appearance: { color: string } }> };
+    };
+    reasons: Record<string, string>;
+  };
+}
+
+interface DirectoryCandidate {
+  slug: string;
+  name: string;
+  category: string;
+  integrations: string[];
+  prompt: string;
+  detailUrl: string;
+  matched: string[];
+}
+
+/** appearance colors for community bots folded into a scouted team */
+const DIRECTORY_COLORS = ["cyan", "red", "purple", "green", "orange"] as const;
+
+const TEAM_GLYPHS = [
+  "bg-purple-500/15 text-purple-300",
+  "bg-cyan-500/15 text-cyan-300",
+  "bg-orange-500/15 text-orange-300",
+  "bg-emerald-500/15 text-emerald-300",
+] as const;
+
+async function openExternal(url: string): Promise<void> {
+  if (window.ogb?.openExternal) {
+    await window.ogb.openExternal(url);
+    return;
+  }
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  if (opened) opened.opener = null;
+}
+
+/** Teams that can be shared: named teams first, in sidebar order, then
+ * General; only teams with at least one visible bot. Pure, for tests. */
+export function shareableTeamList(sections: readonly string[], bots: ReadonlyArray<Pick<Bot, "section" | "hidden">>): Array<{ name: string; bots: number }> {
+  const counts = new Map<string, number>();
+  for (const bot of bots) {
+    if (bot.hidden) continue;
+    const team = bot.section?.trim() ?? "";
+    counts.set(team, (counts.get(team) ?? 0) + 1);
+  }
+  const order = [...new Set([...sections.map((section) => section.trim()).filter(Boolean), ...counts.keys()])]
+    .filter((name) => name !== "");
+  return [...order, ""].flatMap((name) => (counts.get(name) ? [{ name, bots: counts.get(name)! }] : []));
+}
+
+function TeamGlyph({ index }: { index: number }) {
+  return (
+    <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", TEAM_GLYPHS[index % TEAM_GLYPHS.length])}>
+      <Users size={20} />
+    </div>
+  );
+}
+
+/** Everything an import will add, before anything is added. Pure, for tests. */
+export function TeamImportDetails({ pending, importedNames }: { pending: PendingTeamImport; importedNames: string[] }) {
+  return (
+    <>
+      {pending.description && (
+        <p className="max-w-2xl text-[13.5px] leading-relaxed text-ink/55">{pending.description}</p>
+      )}
+      {pending.brief && (
+        <div className="mt-4 rounded-xl border border-ink/[0.1] px-4 py-3 text-[12.5px] text-ink/55">
+          <div className="font-medium text-ink">{t("teamImport.brief")}</div>
+          <p className="mt-1 line-clamp-4 whitespace-pre-wrap break-words">{pending.brief}</p>
+        </div>
+      )}
+      {Boolean(pending.warnings?.length) && <div className="mt-4 rounded-xl border border-ink/[0.1] px-4 py-3 text-[12.5px] text-ink/55">
+        <div className="mb-2 font-medium text-ink">{t("library.ui.backupNotes")}</div>
+        {pending.warnings?.map((warning, index) => <p key={index}>{warning}</p>)}
+      </div>}
+      {(pending.kind === "package" || pending.kind === "backup") && (
+        <div className="mt-5 flex flex-wrap gap-2 text-[11.5px] text-ink/55">
+          {pending.chiefOfStaff && <span className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3 py-1.5"><Crown size={13} />{pending.chiefOfStaff} leads</span>}
+          <span className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3 py-1.5"><MessageSquare size={13} />{pending.rooms} {pending.rooms === 1 ? "group chat" : "group chats"}</span>
+          <span className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3 py-1.5"><BookOpen size={13} />{pending.playbooks} playbooks</span>
+          <span className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3 py-1.5"><CalendarClock size={13} />{pending.version === 2 ? t("teamImport.routinesPaused", { count: pending.routines }) : `${pending.routines} paused routines`}</span>
+          {pending.kind === "package" && pending.version !== 2 && <span className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3 py-1.5"><Plug size={13} />{pending.apps.length} connections</span>}
+          {Boolean(pending.connections?.length) && <span className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3 py-1.5"><Plug size={13} />{t("teamImport.connections", { count: pending.connections?.length ?? 0 })}</span>}
+          {Boolean(pending.notes) && <span className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3 py-1.5"><NotebookPen size={13} />{t("teamImport.notes", { count: pending.notes ?? 0 })}</span>}
+          {Boolean(pending.presets?.length) && <span className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3 py-1.5"><Users size={13} />{t("teamImport.presets", { count: pending.presets?.length ?? 0 })}</span>}
+        </div>
+      )}
+      {Boolean(pending.skills?.length) && (
+        <div className="mt-4 rounded-xl border border-ink/[0.1] px-4 py-3 text-[12.5px] text-ink/55">
+          <div className="font-medium text-ink">{pending.version === 2 ? t("teamImport.skillsOff") : "Included skills — disabled on import"}</div>
+          <p className="mt-1 break-words">{pending.skills?.join(", ")}</p>
+          <p className="mt-1">{pending.version === 2 ? t("teamImport.skillsReview") : "Review each skill in its bot profile before enabling it. Imported instructions do not run automatically."}</p>
+        </div>
+      )}
+      {Boolean(pending.offeredSkills?.length) && (
+        <div className="mt-4 rounded-xl border border-ink/[0.1] px-4 py-3 text-[12.5px] text-ink/55">
+          <div className="font-medium text-ink">{t("teamImport.offeredSkills")}</div>
+          <p className="mt-1 break-words">{pending.offeredSkills?.join(", ")}</p>
+        </div>
+      )}
+      {Boolean(pending.connections?.length) && (
+        <div className="mt-4 rounded-xl border border-ink/[0.1] px-4 py-3 text-[12.5px] text-ink/55">
+          <div className="font-medium text-ink">{t("teamImport.connections", { count: pending.connections?.length ?? 0 })}</div>
+          <ul className="mt-1">
+            {pending.connections?.map((connection, index) => (
+              <li key={`${connection.label}-${index}`} className="truncate">{connection.label} · {connection.url}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="mt-6 text-[12px] font-medium text-ink/55">{t("library.ui.teamMembers")}</div>
+      <div className="mt-2 grid grid-cols-1 gap-x-10 md:grid-cols-2">
+        {pending.members.map((member, index) => (
+          <div key={`${member.name}-${index}`} className="flex min-h-[72px] items-center gap-3 border-b border-ink/[0.1] px-1 py-3">
+            <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-[13px] font-semibold", TEAM_GLYPHS[index % TEAM_GLYPHS.length])}>
+              {member.name.slice(0, 1).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-[14px] font-medium text-ink">{importedNames[index]}</div>
+              {importedNames[index] !== member.name && <div className="text-[11.5px] text-ink/55">New copy of {member.name}</div>}
+              <div className="mt-0.5 truncate text-[12.5px] text-ink/55">{member.title || "General assistant"}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 flex items-start gap-2.5 rounded-xl bg-ink/[0.06] px-4 py-3 text-[12.5px] leading-relaxed text-ink/55">
+        <Check size={15} className="mt-0.5 shrink-0 text-success" />
+        <p>
+          {pending.kind === "backup"
+            ? `${TEAM_BACKUP_EXCLUSIONS} ${pending.archivedBots ? `${pending.archivedBots} archived bots will remain archived.` : ""}`
+            : pending.version === 2
+            ? t("teamImport.sharedTeamSafety")
+            : pending.kind === "package"
+            ? "Bots, Chief of Staff, group chats, and reviewed playbooks are loaded. Suggested routines arrive paused, and connected apps stay off until you approve them. Conversations, credentials, permissions, and computer access stay private."
+            : "Only roles and appearance are loaded. Your conversations, account connections, permissions, and computer access stay private."}
+        </p>
+      </div>
+    </>
+  );
+}
+
+export function TeamLibraryPanel({
+  onClose,
+  onImported,
+  returnFocusRef,
+  initialUrl,
+}: {
+  onClose: () => void;
+  onImported: (result: TeamImportResult) => void;
+  returnFocusRef: React.RefObject<HTMLButtonElement | null>;
+  initialUrl?: string;
+}) {
+  const { state, dispatch } = useStore();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<TeamTab>("explore");
+  const [catalog, setCatalog] = useState<TeamCatalog | null>(null);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState("");
+  const [busySlug, setBusySlug] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingTeamImport | null>(null);
+  const [, setSource] = useState<ImportSource>("file");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [githubLoading, setGithubLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
+  const [scoutFolder, setScoutFolder] = useState("");
+  const [scouting, setScouting] = useState(false);
+  const [scouted, setScouted] = useState<ScoutResult | null>(null);
+  // the folder the current `scouted` result was actually read from — the
+  // import must pin the room to THIS, not to whatever the input says now
+  const [scoutedFolder, setScoutedFolder] = useState("");
+  // null = not asked yet or still loading; [] = asked, nothing (or offline)
+  const [directory, setDirectory] = useState<DirectoryCandidate[] | null>(null);
+  const [pickedDirectory, setPickedDirectory] = useState<Set<string>>(new Set());
+  const [roomName, setRoomName] = useState("");
+  const [creating, setCreating] = useState(false);
+  // The team being shared; its dialog sits above this panel.
+  const [sharing, setSharing] = useState<string | null>(null);
+  // monotonically increasing scout token: a late response from an older
+  // scout (including its lazy directory call) must never overwrite state
+  // that belongs to a newer one
+  const scoutRequest = useRef(0);
+
+  const currentBotCount = state.bots.filter((bot) => !bot.hidden).length;
+  const shareableTeams = shareableTeamList(state.sections ?? [], state.bots);
+  const takenNames = new Set(state.bots.map((bot) => bot.name.trim().toLowerCase()));
+  const importedNames = pending?.members.map((member) => takeImportName(member.name, takenNames)) ?? [];
+
+  const loadCatalog = useCallback(async () => {
+    setCatalogLoading(true);
+    setCatalogError("");
+    try {
+      // SAFETY: this endpoint is owned by the app and returns TeamCatalog.
+      setCatalog((await api("/api/team-library/catalog")) as TeamCatalog);
+    } catch (cause) {
+      setCatalogError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+    return () => returnFocusRef.current?.focus();
+  }, [returnFocusRef]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      // The Share team dialog above this panel owns the keyboard while open.
+      if (sharing !== null) return;
+      if (event.key === "Escape" && !importing) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (pending) setPending(null);
+        else onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      const items = Array.from(
+        dialog?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (!dialog || items.length === 0) return;
+      const first = items[0]!;
+      const last = items.at(-1)!;
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [importing, onClose, pending, sharing]);
+
+  const previewManifest = (preview: PendingTeamImport, nextSource: ImportSource) => {
+    setPending(preview);
+    setSource(nextSource);
+    setError("");
+  };
+
+  const readFile = async (file: File) => {
+    if (file.size > MAX_TEAM_BACKUP_BYTES) throw new Error("That file exceeds the 50 MB import limit.");
+    const raw = await file.text();
+    let manifest: unknown = raw;
+    if (!file.name.toLowerCase().endsWith(".md")) {
+      try {
+        manifest = JSON.parse(raw);
+      } catch (cause) {
+        if (cause instanceof SyntaxError) throw new Error("That backup or team file is not valid JSON.");
+        throw cause;
+      }
+    }
+    previewManifest(teamImportPreview(manifest), "file");
+  };
+
+  // a team built into Orbit: created in one step, like the New bot panel
+  const loadBuiltInTeam = async (template: TeamTemplate) => {
+    if (busySlug) return;
+    if (state.bots.some((bot) => !bot.hidden && bot.section === template.team)) { onClose(); orbitNavigate({ to: "team", key: template.team }); return; }
+    setBusySlug(template.id);
+    setError("");
+    try {
+      const { errors } = await createTeamFromTemplate(template);
+      if (errors.length) setError(errors.join(" "));
+      else { onClose(); orbitNavigate({ to: "team", key: template.team }); }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setBusySlug(null);
+    }
+  };
+
+  const loadLibraryTeam = async (entry: TeamCatalogEntry) => {
+    setBusySlug(entry.slug);
+    setError("");
+    try {
+      previewManifest(teamImportPreview(await api(`/api/team-library/teams/${entry.slug}`)), "library");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setBusySlug(null);
+    }
+  };
+
+  const loadGithubTeam = async () => {
+    await loadGithubUrl(githubUrl);
+  };
+
+  const loadGithubUrl = async (requestedUrl: string) => {
+    if (!requestedUrl.trim()) return;
+    setGithubLoading(true);
+    setError("");
+    try {
+      const manifest = await api("/api/team-library/github", {
+        method: "POST",
+        body: JSON.stringify({ url: requestedUrl.trim() }),
+      });
+      previewManifest(teamImportPreview(manifest), "github");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setGithubLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!initialUrl) return;
+    setTab("import");
+    setGithubUrl(initialUrl);
+    void loadGithubUrl(initialUrl);
+    // A deep link is immutable for this panel instance; reloading it on
+    // every callback identity change would duplicate the preview request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialUrl]);
+
+  const importTeam = async () => {
+    if (!pending) return;
+    setImporting(true);
+    setError("");
+    try {
+      // SAFETY: this endpoint is owned by the app and returns imported bots.
+      const response = (await api("/api/teams/import?mode=add", {
+        method: "POST",
+        body: JSON.stringify(pending.manifest),
+      })) as {
+        bots: Bot[];
+        groups?: Group[];
+        routines?: Routine[];
+        connections?: unknown[];
+      };
+      for (const bot of response.bots) dispatch({ type: "botAdded", bot });
+      for (const group of response.groups ?? []) dispatch({ type: "groupPatched", group });
+      for (const routine of response.routines ?? []) dispatch({ type: "routinePatched", routine });
+      const first = response.bots.find((bot) => !bot.hidden);
+      if (first) dispatch({ type: "select", id: first.id });
+      onImported({
+        name: pending.name,
+        members: response.bots.length,
+        ...(response.connections?.length ? { connections: response.connections.length } : {}),
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const scoutTarget = scoutFolder.trim();
+
+  const runScout = async (folder: string) => {
+    const request = ++scoutRequest.current;
+    setScouting(true);
+    setError("");
+    setScouted(null);
+    setDirectory(null);
+    setPickedDirectory(new Set());
+    try {
+      // SAFETY: this endpoint is owned by the app and returns ScoutResult.
+      const result = (await api(`/api/teams/scout?cwd=${encodeURIComponent(folder)}`)) as ScoutResult;
+      if (request !== scoutRequest.current) return;
+      setScouted(result);
+      setScoutedFolder(folder);
+      setRoomName(result.suggestion.roomName);
+      // community candidates arrive lazily; an unreachable directory just
+      // leaves this section empty
+      void api(`/api/teams/scout/directory?cwd=${encodeURIComponent(folder)}`)
+        // SAFETY: this endpoint is owned by the app and returns candidates.
+        .then((extra) => {
+          if (request === scoutRequest.current) setDirectory((extra as { directory: DirectoryCandidate[] }).directory);
+        })
+        .catch(() => {
+          if (request === scoutRequest.current) setDirectory([]);
+        });
+    } catch (cause) {
+      if (request !== scoutRequest.current) return;
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      if (request === scoutRequest.current) setScouting(false);
+    }
+  };
+
+  const pickScoutFolder = async () => {
+    const chosen = await window.ogb?.pickFolder?.(scoutTarget || undefined);
+    if (!chosen) return;
+    setScoutFolder(chosen);
+    await runScout(chosen);
+  };
+
+  const createProject = async () => {
+    if (!scouted || creating) return;
+    setCreating(true);
+    setError("");
+    try {
+      // the confirmed suggestion, plus any community bots the user ticked —
+      // folded in as ordinary manifest members so the import boundary
+      // (persona only, no grants) applies to them like to everything else
+      const extras = (directory ?? [])
+        .filter((candidate) => pickedDirectory.has(candidate.slug))
+        .map((candidate, index) => ({
+          key: `dir-${candidate.slug}`,
+          name: candidate.name,
+          title: candidate.category || "Community bot",
+          description: candidate.prompt,
+          appearance: { color: DIRECTORY_COLORS[index % DIRECTORY_COLORS.length] },
+        }));
+      const manifest = {
+        ...scouted.suggestion.manifest,
+        team: {
+          ...scouted.suggestion.manifest.team,
+          members: [...scouted.suggestion.manifest.team.members, ...extras],
+        },
+      };
+      const room = roomName.trim() || scouted.suggestion.roomName;
+      // SAFETY: this endpoint is owned by the app and returns imported bots.
+      const response = (await api(
+        `/api/teams/import?mode=project&cwd=${encodeURIComponent(scoutedFolder)}&room=${encodeURIComponent(room)}`,
+        { method: "POST", body: JSON.stringify(manifest) },
+      )) as { bots: Bot[]; group?: Group };
+      for (const bot of response.bots) dispatch({ type: "botAdded", bot });
+      if (response.group) {
+        // upsert now instead of waiting for the SSE frame, then land in the room
+        dispatch({ type: "groupPatched", group: { ...response.group, messages: [] } });
+        dispatch({ type: "select", id: response.group.id });
+      }
+      onImported({
+        name: room,
+        members: response.bots.length,
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const visibleTeams = (catalog?.teams ?? []).filter((entry) => {
+    if (!normalizedSearch) return true;
+    return `${entry.name} ${entry.summary} ${entry.category} ${entry.skills.join(" ")} ${entry.requires.apps.join(" ")}`
+      .toLowerCase()
+      .includes(normalizedSearch);
+  });
+
+  const visibleBuiltIn = TEAM_TEMPLATES.filter((template) => !normalizedSearch
+    || `${template.title} ${template.description} ${[template.chief, ...template.members].map((role) => role.name).join(" ")}`.toLowerCase().includes(normalizedSearch));
+
+  // design: the team library is an existing screen, opened in the Orbit sheet
+  return (
+    <>
+    <OrbitSheet
+      dialogRef={dialogRef}
+      labelId="team-library-title"
+      title={pending ? pending.name : "Templates"}
+      context={pending
+        ? pending.kind === "backup"
+          ? `${pending.members.length} ${pending.members.length === 1 ? "bot" : "bots"} · ${pending.conversations} ${pending.conversations === 1 ? "conversation" : "conversations"} · portable backup`
+          : pending.kind === "package"
+          ? pending.version === 2
+            ? t("teamImport.sharedTeam", { count: pending.members.length })
+            : `${pending.members.length} bots · portable Markdown playbook`
+          : `${pending.members.length} ready-to-load bots`
+        : "Start with a complete playbook or bring your own."}
+      onClose={onClose}
+      closeDisabled={importing}
+      closeLabel="Close templates"
+      leading={pending && (
+        <button
+          onClick={() => {
+            setPending(null);
+            setError("");
+          }}
+          disabled={importing}
+          className="-ml-1.5 flex size-8 shrink-0 items-center justify-center rounded-full text-ink/80 hover:bg-ink/[0.08] disabled:opacity-50"
+          aria-label={t("library.ui.backToTemplates")}
+        >
+          <ArrowLeft size={16} />
+        </button>
+      )}
+      actions={!pending && (
+        <button
+          onClick={() => void openExternal(catalog?.repositoryUrl ?? COMMUNITY_TEAMS_REPOSITORY)}
+          className="flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] text-ink/60 hover:bg-ink/[0.08] hover:text-ink"
+          title={t("library.ui.openTheCommunityTemplatesRepository")}
+        >
+          <Github size={14} />
+          <span className="max-sm:hidden">{t("library.ui.communityRepo")}</span>
+          <ExternalLink size={11} />
+        </button>
+      )}
+    >
+
+        {pending ? (
+          <>
+            <div className="min-h-0 flex-1 overflow-y-auto px-[18px] pb-[18px] pt-[18px]">
+              <TeamImportDetails pending={pending} importedNames={importedNames} />
+              {error && <div role="alert" className="mt-4 rounded-lg bg-[#ff5667]/10 px-3 py-2 text-[12.5px] text-[#ff8a96]">{error}</div>}
+            </div>
+
+            <footer className="flex flex-col gap-3 border-t border-ink/[0.1] px-[18px] py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-[12.5px] text-ink/55">
+                Your {currentBotCount > 0 ? `${currentBotCount} existing ${currentBotCount === 1 ? "bot and its" : "bots and their"}` : "existing"} conversations stay unchanged.
+                {" "}{pending.kind === "backup"
+                  ? t("teamImport.backupCopies")
+                  : t("teamImport.newSection", { name: pending.teamName ?? pending.name })}
+              </div>
+              <button
+                onClick={() => void importTeam()}
+                disabled={importing}
+                className="flex shrink-0 items-center justify-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[13.5px] font-medium text-app hover:bg-ink/[0.08] disabled:opacity-60"
+              >
+                {importing && <Loader2 size={15} className="animate-spin" />}
+                {importing
+                  ? "Importing…"
+                  : pending.kind === "backup" ? "Import backup" : "Add team"}
+              </button>
+            </footer>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-col gap-3 px-[18px] pb-3 pt-[18px] sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex w-fit rounded-xl bg-ink/[0.06] p-1" role="tablist" aria-label={t("library.ui.templateSource")}>
+                <button
+                  role="tab"
+                  aria-selected={tab === "explore"}
+                  onClick={() => {
+                    setTab("explore");
+                    setError("");
+                  }}
+                  className={cn(
+                    "rounded-lg px-4 py-2 text-[13.5px] transition-colors",
+                    tab === "explore" ? "bg-ink/[0.03] text-ink shadow-sm" : "text-ink/55 hover:text-ink",
+                  )}
+                >
+                  {t("teamLibraryPanel.ui.explore")}
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={tab === "import"}
+                  onClick={() => {
+                    setTab("import");
+                    setError("");
+                  }}
+                  className={cn(
+                    "rounded-lg px-4 py-2 text-[13.5px] transition-colors",
+                    tab === "import" ? "bg-ink/[0.03] text-ink shadow-sm" : "text-ink/55 hover:text-ink",
+                  )}
+                >
+                  {t("teamLibraryPanel.ui.import")}
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={tab === "scout"}
+                  onClick={() => {
+                    setTab("scout");
+                    setError("");
+                  }}
+                  className={cn(
+                    "rounded-lg px-4 py-2 text-[13.5px] transition-colors",
+                    tab === "scout" ? "bg-ink/[0.03] text-ink shadow-sm" : "text-ink/55 hover:text-ink",
+                  )}
+                >
+                  {t("teamLibraryPanel.ui.fromAFolder")}
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={tab === "share"}
+                  onClick={() => {
+                    setTab("share");
+                    setError("");
+                  }}
+                  className={cn(
+                    "rounded-lg px-4 py-2 text-[13.5px] transition-colors",
+                    tab === "share" ? "bg-ink/[0.03] text-ink shadow-sm" : "text-ink/55 hover:text-ink",
+                  )}
+                >
+                  {t("teamLibrary.shareTab")}
+                </button>
+              </div>
+              {tab === "explore" && (
+                <label className="flex h-11 w-full items-center gap-2.5 rounded-xl bg-ink/[0.06] px-3.5 sm:w-[320px]">
+                  <Search size={17} className="shrink-0 text-ink/55" />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder={t("library.ui.searchTemplates")}
+                    aria-label={t("library.ui.searchTemplates")}
+                    className="min-w-0 flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink/55 focus:outline-none"
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-[18px] pb-[18px] pt-2">
+              {tab === "explore" && (
+                <div>
+                  {error && <div role="alert" className="mb-4 rounded-lg bg-[#ff5667]/10 px-3 py-2 text-[12.5px] text-[#ff8a96]">{error}</div>}
+                  {visibleBuiltIn.length > 0 && <>
+                    <div className="mb-3 text-[12px] font-medium text-ink/55">{t("library.ui.builtIn")}</div>
+                    <div className="mb-6 grid grid-cols-1 gap-x-10 md:grid-cols-2">
+                      {visibleBuiltIn.map((template, index) => {
+                        const onMap = state.bots.some((bot) => !bot.hidden && bot.section === template.team);
+                        return (
+                          <article key={template.id} className="flex min-h-[104px] items-center gap-3 border-b border-ink/[0.1] px-1 py-4">
+                            <TeamGlyph index={index + 1} />
+                            <div className="min-w-0 flex-1">
+                              <h3 className="truncate text-[14px] font-medium text-ink">{template.title}</h3>
+                              <p className="mt-0.5 line-clamp-2 text-[12.5px] text-ink/55">{template.description}</p>
+                              <p className="mt-1 truncate text-[11.5px] text-ink/40">{[template.chief, ...template.members].map((role) => role.name).join(" · ")}</p>
+                            </div>
+                            <button
+                              onClick={() => void loadBuiltInTeam(template)}
+                              disabled={busySlug !== null}
+                              className="flex min-w-[72px] items-center justify-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 py-2 text-[12.5px] text-ink hover:bg-ink/[0.1] disabled:opacity-40"
+                            >
+                              {busySlug === template.id && <Loader2 size={13} className="animate-spin" />}
+                              {busySlug === template.id ? t("library.ui.creating") : onMap ? t("library.ui.open") : t("library.ui.create")}
+                            </button>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </>}
+                  <div className="mb-3 text-[12px] font-medium text-ink/55">
+                    {search ? t("library.ui.searchResults") : t("library.ui.communityTemplates")}
+                  </div>
+                  {catalogLoading && (
+                    <div className="flex items-center justify-center gap-2 py-24 text-[13px] text-ink/55">
+                      <Loader2 size={16} className="animate-spin" /> {t("library.ui.loadingTemplates")}
+                    </div>
+                  )}
+                  {!catalogLoading && catalogError && (
+                    <div className="rounded-xl bg-[#ff5667]/10 p-4 text-[13px] text-[#ff8a96]">
+                      <p>{catalogError}</p>
+                      <button onClick={() => void loadCatalog()} className="mt-3 rounded-full bg-ink/[0.06] px-3.5 py-2 text-ink hover:bg-ink/[0.1]">{t("library.ui.tryAgain")}</button>
+                    </div>
+                  )}
+                  {!catalogLoading && catalog && (
+                    <div className="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+                      {visibleTeams.map((entry, index) => (
+                        <article key={entry.slug} className="flex min-h-[104px] items-center gap-3 border-b border-ink/[0.1] px-1 py-4">
+                          <TeamGlyph index={index} />
+                          <div className="min-w-0 flex-1">
+                            <h3 className="truncate text-[14px] font-medium text-ink">{entry.name}</h3>
+                            <p className="mt-0.5 truncate text-[12.5px] text-ink/55">{entry.outcome ?? entry.summary}</p>
+                            <p className="mt-1 truncate text-[11.5px] text-ink/40">
+                              {t("library.ui.teamCounts", { bots: entry.members, playbooks: entry.skills.length })}
+                              {entry.requires.apps.length > 0 && ` · ${entry.requires.apps.join(", ")}`}
+                              {entry.setupMinutes && ` · ~${entry.setupMinutes} min`}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => void loadLibraryTeam(entry)}
+                            disabled={busySlug !== null}
+                            className="flex min-w-[72px] items-center justify-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 py-2 text-[12.5px] text-ink hover:bg-ink/[0.1] disabled:opacity-40"
+                          >
+                            {busySlug === entry.slug && <Loader2 size={13} className="animate-spin" />}
+                            {busySlug === entry.slug ? t("library.ui.loading") : t("library.ui.load")}
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                  {!catalogLoading && catalog && visibleTeams.length === 0 && visibleBuiltIn.length === 0 && (
+                    <div className="flex min-h-56 flex-col items-center justify-center text-center">
+                      <div className="text-[14px] font-medium text-ink">{t("library.ui.noTemplatesFound")}</div>
+                      <div className="mt-1 text-[12.5px] text-ink/55">{t("library.ui.tryADifferentSearch")}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === "import" && (
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".md,.json,.mausbackup.json,.mausteam.json,text/markdown,application/json"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0];
+                      event.currentTarget.value = "";
+                      if (!file) return;
+                      void readFile(file).catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+                    }}
+                  />
+                  <div className="mb-3 text-[12px] font-medium text-ink/55">{t("library.ui.bringYourOwnTeam")}</div>
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragEnter={(event) => {
+                        event.preventDefault();
+                        setDragging(true);
+                      }}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        setDragging(false);
+                        const file = event.dataTransfer.files[0];
+                        if (file) void readFile(file).catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+                      }}
+                      className={cn(
+                        "flex min-h-56 flex-col items-center justify-center rounded-[14px] border border-dashed px-6 text-center transition-colors",
+                        dragging ? "border-ink/40 bg-ink/[0.08]" : "border-ink/[0.1] bg-ink/[0.06] hover:bg-ink/[0.06]",
+                      )}
+                    >
+                      <UploadCloud size={27} className="text-ink" />
+                      <span className="mt-3 text-[14px] font-medium text-ink">{t("library.ui.chooseABackupOrTeamFile")}</span>
+                      <span className="mt-1 text-[12.5px] text-ink/55">{t("library.ui.dropAMausbackupJsonBotmrrMd")}</span>
+                    </button>
+
+                    <div className="flex min-h-56 flex-col justify-center rounded-[14px] bg-ink/[0.06] px-6">
+                      <Github size={25} className="text-ink/55" />
+                      <h3 className="mt-3 text-[14px] font-medium text-ink">{t("library.ui.loadFromGithub")}</h3>
+                      <p className="mt-1 text-[12.5px] leading-relaxed text-ink/55">{t("library.ui.pasteAPublicRepoOrA")}</p>
+                      <div className="mt-4 flex gap-2">
+                        <input
+                          value={githubUrl}
+                          onChange={(event) => setGithubUrl(event.target.value)}
+                          onKeyDown={(event) => event.key === "Enter" && void loadGithubTeam()}
+                          placeholder={t("library.ui.githubComOwnerRepo")}
+                          aria-label={t("library.ui.githubTeamUrl")}
+                          className="min-w-0 flex-1 rounded-xl bg-ink/[0.06] px-3 py-2.5 text-[13px] text-ink placeholder:text-ink/55 focus:outline-none"
+                        />
+                        <button
+                          onClick={() => void loadGithubTeam()}
+                          disabled={!githubUrl.trim() || githubLoading}
+                          className="flex items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 text-[13px] font-medium text-app hover:bg-ink/[0.08] disabled:opacity-40"
+                        >
+                          {githubLoading && <Loader2 size={13} className="animate-spin" />}
+                          {t("teamLibraryPanel.ui.load")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {error && <div role="alert" className="mt-4 rounded-lg bg-[#ff5667]/10 px-3 py-2 text-[12.5px] text-[#ff8a96]">{error}</div>}
+                </div>
+              )}
+
+              {tab === "share" && (
+                <div>
+                  <p className="max-w-2xl text-[12.5px] leading-relaxed text-ink/55">{t("teamLibrary.shareIntro")}</p>
+                  {shareableTeams.length === 0 ? (
+                    <p className="mt-6 text-[13px] text-ink/55">{t("teamLibrary.shareEmpty")}</p>
+                  ) : (
+                    <div className="mt-4 grid grid-cols-1 gap-x-10 md:grid-cols-2">
+                      {shareableTeams.map((team, index) => (
+                        <article key={team.name || "general"} className="flex min-h-[84px] items-center gap-3 border-b border-ink/[0.1] px-1 py-4">
+                          <TeamGlyph index={index} />
+                          <div className="min-w-0 flex-1">
+                            <h3 className="truncate text-[14px] font-medium text-ink">{team.name || t("teamLibrary.general")}</h3>
+                            <p className="mt-0.5 text-[12.5px] text-ink/55">{t("teamLibrary.shareBots", { count: team.bots })}</p>
+                          </div>
+                          <button
+                            onClick={() => setSharing(team.name)}
+                            aria-label={t("teamLibrary.shareTeamAria", { name: team.name || t("teamLibrary.general") })}
+                            className="flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 py-2 text-[12.5px] text-ink hover:bg-ink/[0.1]"
+                          >
+                            <Share2 size={13} />
+                            {t("teamLibrary.shareTeam")}
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === "scout" && (
+                <div>
+                  <div className="mb-3 text-[12px] font-medium text-ink/55">{t("library.ui.startFromAProjectFolder")}</div>
+                  <p className="max-w-2xl text-[12.5px] leading-relaxed text-ink/55">
+                    Point the scout at a folder. It reads what&apos;s in there — README, dependencies, layout — and
+                    suggests a team for it. Nothing is created until you say so.
+                  </p>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      value={scoutFolder}
+                      onChange={(event) => setScoutFolder(event.target.value)}
+                      onKeyDown={(event) => event.key === "Enter" && scoutTarget && void runScout(scoutTarget)}
+                      placeholder={t("library.ui.pathToYourProject")}
+                      aria-label={t("library.ui.projectFolderToScout")}
+                      className="min-w-0 flex-1 rounded-xl bg-ink/[0.06] px-3 py-2.5 text-[13px] text-ink placeholder:text-ink/55 focus:outline-none"
+                    />
+                    {Boolean(window.ogb?.pickFolder) && (
+                      <button
+                        onClick={() => void pickScoutFolder()}
+                        disabled={scouting}
+                        className="flex items-center justify-center gap-1.5 rounded-full bg-ink/[0.06] px-4 py-2.5 text-[13px] text-ink hover:bg-ink/[0.1] disabled:opacity-40"
+                      >
+                        <FolderOpen size={14} />
+                        {t("teamLibraryPanel.ui.browse")}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => void runScout(scoutTarget)}
+                      disabled={!scoutTarget || scouting}
+                      className="flex items-center justify-center gap-1.5 rounded-full bg-ink px-4 py-2.5 text-[13px] font-medium text-app hover:bg-ink/[0.08] disabled:opacity-40"
+                    >
+                      {scouting ? <Loader2 size={14} className="animate-spin" /> : <Compass size={14} />}
+                      {scouting ? "Scouting…" : "Scout"}
+                    </button>
+                  </div>
+
+                  {scouted && (
+                    <div className="mt-6">
+                      <div className="rounded-[14px] bg-ink/[0.06] px-5 py-4">
+                        <div className="text-[15px] font-semibold text-ink">{scouted.profile.name}</div>
+                        {scouted.profile.summary && (
+                          <p className="mt-1 text-[12.5px] leading-relaxed text-ink/55">{scouted.profile.summary}</p>
+                        )}
+                        {scouted.profile.stacks.length > 0 && (
+                          <div className="mt-2.5 flex flex-wrap gap-1.5">
+                            {scouted.profile.stacks.map((stack) => (
+                              <span key={stack} className="rounded-full bg-ink/[0.06] px-2.5 py-1 text-[11.5px] text-ink/55">
+                                {stack}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-5 text-[12px] font-medium text-ink/55">{t("library.ui.suggestedTeam")}</div>
+                      <div className="mt-1 grid grid-cols-1 gap-x-10 md:grid-cols-2">
+                        {scouted.suggestion.manifest.team.members.map((member, index) => (
+                          <div key={member.key} className="flex min-h-[64px] items-center gap-3 border-b border-ink/[0.1] px-1 py-3">
+                            <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-[13px] font-semibold", TEAM_GLYPHS[index % TEAM_GLYPHS.length])}>
+                              {member.name.slice(0, 1).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="truncate text-[14px] font-medium text-ink">
+                                {member.name} <span className="font-normal text-ink/55">· {member.title}</span>
+                              </div>
+                              <div className="mt-0.5 truncate text-[12px] text-ink/55">
+                                {scouted.suggestion.reasons[member.key] ?? ""}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {directory && directory.length > 0 && (
+                        <>
+                          <div className="mt-5 text-[12px] font-medium text-ink/55">{t("library.ui.fromTheCommunityDirectoryTickTo")}</div>
+                          <div className="mt-1 flex flex-col">
+                            {directory.map((candidate) => (
+                              <div key={candidate.slug} className="flex items-center gap-3 border-b border-ink/[0.1] px-1 py-3">
+                                <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={pickedDirectory.has(candidate.slug)}
+                                    onChange={() =>
+                                      setPickedDirectory((prev) => {
+                                        const next = new Set(prev);
+                                        if (next.has(candidate.slug)) next.delete(candidate.slug);
+                                        else next.add(candidate.slug);
+                                        return next;
+                                      })
+                                    }
+                                    className="size-4 accent-accent"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-[13.5px] font-medium text-ink">
+                                      {candidate.name}
+                                      {candidate.category && <span className="font-normal text-ink/55"> · {candidate.category}</span>}
+                                    </div>
+                                    <div className="mt-0.5 truncate text-[12px] text-ink/55">
+                                      Matches {candidate.matched.join(", ")}
+                                    </div>
+                                  </div>
+                                </label>
+                                <button
+                                  onClick={() => void openExternal(candidate.detailUrl)}
+                                  aria-label={`Open ${candidate.name} on botdirectory.ai`}
+                                  title={t("library.ui.readThisBotSPageBefore")}
+                                  className="rounded-lg p-1.5 text-ink/55 hover:bg-ink/[0.06] hover:text-ink"
+                                >
+                                  <ExternalLink size={14} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <input
+                          value={roomName}
+                          onChange={(event) => setRoomName(event.target.value)}
+                          aria-label={t("library.ui.groupChatName")}
+                          className="min-w-0 flex-1 rounded-xl bg-ink/[0.06] px-3 py-2.5 text-[13px] text-ink placeholder:text-ink/55 focus:outline-none"
+                        />
+                        <button
+                          onClick={() => void createProject()}
+                          disabled={creating}
+                          className="flex shrink-0 items-center justify-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[13.5px] font-medium text-app hover:bg-ink/[0.08] disabled:opacity-60"
+                        >
+                          {creating && <Loader2 size={15} className="animate-spin" />}
+                          {creating ? "Creating…" : "Create group chat"}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[12px] text-ink/55">
+                        {t("teamLibraryPanel.ui.createsTheTeamAsNewBots")}
+                      </p>
+                    </div>
+                  )}
+                  {error && <div role="alert" className="mt-4 rounded-lg bg-[#ff5667]/10 px-3 py-2 text-[12.5px] text-[#ff8a96]">{error}</div>}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+    </OrbitSheet>
+    {sharing !== null && <ShareTeamDialog team={sharing} overlay onClose={() => setSharing(null)} />}
+    </>
+  );
+}

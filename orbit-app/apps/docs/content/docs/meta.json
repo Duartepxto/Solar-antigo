@@ -1,0 +1,17 @@
+{
+  "title": "Orbit",
+  "root": true,
+  "pages": [
+    "index",
+    "getting-started",
+    "features",
+    "providers",
+    "computers",
+    "mobile",
+    "self-hosting",
+    "security",
+    "troubleshooting",
+    "changelog",
+    "contributing"
+  ]
+}

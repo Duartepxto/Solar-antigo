@@ -1,0 +1,39 @@
+// This function is called only for the fixture just created by run.mjs.
+// It never seeds the persistent backend or discovers a server from a port.
+export async function seedSolarPreview(fixture, control) {
+  const url = fixture.info.url;
+  async function request(path, method = 'GET', body) {
+    const response = await fetch(`${url}${path}`, {
+      method, headers: { 'content-type': 'application/json', origin: url },
+      ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error(`Não foi possível preparar a pré-visualização (${response.status}).`);
+    return response.json();
+  }
+  const list = await request('/api/bots');
+  const bots = Array.isArray(list) ? list : list.bots;
+  const starter = bots.find(bot => bot.name === 'Fixture Starter');
+  if (!starter) throw new Error('A fixture não tem o agente inicial esperado.');
+  await request(`/api/bots/${starter.id}`, 'PATCH', { name: 'Jarvis', title: 'Coordenação', color: 'orange' });
+  const definitions = [
+    ['Hermes', '01 · Operações', 'Coordenação diária', 'gray', true],
+    ['Lua Prata', '01 · Operações', 'Organização', 'gray', false],
+    ['Aura', '02 · Comunicação', 'Comunicação', 'yellow', true],
+    ['Atlas', '03 · Pesquisa', 'Investigação e síntese', 'blue', true],
+    ['Lua Gelo', '03 · Pesquisa', 'Fontes e referências', 'cyan', false],
+    ['Ares', '04 · Desenvolvimento', 'Implementação', 'orange', true],
+    ['Lua Vulcânica', '04 · Desenvolvimento', 'Qualidade e revisão', 'orange', false],
+    ['Juno', '05 · Estratégia', 'Planeamento', 'yellow', true],
+    ['Lua Areia', '05 · Estratégia', 'Análise', 'yellow', false],
+    ['Nova', '06 · Projetos', 'Projetos', 'purple', true],
+    ['Orion', '07 · Design', 'Design e comunicação', 'teal', true],
+    ['Nereu', '08 · Conhecimento', 'Conhecimento', 'blue', true],
+    ['Lua Crateras', '08 · Conhecimento', 'Arquivo', 'blue', false],
+  ];
+  for (const [name, section, title, color, chiefOfStaff] of definitions) {
+    const created = await control(['new-bot', '--url', url, '--name', name, '--title', title, '--section', section]);
+    if (!created.success || !created.bot?.id) throw new Error(`Não foi possível criar ${name} na fixture.`);
+    await request(`/api/bots/${created.bot.id}`, 'PATCH', { color, chiefOfStaff });
+  }
+  console.log('Pré-visualização solar: Jarvis, oito planetas e cinco luas temporárias, com motor simulado.');
+}

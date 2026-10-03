@@ -1,0 +1,153 @@
+// The exit beat: the seeded bot gets a name, a color, and one standing
+// instruction. This is the first touch of bot settings, so every field is
+// optional with a sensible default and Finish always works, even when the
+// save fails (the bot can be edited later from its settings).
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
+import { t } from "@/lib/i18n";
+import { MAUS_COLOR_NAMES, MAUS_COLORS, type MausColor } from "@/lib/mascot";
+import { api, type Bot } from "@/state/store";
+import { inputClass, PrimaryButton, staggerIndex, type BeatProps } from "./shared";
+
+const SOUL_LINE_LIMIT = 200;
+
+/** The instruction line joins whatever SOUL the bot already has rather than
+ * replacing it; a bot imported from a team keeps its playbook. */
+function soulWithLine(existing: string | undefined, line: string): string | undefined {
+  const trimmed = line.trim();
+  if (!trimmed) return undefined;
+  const current = existing?.trimEnd() ?? "";
+  return current ? `${current}\n\n${trimmed}` : trimmed;
+}
+
+export function MeetYourBotBeat({
+  bot,
+  onFinish,
+  setMascot,
+  bump,
+}: Pick<BeatProps, "setMascot" | "bump"> & {
+  bot: Bot | null;
+  onFinish: () => void;
+}) {
+  const [name, setName] = useState(bot?.name ?? "");
+  const [color, setColor] = useState<MausColor>(bot?.color ?? "green");
+  const [line, setLine] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setMascot("celebrate");
+    bump("celebrate");
+    const settle = setTimeout(() => setMascot("happy"), 1600);
+    return () => clearTimeout(settle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const save = async () => {
+    if (!bot) {
+      onFinish();
+      return;
+    }
+    const patch: Record<string, unknown> = {};
+    const trimmedName = name.trim();
+    if (trimmedName && trimmedName !== bot.name) patch.name = trimmedName;
+    if (color !== bot.color) patch.color = color;
+    const soul = soulWithLine(bot.soul, line);
+    if (soul !== undefined) patch.soul = soul;
+    if (!Object.keys(patch).length) {
+      onFinish();
+      return;
+    }
+    setSaving(true);
+    setFailed(false);
+    try {
+      await api(`/api/bots/${encodeURIComponent(bot.id)}`, { method: "PATCH", body: JSON.stringify(patch) });
+      onFinish();
+    } catch {
+      setFailed(true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="stagger flex flex-col">
+      <p className="animate-rise mt-3 text-pretty text-[14px] leading-[1.6] text-ink/80" style={staggerIndex(0)}>
+        {t("onboarding.bot.intro")}
+      </p>
+
+      <div className="animate-rise mt-3" style={staggerIndex(1)}>
+        <div className="min-w-0">
+          <label className="block text-[12px] leading-normal text-ink/60" htmlFor="welcome-bot-name">
+            {t("onboarding.bot.name")}
+          </label>
+          <input
+            id="welcome-bot-name"
+            autoFocus
+            type="text"
+            value={name}
+            maxLength={100}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void save()}
+            placeholder={bot?.name}
+            className={`mt-1.5 ${inputClass}`}
+          />
+        </div>
+      </div>
+
+      <div className="animate-rise mt-3" style={staggerIndex(2)}>
+        <div className="text-[12px] leading-normal text-ink/60">{t("onboarding.bot.color")}</div>
+        <div role="radiogroup" aria-label={t("onboarding.bot.color")} className="mt-1.5 flex flex-wrap gap-2">
+          {MAUS_COLOR_NAMES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={c === color}
+              aria-label={t("onboarding.bot.colorAria", { color: c })}
+              onClick={() => {
+                setColor(c);
+                bump("customize");
+              }}
+              className={cn(
+                "size-[26px] rounded-full border-2 transition-transform duration-150 hover:scale-110 active:scale-95",
+                c === color ? "border-ink" : "border-transparent",
+              )}
+              style={{ backgroundColor: MAUS_COLORS[c] }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="animate-rise mt-3" style={staggerIndex(3)}>
+        <label className="block text-[12px] leading-normal text-ink/60" htmlFor="welcome-bot-soul">
+          {t("onboarding.bot.soul")}
+        </label>
+        <input
+          id="welcome-bot-soul"
+          type="text"
+          value={line}
+          maxLength={SOUL_LINE_LIMIT}
+          onChange={(e) => setLine(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && void save()}
+          placeholder={t("onboarding.bot.soulPlaceholder")}
+          className={`mt-1.5 ${inputClass}`}
+        />
+      </div>
+
+      {failed && (
+        <div className="animate-rise mt-3 flex items-center gap-2.5 text-[12.5px] leading-[1.45] text-[#ff6b78]" role="alert">
+          <span className="flex-1">{t("onboarding.bot.error")}</span>
+          <button type="button" onClick={onFinish}
+            className="h-7 shrink-0 whitespace-nowrap rounded-full border border-[#ff6b78]/50 px-3 text-[12px] font-medium hover:bg-[#ff6b78]/10">
+            {t("onboarding.bot.finishAnyway")}
+          </button>
+        </div>
+      )}
+
+      <PrimaryButton onClick={() => void save()} disabled={saving} className="animate-rise mt-5" style={staggerIndex(4)}>
+        {saving ? t("onboarding.bot.saving") : t("onboarding.bot.finish")}
+      </PrimaryButton>
+    </div>
+  );
+}

@@ -1,0 +1,12 @@
+# Maintainer review is required on the open-core boundary, the cloud seam and
+# the licensing files. Enforced when the ruleset requires code-owner review.
+/enterprise/                    @DragonQLF
+/server/enterprise.ts           @DragonQLF
+/server/enterprise.test.ts      @DragonQLF
+/server/brand.ts                @DragonQLF
+/server/tunnel.ts               @DragonQLF
+/cloudflare/control-plane/      @DragonQLF
+/LICENSE                        @DragonQLF
+/LICENSING.md                   @DragonQLF
+/CLA.md                         @DragonQLF
+/.github/                       @DragonQLF

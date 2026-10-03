@@ -1,0 +1,13 @@
+{
+  "name": "solar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --experimental-strip-types chatgpt-3.0/run.mjs",
+    "preview": "node --experimental-strip-types chatgpt-3.0/run.mjs --fixture",
+    "smoke": "node --experimental-strip-types chatgpt-3.0/run.mjs --smoke",
+    "legacy": "node server.mjs"
+  },
+  "description": "Workspace local de agentes com mapa solar, baseado no Orbit"
+}

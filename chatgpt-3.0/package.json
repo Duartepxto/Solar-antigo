@@ -1,0 +1,14 @@
+{
+  "name": "chatgpt-3-local",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node run.mjs",
+    "preview": "node run.mjs --fixture",
+    "verify": "node run.mjs --smoke"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  }
+}
