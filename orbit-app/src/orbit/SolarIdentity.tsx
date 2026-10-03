@@ -3,7 +3,7 @@ import { useStore } from '@/state/store';
 import { buildModel, loadBotOrder, loadLayout, type OrbitModel } from './model';
 import { solarNodes, type SolarNode } from './solar-model';
 import { SolarPlanet } from './SolarPlanet';
-import { registerSolarPortrait, pointSolarPortrait, leaveSolarPortrait } from './solar-portraits';
+import { registerSolarPortrait, updateSolarPortraitFallback, pointSolarPortrait, leaveSolarPortrait } from './solar-portraits';
 import { solarState, solarActivity } from './solar-state';
 
 const IdentityContext = createContext<ReadonlyMap<string, SolarNode> | null>(null);
@@ -22,13 +22,14 @@ export function SolarIdentity({ id, size, label, className, dim }: { id:string; 
   const skin = identity?.moonSkin ?? identity?.skin ?? 'moon-silver';
   const activity = solarActivity(identity?.bot?.tool);
   const currentState = solarState(identity?.bot ?? null, state.connected);
+  const body = { id, kind, skin, x: 0, y: 0, diameter: 82, color: identity?.color ?? '#ccd4df', active: !!identity?.bot?.busy,
+    state: currentState, activity, tool: identity?.bot?.tool ?? undefined };
+  const latestBody = useRef(body); latestBody.current = body;
   useEffect(() => {
     setReady(false); let drawn = false;
-    return registerSolarPortrait(canvas.current!, { id, kind, skin, x: 0, y: 0, diameter: 82,
-      color: identity?.color ?? '#ccd4df', active: !!identity?.bot?.busy,
-      state: currentState, activity, tool: identity?.bot?.tool ?? undefined,
-    }, () => { if (!drawn) { drawn = true; setReady(true); } });
-  }, [id,kind,skin,currentState,activity,identity?.bot?.tool]);
+    return registerSolarPortrait(canvas.current!, latestBody.current, () => { if (!drawn) { drawn = true; setReady(true); } });
+  }, [id,kind,skin]);
+  useEffect(() => { updateSolarPortraitFallback(latestBody.current); }, [id,currentState,activity,identity?.bot?.tool]);
   return <span className={`solar-identity ${className ?? ''}`} data-solar-identity={id} data-solar-kind={kind}
     style={{width:size,height:size,opacity:dim?.55:undefined,position:'relative'}} {...(label?{role:'img','aria-label':label}:{'aria-hidden':true})}>
     {!ready && <SolarPlanet kind={kind} skin={skin} />}

@@ -67,6 +67,10 @@ export function registerSolarPortrait(canvas: HTMLCanvasElement, body: SolarRend
 export function publishSolarPortraits(bodies: SolarRenderBody[], settings: SolarRenderSettings, motionPaused: boolean) {
   model = new Map(bodies.map(body => [body.id, body])); preferences = settings; paused = motionPaused; update();
 }
+export function updateSolarPortraitFallback(body: SolarRenderBody) {
+  for (const target of targets) if (target.body.id === body.id) target.body = body;
+  update();
+}
 export function pointSolarPortrait(id: string, x: number, y: number) {
   const cell = cells.get(id); if (cell) engine?.pointAt({ x: cell.x + x * CELL, y: cell.y + y * CELL });
 }
