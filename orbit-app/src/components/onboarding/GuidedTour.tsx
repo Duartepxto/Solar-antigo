@@ -112,7 +112,7 @@ export function GuidedTour() {
         }
         case "focusBot":
           // Orbit flies to the selected bot; the steps point at its view
-          window.dispatchEvent(new CustomEvent(ORBIT_FOCUS_EVENT, { detail: { botId: state.selectedId } }));
+          window.dispatchEvent(new CustomEvent(ORBIT_FOCUS_EVENT, { detail: { botId: import.meta.env.VITE_JARVIS_SOLAR === 'true' ? state.bots.find(bot=>!bot.hidden&&bot.system!=='orbit'&&!/^jarvis(?:\s|$)/i.test(bot.name))?.id ?? state.selectedId : state.selectedId } }));
           return;
         case "showMap":
           orbitNavigate({ to: "fit" });
@@ -135,7 +135,7 @@ export function GuidedTour() {
           return;
       }
     },
-    [dispatch, state.computerOpen, state.selectedId],
+    [dispatch, state.computerOpen, state.selectedId, state.bots],
   );
 
   const save = useCallback(

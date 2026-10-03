@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ArrowUp, ChevronDown, ChevronRight, Check, Mic, Square, X, MessageCircle, Plus, Search, Settings2, Sparkles, Users } from 'lucide-react';
+import { ArrowUp, ChevronDown, ChevronRight, Check, Mic, Square, X, MessageCircle, Plus, Search, Sparkles, Users } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import { useStore } from '@/state/store';
 import type { OrbitModel } from './model';
@@ -8,8 +8,8 @@ import { SolarPlanet } from './SolarPlanet';
 import {useSolarDictation} from './useSolarDictation';
 import {solarState} from './solar-state';
 
-export function SolarHeader({ onSearch, onSettings, onAdd, onTeam, onChannel, canMake, mac }: {
-  onSearch: () => void; onSettings: () => void; onAdd: () => void; onTeam: () => void; onChannel: () => void; canMake: boolean; mac: boolean;
+export function SolarHeader({ onSearch, onAdd, onTeam, onChannel, canMake, mac }: {
+  onSearch: () => void; onAdd: () => void; onTeam: () => void; onChannel: () => void; canMake: boolean; mac: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const menu = useRef<HTMLDivElement>(null), create = useRef<HTMLButtonElement>(null);
@@ -25,7 +25,6 @@ export function SolarHeader({ onSearch, onSettings, onAdd, onTeam, onChannel, ca
     <div className="solar-brand"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="7" /><path d="M16 2v3M16 27v3M2 16h3M27 16h3M6 6l2 2M24 24l2 2M6 26l2-2M24 8l2-2" /></svg><span>{t('jarvis.solar.brand')}<small>{t('jarvis.solar.workspace')}</small></span></div>
     <nav className="solar-header-actions" style={noDrag} aria-label={t('jarvis.solar.navigation')}>
       <button className="solar-search solar-glass" type="button" onClick={onSearch} aria-label={t('jarvis.solar.search')}><Search size={15} /><span>{t('jarvis.solar.search')}</span><kbd aria-hidden="true">⌘ / Ctrl K</kbd></button>
-      <button className="solar-icon-button solar-glass" type="button" onClick={onSettings} title={t('jarvis.solar.settings')} aria-label={t('jarvis.solar.settings')}><Settings2 size={16}/></button>
       {canMake && <div className="solar-create-wrap"><button ref={create} className="solar-icon-button solar-glass" type="button" onClick={() => { setOpen(v => !v); }} aria-expanded={open} aria-haspopup="menu" aria-label={t('jarvis.solar.create')} title={t('jarvis.solar.create')}><Plus size={19} /></button>
         {open && <div ref={menu} className="solar-menu solar-create-menu" role="menu" aria-label={t('jarvis.solar.create')} onKeyDown={event => {
           if(event.key==='Escape'){setOpen(false);create.current?.focus();return;}

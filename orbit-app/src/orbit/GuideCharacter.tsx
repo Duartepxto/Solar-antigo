@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { MausState } from "@/lib/mascot";
 import { drawChar, newCharState, type Mood } from "./characters";
-import { SolarPlanet } from './SolarPlanet';
+import { SolarIdentity } from './SolarIdentity';
 
 /** The guide's colour: onboarding green (design_handoff_orbit README, tokens). */
 const GUIDE_RGB: [number, number, number] = [62, 224, 154];
@@ -71,6 +71,6 @@ export function GuideCharacter({ mood, pulse = 0, size = 150, className }: {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [size]);
-  if (import.meta.env.VITE_JARVIS_SOLAR === 'true') return <span aria-hidden="true" className={className} style={{display:'inline-block',width:size,height:size}}><SolarPlanet kind="sun"/></span>;
+  if (import.meta.env.VITE_JARVIS_SOLAR === 'true') return <span aria-hidden="true" className={className} style={{display:'inline-block',width:size,height:size}}><SolarIdentity id="you" size={size}/></span>;
   return <canvas ref={ref} aria-hidden style={{ width: size, height: size }} className={className} />;
 }

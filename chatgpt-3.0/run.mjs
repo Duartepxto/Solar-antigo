@@ -7,6 +7,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const orbit = resolve(root, '../orbit-app');
 const smoke = process.argv.includes('--smoke');
 const preview = process.argv.includes('--fixture');
+const installed = process.argv.includes('--installed');
 const uiPort = Number(process.env.CHATGPT3_UI_PORT || 5200);
 const apiPort = Number(process.env.CHATGPT3_API_PORT || 8809);
 const dataDir = resolve(root, '.data');
@@ -53,7 +54,10 @@ try {
   if (!existsSync(vitePath)) throw new Error('Instala primeiro as dependências em orbit-app com pnpm install.');
   process.chdir(orbit);
   let serverUrl;
-  if (smoke || preview) {
+  if (installed) {
+    serverUrl = 'http://127.0.0.1:8799';
+    await ready(serverUrl);
+  } else if (smoke || preview) {
     const { launchVerificationServer, runControlOrbit } = await import(pathToFileURL(resolve(orbit, 'scripts/control-orbit.ts')).href);
     fixture = await launchVerificationServer();
     serverUrl = fixture.info.url;
@@ -83,7 +87,7 @@ try {
     configLoader: 'native',
     plugins: [{
       name: 'chatgpt3-studio',
-      transformIndexHtml: (html) => html.replace('<title>Orbit</title>', '<title>Jarvis 3.0</title>').replace('<body>', `<body><!--
+      transformIndexHtml: (html) => html.replace('<body>', `<body><!--
 THESIS: An agent workspace represented by a luminous solar system, with real agents as planets and moons.
 OWN-WORLD: Black canvas (#050607), visibly separate beveled block-like particles sculpting recognizable planetary volumes, teal continents and blue oceans, amber Sun, particle rings of Saturn, warm Mars. Each skin has its own carved face with curved 3D eye lenses seated inside its apertures and an animated mouth groove. Nearby mouse movement gently indents local particles and directs the gaze; the shell always retains its planetary form. Restrained glass controls. No photographic sphere skins or flat face overlays.
 STORY: See the team hierarchy, open a real agent, send a message and freely arrange the system.
@@ -115,11 +119,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   await web.listen();
   const address = web.httpServer.address();
   const uiUrl = `http://127.0.0.1:${address.port}`;
-  console.log(`Jarvis 3.0: ${uiUrl}\nBackend Orbit: ${serverUrl}`);
-  console.log(`Estúdio de desenho 2D: ${uiUrl}/robot-studio/`);
+  console.log(`Solar: ${uiUrl}\nBackend: ${serverUrl}`);
+  if (!installed) console.log(`Estúdio de desenho 2D: ${uiUrl}/robot-studio/`);
   if (smoke) {
     const page = await fetch(uiUrl);
-    if (!page.ok || !(await page.text()).includes('<title>Jarvis 3.0</title>')) throw new Error('Falhou a página inicial.');
+    if (!page.ok || !(await page.text()).includes('<title>Solar</title>')) throw new Error('Falhou a página inicial.');
     const health = await fetch(`${uiUrl}/api/health`);
     if (!health.ok) throw new Error('Falhou o proxy para o backend.');
     const main = await fetch(`${uiUrl}/src/main.tsx`);
@@ -136,7 +140,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     await stop();
     process.exit(0);
   } else {
-    console.log(preview ? 'Pré-visualização com motor simulado e dados temporários. Ctrl+C para terminar.' : `Dados desta aplicação: ${dataDir}\nCtrl+C para terminar.`);
+    console.log(preview ? 'Pré-visualização com motor simulado e dados temporários. Ctrl+C para terminar.' : `Dados desta aplicação: ${installed?'espaço de trabalho do Solar instalado':dataDir}\nCtrl+C para terminar.`);
   }
 } catch (error) {
   console.error(error.message);

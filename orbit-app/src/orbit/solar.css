@@ -61,16 +61,10 @@
 .solar-link { animation:solar-link-stream 2s linear infinite; }
 @keyframes solar-link-stream { to { stroke-dashoffset:-36; } }
 @media(prefers-reduced-motion:reduce) { .solar-link { animation:none; } }
-.solar-simulation { position:absolute;left:50%;bottom:89px;transform:translateX(-50%);z-index:30;display:flex;gap:10px;align-items:center;padding:8px 10px 8px 15px;border-radius:20px;color:#bdc6d3;font-size:10px; }
-.solar-simulation > span { display:flex;gap:10px;align-items:center; }
-.solar-simulation strong { color:#efcf9f;font-size:11px;font-weight:500;min-width:72px; }
-.solar-simulation button { display:grid;place-items:center;width:30px;height:30px;border-radius:50%;cursor:pointer; }
-.solar-simulation button:hover { background:#ffffff0b; }
 .solar-body-label { text-shadow:0 1px 3px #050607,0 0 5px #050607; }
 .solar-world-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 .solar-summary { position: absolute; top: 15px; left: 31px; display: flex; flex-direction: column; gap: 7px; pointer-events: none; font-size: 12px; font-weight: 500; }
 .solar-summary > span:nth-child(2) { font-size: 11px; font-weight: 400; color: var(--solar-muted); }
-.solar-preview-label { font-size: 10px; font-weight: 400; color: #c0ad8e; margin-top: 2px; }
 .solar-body { position: absolute; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; width: max(44px,var(--planet-size)); height: max(44px,var(--planet-size)); background: none; border: 0; padding: 0; cursor: grab; touch-action: none; z-index: 2; outline-offset: 9px; border-radius: 50%; }
 .solar-body:active { cursor: grabbing; }
 .solar-body:focus-visible { outline: 1.5px solid #e6c795; z-index: 6; }
@@ -218,8 +212,6 @@
   .orbit-root[data-solar-focus] .orbit-column > [role=separator] { display:none; }
   .orbit-root[data-solar-focus]:has(.solar-focus[data-covered]) .orbit-column { top:70px; }
 }
-.solar-credits { position: absolute; bottom: 9px; right: 30px; color: #8a919d; font-size: 9px; text-underline-offset: 3px; z-index: 10; }
-.solar-credits:hover { color: #cad0d9; text-decoration: underline; }
 .solar-send { height: 34px; width: 34px; display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; border: 1px solid #e9c48b55; background: #e6c899; color: #1c1c20; cursor: pointer; transition: background 180ms; }
 .solar-send:disabled { background: #ffffff12; border-color: #ffffff0d; color: #9ea3ad; cursor: default; }
 .solar-send:not(:disabled):hover { background: #f6dcb4; }

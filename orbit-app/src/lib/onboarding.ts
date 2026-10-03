@@ -16,7 +16,7 @@ export interface OnboardingStatus {
 
 /** Bump when the welcome flow changes enough that existing users should see
  * it again. Completions at an older version count as not done. */
-export const WELCOME_VERSION = 1;
+export const WELCOME_VERSION = import.meta.env.VITE_JARVIS_SOLAR === 'true' ? 2 : 1;
 
 export const EMPTY_ONBOARDING: OnboardingStatus = {
   completedAt: "",

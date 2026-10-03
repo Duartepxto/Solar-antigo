@@ -1765,6 +1765,12 @@ export class Store {
   ensureOrbitAgent(modelSelection?: ModelSelection): BotRecord {
     const existing = this.orbitAgent();
     if (existing) {
+      if (process.env.SOLAR_APP === '1' && existing.name === 'Orbit') {
+        existing.name = 'Jarvis';
+        if (existing.title === 'Your assistant across Orbit') existing.title = 'Your assistant across Solar';
+        this.saveBots();
+        this.emit({ type: 'bot', botId: existing.id });
+      }
       // a section or a hide would put it somewhere it must not be
       if (existing.section || existing.hidden || existing.chiefOfStaff) {
         delete existing.section;
@@ -1777,8 +1783,8 @@ export class Store {
       return existing;
     }
     const bot = this.createBot({
-      name: "Orbit",
-      title: "Your assistant across Orbit",
+      name: process.env.SOLAR_APP === '1' ? 'Jarvis' : 'Orbit',
+      title: process.env.SOLAR_APP === '1' ? 'Your assistant across Solar' : 'Your assistant across Orbit',
       description: "Sets things up, finds what went wrong, brings in the right bot, and helps on your screen.",
       color: "green",
       ...(modelSelection ? { modelSelection } : {}),

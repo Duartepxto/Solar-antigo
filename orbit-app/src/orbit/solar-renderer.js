@@ -1,6 +1,6 @@
 // Distinct fragments retain a planetary volume. Each material has its own
 // carved face and recessed 3D eye lenses; pointer dents never disperse the shell.
-import { solarFaceEyeOpen } from './solar-face';
+import { solarFaceEyeOpen, solarFacePose } from './solar-face';
 import * as THREE from './vendor/three.module.js';
 import { POINTER_INDENT, POINTER_FALLOFF, pointerDent } from './solar-interaction.js';
 import { SURFACE_PRESETS, surfaceColor } from './solar-presets.js';
@@ -419,9 +419,10 @@ export async function createSolarWorld(canvas) {
       const blink=moving&&phase>period-.22?1-Math.pow(Math.sin((phase-period+.22)/.22*Math.PI),2):1;
       const pulse=moving&&signalAge<1?Math.sin(Math.max(0,signalAge)*Math.PI)*.18:0;
       object.root.scale.set(object.radius*(1-pulse*.12+arrival*.025),object.radius*(1+pulse*.12+arrival*.025),object.radius);
+      const pose=solarFacePose(object.state,time+object.phase,moving);
       for(const material of [object.surface.material,object.core.material]) {
-        const u=material.uniforms; u.stageLight.value=object.stageLight; u.mouthSmile.value=object.profile.smile; u.time.value=time; u.eyeOpen.value+=(solarFaceEyeOpen(object.state,blink)-u.eyeOpen.value)*(moving?blend:1); u.cursor.value.copy(object.cursor); u.interaction.value=object.interaction; u.gaze.value.copy(object.gaze); u.motionTrail.value.copy(object.trail); u.luminous.value=(object.profile.luminous+.018)*settings.glow; u.speaking.value=0;
-        for(const [key,target] of [['focus',0],['request',0],['concern',0]]) {
+        const u=material.uniforms; u.stageLight.value=object.stageLight; u.mouthSmile.value+=(object.profile.smile*pose.smile-u.mouthSmile.value)*blend; u.time.value=time; u.eyeOpen.value+=(solarFaceEyeOpen(object.state,blink)-u.eyeOpen.value)*(moving?blend:1); u.cursor.value.copy(object.cursor); u.interaction.value=object.interaction; u.gaze.value.copy(object.gaze); u.motionTrail.value.copy(object.trail); u.luminous.value=(object.profile.luminous+.018)*settings.glow; u.speaking.value+=(pose.speech-u.speaking.value)*blend;
+        for(const [key,target] of [['focus',pose.focus],['request',pose.request],['concern',pose.concern]]) {
           u[key].value+=(target-u[key].value)*blend;
         }
       }
@@ -446,7 +447,7 @@ export async function createSolarWorld(canvas) {
       }
       object.mouth.visible=!object.background;
       const mouthPositions=object.mouth.geometry.attributes.position;
-      const open=0;
+      const open=u.speaking.value;
       for(let i=0;i<26;i++){
         const x=(i/25*2-1)*object.profile.mouthSpan*scale,t=x/(object.profile.mouthSpan*scale);
         const curve=(object.profile.mouthY+t*t*(u.mouthSmile.value-u.request.value*.04-u.concern.value*.09))*scale;
@@ -510,7 +511,7 @@ export async function createSolarWorld(canvas) {
         object.root.scale.setScalar(body.diameter/2); object.active=body.active;
         // Restoring the map colour follows the returning camera, with no residual fade.
         if(object.background&&!body.background)object.stageLight=1;
-        object.background=!!body.background; object.grabbed=!!body.grabbed; object.state=body.state??'ready'; object.parentId=body.parentId; object.activity=body.activity??'task';
+        object.background=!!body.background; object.grabbed=!!body.grabbed; object.state=body.callPhase==='speaking'?'speaking':body.callPhase==='working'||body.callPhase==='sending'?'thinking':body.callPhase==='listening'?'ready':body.state??'ready'; object.parentId=body.parentId; object.activity=body.activity??'task';
         object.tool=body.tool;
         object.color=body.color;
         if(body.signal&&(body.signal.at!==object.signal?.at||body.signal.kind!==object.signal?.kind)){object.signal=body.signal;object.signalElapsed=0;}

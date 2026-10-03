@@ -58,7 +58,7 @@ export function HelloBeat({ onNext, onSkip, hosted = false }: BeatProps & { host
   return (
     <div className="stagger flex flex-col items-center">
       <p className="animate-rise mt-3 text-center text-[14px] leading-[1.6] text-ink/55" style={staggerIndex(0)}>
-        {t("onboarding.intro")}
+        {t(import.meta.env.VITE_JARVIS_SOLAR === 'true'?'jarvis.welcome.intro':'onboarding.intro')}
       </p>
       <label className="animate-rise mt-3.5 flex w-full flex-col gap-1.5 text-[12px] leading-normal text-ink/60" style={staggerIndex(1)}>
         {t("onboarding.name")}

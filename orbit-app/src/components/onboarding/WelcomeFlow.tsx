@@ -37,6 +37,8 @@ import { QuietButton, WelcomeFooterContext } from "./beats/shared";
 import { withViewTransition } from "./view-transition";
 import { ProgressDots } from "./ProgressDots";
 import { FeatureReel } from "./reel/FeatureReel";
+import { useSolarSpeechReady } from '@/lib/solar-voice';
+import { SolarFeatureReel } from './reel/SolarFeatureReel';
 
 /** The guide's resting face per beat; beats may override it as they learn
  * more (the engines beat looks proud or curious once the harness answers). */
@@ -103,7 +105,8 @@ export function WelcomeFlow({
 }) {
   const { dispatch } = useStore();
   const { capabilities } = useDesktopCapabilities();
-  const beats = beatsFor({ dictation: dictation ?? capabilities.dictation.available, reel, hosted });
+  const solarReady = useSolarSpeechReady();
+  const beats = beatsFor({ dictation: dictation ?? (solarReady || capabilities.dictation.available), reel, hosted });
   const [beat, setBeat] = useState<BeatId>(() => (initialBeat && beats.includes(initialBeat) ? initialBeat : "hello"));
   const [mascot, setMascot] = useState<MausState>(MASCOT_FOR_BEAT[beat]);
   const [motion, setMotion] = useState<{ kind: Motion; key: number }>({ kind: "blink", key: 0 });
@@ -273,7 +276,7 @@ export function WelcomeFlow({
         <WelcomeFooterContext.Provider value={footer}>
         <div key={beat} className="flex shrink-0 flex-col">
           {beat === "hello" && <HelloBeat {...beatProps} hosted={hosted} />}
-          {beat === "reel" && <FeatureReel {...beatProps} />}
+          {beat === "reel" && (import.meta.env.VITE_JARVIS_SOLAR === 'true' ? <SolarFeatureReel {...beatProps} /> : <FeatureReel {...beatProps} />)}
           {beat === "engines" && <EnginesBeat {...beatProps} hosted={hosted} onOpenOrganisation={onOpenOrganisation} />}
           {beat === "permissions" && <PermissionsBeat {...beatProps} />}
           {beat === "phone" && <PhoneBeat {...beatProps} />}

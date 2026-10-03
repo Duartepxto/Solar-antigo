@@ -10,7 +10,6 @@ import { SolarWorld } from './SolarWorld';
 import { SolarPlanet } from './SolarPlanet';
 import { SolarConstellation } from './SolarConstellation';
 import type { SolarSkin } from './solar-model';
-import type {SolarPreviewState} from './useSolarAnimationPreview';
 
 /** Agent identity and its real system controls; the existing panels own all actions. */
 export function SolarFocus({ model, id, name, systems, width, height, chatWidth, covered, creating=false, onBackground }: {
@@ -20,11 +19,9 @@ export function SolarFocus({ model, id, name, systems, width, height, chatWidth,
   const node = nodes.find(candidate => candidate.id === id) ?? nodes[0];
   const [preferences] = useSolarPreferences(), [failed,setFailed] = useState(false);
   const [previewSkin,setPreviewSkin]=useState<SolarSkin>('earth');
-  const [rehearsal,setRehearsal]=useState<Record<string,SolarPreviewState>>({});
-  useEffect(()=>{const update=(event:Event)=>setRehearsal((event as CustomEvent<Record<string,SolarPreviewState>>).detail);window.addEventListener('jarvis-solar-preview-state',update);return()=>window.removeEventListener('jarvis-solar-preview-state',update);},[]);
   useEffect(()=>{if(!creating)return;const preview=(event:Event)=>setPreviewSkin((event as CustomEvent<SolarSkin>).detail);window.addEventListener('jarvis-solar-preview',preview);return()=>window.removeEventListener('jarvis-solar-preview',preview);},[creating]);
   const compact = width < 760, areaWidth = compact ? width : Math.max(220,width-chatWidth-28);
-  const state = rehearsal[node.id]?.state??solarState(node.bot,model.connected), diameter=compact?74:152;
+  const state = solarState(node.bot,model.connected), diameter=compact?74:152;
   const portrait=useRef<HTMLDivElement>(null);
   useLayoutEffect(()=>{
     const el=portrait.current;if(!el||covered||creating||!preferences.motion||matchMedia('(prefers-reduced-motion: reduce)').matches)return;

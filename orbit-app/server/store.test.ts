@@ -27,6 +27,20 @@ describe("Store", () => {
     rmSync(DATA_DIR, { recursive: true, force: true });
   });
 
+  it('migrates only the built-in default name to Jarvis, preserving identity, model and conversations', () => {
+    vi.stubEnv('SOLAR_APP','0');
+    const store=new Store(selection),agent=store.ensureOrbitAgent();
+    const identity={id:agent.id,threadId:agent.threadId,modelSelection:{...agent.modelSelection}};
+    const message=store.appendMessage(agent.threadId,{role:'user',kind:'text',text:'Keep my conversation'});
+    try {
+      vi.stubEnv('SOLAR_APP','1');
+      expect(store.ensureOrbitAgent()).toMatchObject({...identity,name:'Jarvis'});
+      expect(store.messagesFor(agent.threadId).some(item=>item.id===message.id)).toBe(true);
+      store.patchBot(agent.id,{name:'My Jarvis'});
+      expect(store.ensureOrbitAgent().name).toBe('My Jarvis');
+    } finally { vi.unstubAllEnvs(); }
+  });
+
   it("renames populated teams without changing members, conversations, grants or computer identity", () => {
     const store = new Store(selection);
     const chief = store.createBot({ section: "Delivery" });

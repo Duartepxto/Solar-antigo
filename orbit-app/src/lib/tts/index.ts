@@ -256,7 +256,9 @@ export class Speaker {
 
     const synth = window.speechSynthesis;
     const utterance = new window.SpeechSynthesisUtterance(value);
-    const selected = resolveLocalSystemVoice(remoteSystemVoice(opts.botId));
+    const language = document.documentElement.lang || navigator.language;
+    utterance.lang = language;
+    const selected = resolveLocalSystemVoice(remoteSystemVoice(opts.botId)) ?? synth.getVoices().find(voice => voice.lang.toLowerCase().split('-')[0] === language.toLowerCase().split('-')[0]);
     if (selected) utterance.voice = selected;
     this.localUtterance = utterance;
 
@@ -290,12 +292,12 @@ export class Speaker {
       utterance.onend = () => finish(true);
       utterance.onerror = (event) => {
         const interrupted = event.error === "canceled" || event.error === "interrupted";
-        finish(false, interrupted ? undefined : "This Mac could not play its selected voice.");
+        finish(false, interrupted ? undefined : "This device could not play its selected voice.");
       };
       try {
         synth.speak(utterance);
       } catch {
-        finish(false, "This Mac could not start its selected voice.");
+        finish(false, "This device could not start its selected voice.");
       }
     });
   }

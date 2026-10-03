@@ -62,7 +62,7 @@ export function loadBrand(options: { file?: string; isEntitled?: (feature: strin
   const file = options.file ?? brandFile();
   const isEntitled = options.isEntitled ?? entitled;
   const fallback = (notice?: string): BrandStatus =>
-    notice ? { brand: DEFAULT_BRAND, source: "default", file, notice } : { brand: DEFAULT_BRAND, source: "default", file };
+    notice ? { brand: process.env.SOLAR_APP === "1" ? { ...DEFAULT_BRAND, name: "Solar" } : DEFAULT_BRAND, source: "default", file, notice } : { brand: DEFAULT_BRAND, source: "default", file };
   if (!existsSync(file)) return fallback();
   let raw: unknown;
   try {

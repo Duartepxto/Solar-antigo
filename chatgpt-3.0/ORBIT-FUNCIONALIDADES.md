@@ -34,3 +34,19 @@ O painel Computador está também acessível no espaço Desenvolvimento, junto d
 Evidência: `docs/verification-evidence/solar-agent-result.png`, captura do browser da fixture local. Conteúdo HTML criado por código apenas para verificação; sem dados pessoais ou imagens geradas.
 
 Revisão do retrato: `docs/verification-evidence/solar-live-identity.png` mostra a Lua Vulcânica real no editor e no chat. Os canvases são atualizados por um renderizador partilhado com os mesmos modelos, estados e preferências do mapa, incluindo piscar/olhar e sono, em vez do fallback de linhas que apareceu anteriormente. A miniatura estática também foi corrigida: o canvas agora tem um host antes de criar a cena.
+
+## Preparação para uso real
+
+A simulação automática, o showcase e os seus controlos foram removidos do código da aplicação. O mapa passa a mostrar apenas atividade real. Foram retirados os rótulos de demonstração e “All quiet”; os créditos das texturas ficam em Sobre, com a origem e CC BY 4.0. A instrução discreta para arrastar mantém-se.
+
+O Jarvis tem seis controlos próprios (motor, aprovações, skills, memória, voz e acesso ao sistema), em vez de todos os sistemas de um agente comum. O botão Application Settings desapareceu do cabeçalho. O agente integrado muda de Orbit para Jarvis no Solar, preservando ID, motor, threads e nomes personalizados.
+
+A primeira abertura usa a introdução Solar versão 2: mapa e hierarquia, chamada versus ditado, desenvolvimento e resultados, configuração do motor e permissões. É possível saltar e voltar a abrir pelo Sistema. Os olhos mantêm-se legíveis; pensar/trabalhar/esperar/falhar têm variações pequenas, dormir fecha os olhos e mostra zzz. A chamada comunica as suas fases ao modelo, incluindo a boca durante a fala.
+
+Voz local: Whisper incluído para transcrição e vozes instaladas no sistema para respostas, sem fornecedor pago de voz. O ditado escreve um rascunho; Chamada envia turnos ao agente e lê respostas. Confirmações faladas em português/inglês exigem uma frase inteira de consentimento. Uma frase como “sim mas não faças isso” não aprova nada. A voz selecionada acompanha a língua da interface, se estiver instalada.
+
+Verificação desta atualização: 226 testes passaram; um teste de plataforma foi saltado. TypeScript de frontend e servidor, lint dos ficheiros alterados e catálogos de tradução validados. Codex está autenticado com ChatGPT e respondeu a um teste sintético numa pasta temporária vazia. A voz local foi testada com reprodução simulada e áudio público nas verificações anteriores; o microfone físico e uma chamada completa no equipamento precisam de ser experimentados pelo utilizador. Contas externas, Apps/MCP, telefone e computadores remotos funcionam pelos fluxos originais, mas exigem ligação e permissões de cada serviço; não inventamos essas ligações.
+
+Para desenvolvimento com os dados da aplicação já instalada: `node chatgpt-3.0/run.mjs --installed`. Este modo liga a página local ao backend do Solar em 8799, sem criar dados fictícios ou outro espaço de trabalho. Para testes, continuar a usar `--fixture` ou `--smoke`, que isolam todas as mutações.
+
+Fecho da entrega: instalador `Solar-0.1.86-setup.exe` compilado e aplicado com código de saída 0. A aplicação reabriu; HTTP 200, voz local pronta e hash do bundle principal servido igual ao build atual. Título e favicon passam a Solar. O smoke de arranque isolado passou. Evidência `docs/verification-evidence/solar-installed-workspace.png`: mapa persistente sem showcase, controlos provisórios ou créditos sobre o canvas. A imagem foi capturada no browser ligado à instalação, sem enviar mensagens nem alterar os dados para testar.

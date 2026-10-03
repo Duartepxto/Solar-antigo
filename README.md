@@ -61,3 +61,7 @@ Mutações de teste devem usar a fixture isolada, seguindo `orbit-app/docs/verif
 ## Origem e licença
 
 A base Orbit mantém os seus avisos e licença Apache-2.0 em `orbit-app/LICENSE`. Consultar também as licenças das dependências e dos assets. A pesquisa de OpenDots serve como referência de funcionalidades; não importámos o seu runtime, código ou serviços externos.
+
+## Versão de uso diário
+
+O Solar instalado abre o espaço de trabalho persistente em `%APPDATA%/Solar/workspace`, com os agentes reais e a introdução na primeira abertura. Não inclui showcase nem simulação automática. Para abrir a página de desenvolvimento ligada a esse mesmo espaço de trabalho, com o Solar em execução: `node chatgpt-3.0/run.mjs --installed`. Para verificar alterações, usar fixtures isoladas. Consultar [estado das funcionalidades](chatgpt-3.0/ORBIT-FUNCIONALIDADES.md) para dependências e validação.

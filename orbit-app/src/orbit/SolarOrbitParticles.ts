@@ -35,6 +35,17 @@ export class SolarOrbitParticles {
       const activity=b.state==='working'?1.7:b.state==='thinking'?.9:.55;
       const breath=moving?1+.08*Math.sin(time*activity*2+ c.seed):1;
       const feedback=b.signalAge<.8?.18*(1-b.signalAge/.8):0;
+      // State marks live above the shell, independent of the aura preference.
+      ctx.save();ctx.globalAlpha=b.alpha;ctx.fillStyle=b.color;ctx.strokeStyle=b.color;
+      if(b.state==='sleeping') {
+        ctx.textAlign='center';
+        for(let i=0;i<3;i++){const u=moving?(time*.28+i/3)%1:(i+1)/4;ctx.globalAlpha=b.alpha*(.9-u*.6);ctx.font='600 '+Math.max(9,b.radius*(.18+u*.09))+'px Inter, sans-serif';ctx.fillText('z',b.x+b.radius*(.55+u*.4),b.y-b.radius*(.55+u*.7));}
+      } else if(b.state==='thinking') {
+        for(let i=0;i<3;i++){const pulse=moving?.55+.45*Math.sin(time*3-i*1.1):.75;ctx.globalAlpha=b.alpha*(.45+.4*pulse);const r=Math.max(2,b.radius*.045);ctx.fillRect(b.x+b.radius*(.5+i*.18)-r,b.y-b.radius*(1.03+i*.09)-r,r*2,r*2);}
+      } else if(b.state==='waiting'||b.state==='blocked') {
+        ctx.globalAlpha=b.alpha*(moving?.7+.2*Math.sin(time*2):.8);ctx.font='600 '+Math.max(12,b.radius*.3)+'px Inter, sans-serif';ctx.textAlign='center';ctx.fillText(b.state==='waiting'?'?':'!',b.x+b.radius*.85,b.y-b.radius*.7);
+      }
+      ctx.restore();
       if(!debris)continue;
       ctx.save();ctx.beginPath();ctx.rect(0,0,width,height);ctx.arc(b.x,b.y,b.radius*.98,0,Math.PI*2,true);ctx.clip('evenodd');
       drawChar(ctx,c,mood,b.x,b.y,b.radius*1.15,b.alpha*(breath+feedback),time,delta,{particlesOnly:true,auraOnly:true,particleOpacity:.36,noRing:true,reduced:!moving,camScale:1});

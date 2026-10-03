@@ -68,6 +68,10 @@ export function AboutDialog({ open, onClose }: { open: boolean; onClose: () => v
           {row(t("about.docs"), t("about.open"), DOCS_URL)}
           {row(t("about.releases"), t("about.open"), RELEASES_URL)}
           {row(t("about.license"), t("about.view"), LICENSE_URL)}
+          {import.meta.env.VITE_JARVIS_SOLAR === 'true' && <>
+            {row(t('jarvis.solar.textureCredit'), 'Solar System Scope / INOVE', 'https://www.solarsystemscope.com/textures/')}
+            {row(t('about.license'), 'CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/')}
+          </>}
         </div>
       </div>
     </ColumnLayer>

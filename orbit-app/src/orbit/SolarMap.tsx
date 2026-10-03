@@ -1,7 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
-import {createPortal} from 'react-dom';
-import { ArrowUpRight, Focus, Minus, Plus, RotateCcw, Settings2, Pause, Play, Square } from 'lucide-react';
-import type {LocaleKey} from '@/locales';
+import { Focus, Minus, Plus, RotateCcw, Settings2 } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import type { OrbitModel, Point } from './model';
 import { loadSolarLayout, saveSolarLayout, solarNodes, solarPositions, type SolarLayout } from './solar-model';
@@ -11,7 +9,7 @@ import { useSolarPreferences } from './solar-preferences';
 import { solarState, solarActivity, type SolarSignal } from './solar-state';
 import { zoomSolarCamera, solarBodyDiameter, transitionSolarCamera } from './solar-camera';
 import './solar.css';
-import {useSolarAnimationPreview} from './useSolarAnimationPreview';
+import { onCallPhase, type CallPhase } from './events';
 import { publishSolarPortraits } from './solar-portraits';
 
 interface Camera { x: number; y: number; scale: number }
@@ -33,12 +31,13 @@ export function SolarMap({ model, onBot, onSettings, onAdd, active = true, focus
   const [notice, setNotice] = useState('');
   const [paused, setPaused] = useState(document.hidden);
   const [renderFailed, setRenderFailed] = useState(false);
+  const [callPhases,setCallPhases]=useState<Record<string,CallPhase>>({});
+  useEffect(()=>onCallPhase((id,phase)=>setCallPhases(current=>{const next={...current};if(phase)next[id]=phase;else delete next[id];return next;})),[]);
   const [signals, setSignals] = useState<Record<string, SolarSignal>>({});
   const previousActivity = useRef(new Map<string, { busy: boolean; message: string | null }>());
   const drag = useRef<Drag | null>(null), suppressClick = useRef(false);
   const history = useRef<SolarLayout[]>([]);
   const nodes = useMemo(() => solarNodes(model), [model]);
-  const preview=useSolarAnimationPreview(nodes);
   const positions = useMemo(() => solarPositions(nodes, layout, size.w < 650, size.w >= 500), [nodes, layout, size.w]);
   const positionsRef = useRef(positions); positionsRef.current = positions;
   const cameraRef = useRef(camera); cameraRef.current = camera;
@@ -193,13 +192,11 @@ export function SolarMap({ model, onBot, onSettings, onAdd, active = true, focus
   }
   const screen = (p: Point) => ({ x: size.w / 2 + viewCamera.x + p.x * viewCamera.scale, y: size.h / 2 + viewCamera.y + p.y * viewCamera.scale });
   const planets = nodes.filter(node => node.kind === 'planet');
-  const working = nodes.filter(node => node.bot?.busy).length;
-  const waiting = nodes.filter(node => node.bot?.waiting).length;
   const bodies = nodes.map(node => ({ id: node.id, parentId:node.parentId, kind: node.kind, skin: node.kind === 'moon' ? node.moonSkin : node.skin, ...screen(positions[node.id]), diameter: bodyDiameter(node.kind, viewCamera.scale,node.moonSkin), color: node.color, active: !!node.bot?.busy, grabbed: grabbedId !== null && (grabbedId === node.id || grabbedId === node.parentId),
-    background:!!focusId&&node.id!==focusId,state:preview.states[node.id]?.state??solarState(node.bot,model.connected),tool:preview.states[node.id]?.activity?undefined:node.bot?.tool??undefined,activity:preview.states[node.id]?.activity??solarActivity(node.bot?.tool),signal:preview.states[node.id]?.signal??signals[node.id] }));
-  useEffect(() => { publishSolarPortraits(bodies, preferences, paused || preview.paused || !preferences.motion); }, [bodies, preferences, paused, preview.paused]);
+    background:!!focusId&&node.id!==focusId,callPhase:callPhases[node.id],state:solarState(node.bot,model.connected),tool:node.bot?.tool??undefined,activity:solarActivity(node.bot?.tool),signal:signals[node.id] }));
+  useEffect(() => { publishSolarPortraits(bodies, preferences, paused || !preferences.motion); }, [bodies, preferences, paused ]);
 
-  return <div ref={root} className="solar-map" data-focused={focusId||undefined} data-many={planets.length >= 5 || undefined} data-paused={paused || preview.paused || !preferences.motion || undefined} data-compact={size.w >= 500 && size.w < 650 ? 'wide' : undefined} role="region" aria-label={t('jarvis.solar.map')}
+  return <div ref={root} className="solar-map" data-focused={focusId||undefined} data-many={planets.length >= 5 || undefined} data-paused={paused || !preferences.motion || undefined} data-compact={size.w >= 500 && size.w < 650 ? 'wide' : undefined} role="region" aria-label={t('jarvis.solar.map')}
     onPointerDown={event => { if (event.target === event.currentTarget) start(event, null); }}
     onPointerMove={move} onPointerUp={() => end()} onPointerCancel={() => end(true)}
     onKeyDown={event => {
@@ -219,24 +216,18 @@ export function SolarMap({ model, onBot, onSettings, onAdd, active = true, focus
         return [base,distance<r+b?null:<line key={`${node.id}-waiting`} x1={s.x+(q.x-s.x)/distance*r} y1={s.y+(q.y-s.y)/distance*r} x2={q.x-(q.x-s.x)/distance*b} y2={q.y-(q.y-s.y)/distance*b} stroke="#ff9800" strokeOpacity={focusId?.12:.6} strokeWidth="1.2"/>];
       })}
     </svg>
-    <SolarWorld bodies={bodies} width={size.w} height={size.h} paused={paused || preview.paused || !preferences.motion || !active} settings={preferences} onFailure={() => setRenderFailed(true)} />
-    {preview.playing&&root.current&&createPortal(<div className="solar-simulation solar-glass" role="group" aria-label={t('jarvis.solar.simulation')}>
-      <span>{t('jarvis.solar.simulation')}<strong>{t(`jarvis.solar.${preview.phase}` as LocaleKey)}</strong></span>
-      <button type="button" aria-label={t(preview.paused?'jarvis.solar.resume':'jarvis.solar.pause')} onClick={()=>window.dispatchEvent(new Event('jarvis-solar-pause-preview'))}>{preview.paused?<Play size={14}/>:<Pause size={14}/>}</button>
-      <button type="button" aria-label={t('jarvis.solar.stopSimulation')} onClick={()=>window.dispatchEvent(new Event('jarvis-solar-stop-preview'))}><Square size={12}/></button>
-    </div>,root.current.closest('.orbit-stage')??root.current)}
+    <SolarWorld bodies={bodies} width={size.w} height={size.h} paused={paused || !preferences.motion || !active} settings={preferences} onFailure={() => setRenderFailed(true)} />
     {renderFailed && <div className="solar-connection-note solar-glass" role="alert">{t('jarvis.solar.renderFailed')}<button type="button" onClick={() => window.location.reload()}>{t('orbit.retry')}</button></div>}
     <div className="solar-summary">
       <span>{t('jarvis.solar.system')}</span>
       <span>{t('jarvis.solar.count', { count: nodes.filter(node => !!node.bot).length, teams: planets.length })}</span>
-      {import.meta.env.VITE_JARVIS_PREVIEW === 'true' && <span className="solar-preview-label">{t('jarvis.solar.preview')}</span>}
     </div>
     {nodes.map(node => {
       const p = screen(positions[node.id]);
       const diameter = bodyDiameter(node.kind, viewCamera.scale,node.moonSkin);
       const displayName = node.kind === 'planet' ? t(`jarvis.solar.${node.skin ?? 'earth'}`) : node.name;
       const displayTeam = import.meta.env.VITE_JARVIS_PREVIEW === 'true' ? node.team.replace(/^\d+\s*·\s*/, '') : node.team;
-      const visibleState=preview.states[node.id]?.state??solarState(node.bot,model.connected);
+      const visibleState=solarState(node.bot,model.connected);
       const status = t(`jarvis.solar.${visibleState==='ready'?'idle':visibleState}`);
       const style = { left: p.x, top: p.y, '--planet-size': `${diameter}px`, '--planet-color': node.color } as CSSProperties;
       return <button key={node.id} type="button" className={`solar-body solar-body--${node.kind}${node.bot?.busy ? ' solar-body--working' : ''}${node.bot?.waiting ? ' solar-body--waiting' : ''}`}
@@ -273,8 +264,7 @@ export function SolarMap({ model, onBot, onSettings, onAdd, active = true, focus
       <button type="button" onClick={() => updatePreferences({links:!lines})} aria-pressed={lines} title={t('jarvis.solar.connections')} aria-label={t('jarvis.solar.connections')}><Settings2 size={15} /></button>
       <button type="button" onClick={() => { remember(layoutRef.current); const next: SolarLayout = { version: 1, offsets: {} }; setLayout(next); persist(next); }} title={t('jarvis.solar.reset')} aria-label={t('jarvis.solar.reset')}><RotateCcw size={14} /></button>
     </div>
-    <div className="solar-map-hint"><span>{t('jarvis.solar.drag')}</span><span>{waiting ? t('jarvis.solar.waitingCount', { count: waiting }) : working ? t('jarvis.solar.workingCount', { count: working }) : t('jarvis.solar.ready')}</span><ArrowUpRight size={12} /></div>
+    <div className="solar-map-hint"><span>{t('jarvis.solar.drag')}</span></div>
     <div className="solar-notice" role="status">{notice}</div>
-    <a className="solar-credits" href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer">{t('jarvis.solar.textureCredit')}</a>
   </div>;
 }

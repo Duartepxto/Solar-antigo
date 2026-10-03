@@ -1,15 +1,16 @@
+import { solarCallDecision } from '@/lib/solar-call-decision';
 import { solarSpeechBridge, useSolarSpeechReady } from '@/lib/solar-voice';
 // Call mode — the bot on the line.
 //
 // The loop is deliberately HALF-DUPLEX: the microphone is live only when
-// the bot is not speaking. The dictation helper is Apple's SFSpeechRecognizer
-// running on raw AVAudioEngine input with no acoustic echo cancellation, so
+// the bot is not speaking. Solar uses local Whisper on Windows and the
+// native speech bridge on macOS. Keeping capture closed during playback means
 // a mic left open through playback transcribes the bot's own voice back into
 // the conversation and the two of them talk forever. Interrupting is a tap
 // or Escape instead, which is honest and cannot feed back. (Full-duplex
 // barge-in needs AEC on the capture path — a follow-up, not a footnote.)
 //
-// Turn-taking uses a small silence endpointer in the native helper. Apple's
+// Turn-taking uses a silence endpointer in the capture bridge. Apple's
 // buffer-backed recognizer does not finalize on silence by itself: the helper
 // has to end the audio stream, which then produces the final transcript.
 //
@@ -37,6 +38,7 @@ import { callCapabilityHelp } from "@/lib/call-capability";
 /** Spoken answers to a permission card. Anything else is read as a reply
  * to the bot, not as consent — an approval must never be granted by a
  * sentence that merely contained the word "sure". */
+const SOLAR_CALL = import.meta.env.VITE_JARVIS_SOLAR === 'true';
 const YES = /^(yes|yeah|yep|yup|sure|ok|okay|go ahead|do it|allow|approve|approved|fine|please do)\b/i;
 const NO = /^(no|nope|don'?t|do not|stop|deny|denied|cancel|never|skip it)\b/i;
 
@@ -89,7 +91,7 @@ export function CallTargetButton({
   const voiceReady =
     localVoice ||
     (configured && (requireExplicitVoices ? everyTargetHasVoice : Boolean(state.config?.tts?.ready || everyTargetHasVoice)));
-  const unavailable = !active && (!capabilitiesReady || !supported || !voiceReady);
+  const unavailable = !active && (!(capabilitiesReady || solarReady) || !supported || !voiceReady);
   const voiceSetupRequired = capabilitiesReady && supported && !voiceReady;
   const [helpOpen, setHelpOpen] = useState(false);
   // "On a call · m:ss", counted from when this call began here
@@ -292,7 +294,7 @@ function Call({ bot }: { bot: Bot }) {
     setNote(null);
     void solarSpeechBridge()?.speechStart({ endpointMs: CALL_ENDPOINT_MS }).catch(() => {
       if (alive.current && currentCall() === bot.id) {
-        setNote("The microphone couldn't start. Check Microphone and Speech Recognition access.");
+        setNote(t('jarvis.call.microphoneError'));
       }
     });
   }, [bot.id, move]);
@@ -343,7 +345,7 @@ function Call({ bot }: { bot: Bot }) {
     const offTranscript = bridge.onSpeechTranscript((line) => {
       if (!alive.current || currentCall() !== bot.id || phaseRef.current !== "listening") return;
       if (line.error) {
-        setNote("Dictation stopped unexpectedly. Check Microphone and Speech Recognition access.");
+        setNote(t('jarvis.call.captureError'));
         return;
       }
       if (typeof line.text !== "string") return;
@@ -361,8 +363,9 @@ function Call({ bot }: { bot: Bot }) {
           hush();
           return;
         }
-        if (YES.test(said) || NO.test(said)) {
-          const allow = YES.test(said);
+        const decision = SOLAR_CALL ? solarCallDecision(said) : YES.test(said) ? 'allow' : NO.test(said) ? 'deny' : null;
+        if (decision) {
+          const allow = decision === 'allow';
           if (allow && open.skill) {
             setHeard("");
             void sayThenListen("Open this chat to review the complete skill before enabling it. You can say no now to deny it.");
@@ -573,10 +576,10 @@ function Call({ bot }: { bot: Bot }) {
   // design: a call is the bot on the canvas plus this strip above the
   // composer; the header keeps "On a call · m:ss" and Hang up
   return (
-    <div role="status" aria-live="polite" className="pointer-events-auto mx-1.5 mb-2 flex flex-col gap-1.5 rounded-xl border border-[rgba(56,213,145,.35)] bg-[rgba(56,213,145,.07)] px-3 py-2.5">
+    <div role="status" aria-live="polite" className={cn("pointer-events-auto mx-1.5 mb-2 flex flex-col gap-1.5 px-3 py-2.5", SOLAR_CALL ? "border-y border-ink/15" : "rounded-xl border border-[rgba(56,213,145,.35)] bg-[rgba(56,213,145,.07)]")}>
       <div className="flex items-center gap-2 text-[12.5px]">
         <span className={cn("size-[7px] shrink-0 rounded-full bg-[#38d591]", phase === "listening" && "animate-pulse")} style={{ boxShadow: "0 0 8px #38d591" }} />
-        <span className="font-medium text-[#7fe8bc]">{status}</span>
+        <span className="font-medium text-[#7fe8bc]">{SOLAR_CALL && <>{t('jarvis.call.mode')} · </>}{status}</span>
         {(phase === "working" || phase === "sending") && <Loader2 size={12} className="animate-spin text-[#7fe8bc]" />}
         <span className="flex-1" />
         {speaker.isSpeaking() && (

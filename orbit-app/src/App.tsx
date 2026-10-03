@@ -192,11 +192,9 @@ function Application() {
         <ThreadRefsProvider>
           <Shell />
         </ThreadRefsProvider>
-        {import.meta.env.VITE_JARVIS_SOLAR !== 'true' && <>
-          <WelcomeGate viewer={viewer} />
-          <GuidedTour />
-          <FirstConversationTour quiet={spotlightsQuiet(viewer)} />
-        </>}
+        <WelcomeGate viewer={viewer} />
+        <GuidedTour />
+        <FirstConversationTour quiet={spotlightsQuiet(viewer)} />
       </StoreProvider>
     </DesktopCapabilitiesProvider>
   );

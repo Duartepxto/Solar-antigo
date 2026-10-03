@@ -4,7 +4,7 @@
 // every value on the map is read from the store.
 
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Code2, Plus, Search, WifiOff, X } from "lucide-react";
+import { Code2, Plus, Search, SlidersHorizontal, WifiOff, X } from "lucide-react";
 import { api, useStore, type Bot } from "@/state/store";
 import { MAUS_COLORS } from "@/lib/mascot";
 import { t, tCount } from "@/lib/i18n";
@@ -20,6 +20,7 @@ import { buildModel, focusGeom, loadBotOrder, setPreferredChatWidth, loadLayout,
 import { OrbitScene, type OrbitView, type SceneLabels } from "./scene";
 import { useSolarPreferences } from './solar-preferences';
 import { SolarMap } from './SolarMap';
+import { solarNodes } from './solar-model';
 import { SolarFocus } from './SolarFocus';
 import { SolarDevelopmentWorkspace } from './SolarDevelopmentWorkspace';
 import { SolarIdentityProvider } from './SolarIdentity';
@@ -481,6 +482,11 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
       if (remoteClient) { setRemoteSettings(true); return; }
       setBotPanel((cur) => (cur === p ? null : p));
     }, facts, botPanel);
+      if (JARVIS_SOLAR && focusedBot.id === solarNodes(model)[0]?.id) {
+        const core = result.filter(system => ['engine','approvals','skills','memory','voice'].includes(system.key));
+        if (canMake) core.push({ key: 'workspace', icon: SlidersHorizontal, label: t('orbit.hub.system'), value: t('jarvis.solar.workspace'), status: '', run: () => { setYouPanel('system'); setView({kind:'you'}); } });
+        return core;
+      }
       if (JARVIS_SOLAR && canMake) result.push({key: "development", icon: Code2, label: t("jarvis.dev.title"), value: t("jarvis.dev.files"), status: t("jarvis.dev.code"), selected: developmentOpen, run: () => { setBotPanel(null); setDevelopmentOpen(true); }});
       return result;
     }
@@ -496,7 +502,7 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
       return { key: h.key, icon: h.icon, label: t(h.label as never), value, status, selected: teamPanel === h.key, run: () => setTeamPanel(h.key) };
     });
     return [];
-  }, [focusedBot, focusedTeam, view.kind, state, dispatch, focusBot, appSections, facts, botPanel, remoteClient, youPanel, teamPanel, teamComputers, teamInstructions, phone, solarPreferences.background, developmentOpen, canMake]);
+  }, [focusedBot, focusedTeam, view.kind, state, dispatch, focusBot, appSections, facts, botPanel, remoteClient, youPanel, teamPanel, teamComputers, teamInstructions, phone, solarPreferences.background, developmentOpen, canMake, model, setView]);
   const liveIdx = systems.flatMap((sys, i) => (sys.live ? [i] : []));
   const warnIdx = systems.flatMap((sys, i) => (sys.tone === "warning" ? [i] : []));
   // ---- "wants to show you" ---------------------------------------------
@@ -710,7 +716,7 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
       {/* Title bar: the same surface as the map, no divider */}
       {/* the desktop app's title bar drags the window (double-click zooms,
           as the system setting says); its controls opt out */}
-      {JARVIS_SOLAR ? <SolarHeader onSearch={onSearch} onSettings={() => setView({ kind: 'you' })} onAdd={() => setView({ kind: 'new', section: null })}
+      {JARVIS_SOLAR ? <SolarHeader onSearch={onSearch} onAdd={() => setView({ kind: 'new', section: null })}
         onTeam={() => setNewTeamOpen(true)} onChannel={() => setNewChannelOpen(true)} canMake={canMake} mac={mac} /> : <div style={window.ogb ? ({ WebkitAppRegion: "drag" } as React.CSSProperties) : dragStyle} className={cn("relative flex h-[38px] shrink-0 items-center gap-2 px-3.5", mac && "pl-[84px]")}>
         {/* the desktop app's workspace (this computer or a server) and the organisation's mark */}
         <DesktopWorkspaceSwitcher chip />
