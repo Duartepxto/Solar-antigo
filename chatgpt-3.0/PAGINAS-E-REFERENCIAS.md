@@ -1,8 +1,8 @@
 # Páginas e funcionalidades: revisão atual
 
-O painel de quick settings foi retirado. O botão superior abre diretamente o hub de definições do Orbit. Temas, movimento, interação, aura, linhas e brilho passam para Aparência. Ao abrir um agente, as linhas entre planetas ficam com opacidade 7–12%, sem deslocamento animado; as ligações do planeta aos seus sistemas ficam mais visíveis. A composição de foco e os controlos de zoom são preservados.
+O painel de quick settings foi retirado. O botão superior abre diretamente o hub de definições do Solar. Temas, movimento, interação, aura, linhas e brilho passam para Aparência. Ao abrir um agente, as linhas entre planetas ficam com opacidade 7–12%, sem deslocamento animado; as ligações do planeta aos seus sistemas ficam mais visíveis. A composição de foco e os controlos de zoom são preservados.
 
-A primeira página trabalhada é Criar agente/equipa: mantém as ações, papéis, modelos de equipa, opções de visibilidade e erros do Orbit. Acrescenta pesquisa e duas pílulas para separar agentes de equipas; mantém preview à esquerda e opções abertas, sem cartões grossos.
+A primeira página trabalhada é Criar agente/equipa: mantém as ações, papéis, modelos de equipa, opções de visibilidade e erros do Solar. Acrescenta pesquisa e duas pílulas para separar agentes de equipas; mantém preview à esquerda e opções abertas, sem cartões grossos.
 
 ## Gestão de equipas proposta
 
@@ -12,7 +12,7 @@ Vista própria de gestão, com responsáveis e membros, para arrastar luas entre
 
 Fontes primárias: https://github.com/CopilotKit/OpenDots e https://www.copilotkit.ai/opendots . A aplicação oficial Dots é distinta: https://openai.com/index/introducing-dots/ . Existem vários projetos com o nome OpenDots; a identidade do vídeo do utilizador ainda não foi confirmada.
 
-| Ideia observada | Base disponível no Solar/Orbit | Trabalho seguinte |
+| Ideia observada | Base disponível no Solar/Solar | Trabalho seguinte |
 | --- | --- | --- |
 | Papéis e permissões por agente | Papéis, instruções, ferramentas e aprovações existentes | Tornar a criação e configuração mais claras |
 | Trabalho recorrente com pausa/histórico | Rotinas, logs, calendário existentes | Adaptar páginas ao mundo solar |

@@ -1,4 +1,4 @@
-# Orbit original e vidro — 3 de outubro de 2026
+# Solar original e vidro — 3 de outubro de 2026
 
 ## Correção final pedida pelo utilizador
 
@@ -10,10 +10,10 @@ Revisão local de `orbit-app/src/orbit/scene.ts`, `characters.ts`, `tool-icons.t
 
 ## Elementos trazidos para o tema solar
 
-- Ícone de atividade reutiliza `toolIcon`, o código Lucide original do Orbit. Ferramenta real determina o símbolo (terminal, leitura, escrita, pesquisa, browser, memória, aplicação, etc.). A demonstração usa categorias equivalentes. Sai o desenho de satélite; entra o pequeno quadrado arredondado escuro, com contorno na cor do agente e ligação pontilhada. Mantém tamanho constante entre planetas e luas e percurso frontal completo.
+- Ícone de atividade reutiliza `toolIcon`, o código Lucide original do Solar. Ferramenta real determina o símbolo (terminal, leitura, escrita, pesquisa, browser, memória, aplicação, etc.). A demonstração usa categorias equivalentes. Sai o desenho de satélite; entra o pequeno quadrado arredondado escuro, com contorno na cor do agente e ligação pontilhada. Mantém tamanho constante entre planetas e luas e percurso frontal completo.
 - A página de agente conserva as funções e a composição espacial. Usa a composição original dos sistemas, com ícone simples à esquerda e legenda/valor/estado à direita. As linhas partem do planeta; removem-se asas, molduras novas e caminhos arbitrários entre controlos. Chat permanece aberto, sem cartão exterior.
-- Aura usa quadrados planos, com tamanho e luminosidade ponderados pela profundidade, seguindo a receita das partículas do Orbit. Permanecem próximas do planeta, em rotação e sensíveis ao rato.
-- Receção: círculo que cresce de 1.1 a 2.5 raios durante 0.8s e desaparece. Atenção/bloqueio: pulsos âmbar/vermelhos de 1.15 a 1.95 raios. São os efeitos circulares encontrados no Orbit; não se encontrou um efeito gráfico denominado portal. Movimento reduzido mantém atenção estática.
+- Aura usa quadrados planos, com tamanho e luminosidade ponderados pela profundidade, seguindo a receita das partículas do Solar. Permanecem próximas do planeta, em rotação e sensíveis ao rato.
+- Receção: círculo que cresce de 1.1 a 2.5 raios durante 0.8s e desaparece. Atenção/bloqueio: pulsos âmbar/vermelhos de 1.15 a 1.95 raios. São os efeitos circulares encontrados no Solar; não se encontrou um efeito gráfico denominado portal. Movimento reduzido mantém atenção estática.
 - Hierarquia, partículas de envio, câmara, chat, aprovações, painéis e criação existentes continuam operacionais. Não se copia o personagem/orb por cima dos planetas nem se reabre o redesenho das caras adiado pelo utilizador.
 
 ## Vidro

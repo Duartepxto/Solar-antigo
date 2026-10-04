@@ -9,5 +9,5 @@
     "smoke": "node --experimental-strip-types chatgpt-3.0/run.mjs --smoke",
     "legacy": "node server.mjs"
   },
-  "description": "Workspace local de agentes com mapa solar, baseado no Orbit"
+  "description": "Workspace local de agentes com mapa solar, com interface solar"
 }

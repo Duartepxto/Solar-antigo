@@ -42,7 +42,7 @@ if (!process.versions.electron) {
   session.defaultSession.webRequest.onBeforeRequest((request, callback) => {
     callback({ cancel: !request.url.startsWith("data:") });
   });
-  const iconPath = fileURLToPath(new URL("../electron/resources/app-icon.png", import.meta.url));
+  const iconPath = fileURLToPath(new URL(process.env.SOLAR_APP === "1" ? "../electron/resources/solar-icon.png" : "../electron/resources/app-icon.png", import.meta.url));
   let active, quitting = false, tray, splash, trayMenu;
   const requestQuit = () => { quitting = true; };
   try {
@@ -61,7 +61,7 @@ if (!process.versions.electron) {
     await delay(150);
     mkdirSync(output, { recursive: true });
     writeFileSync(join(output, "startup-screen.png"), (await active.webContents.capturePage()).toPNG());
-    assert.equal(await active.webContents.executeJavaScript("document.querySelector('h1').textContent"), "Orbit Bot");
+    assert.equal(await active.webContents.executeJavaScript("document.querySelector('h1').textContent"), process.env.SOLAR_APP === "1" ? "Solar" : "Orbit Bot");
     assert.equal(await active.webContents.executeJavaScript("typeof process"), "undefined");
     // Exercise the actual renderer close button.
     await active.webContents.executeJavaScript("document.querySelector('button').click()");

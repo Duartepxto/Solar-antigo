@@ -1,5 +1,5 @@
 // Retain the Windows notification-area identity across app restarts.
-export function createSystemTray({ Tray, Menu, nativeImage, iconPath, getWindow, onQuit }) {
+export function createSystemTray({ Tray, Menu, nativeImage, iconPath, getWindow, onQuit, appName = process.env.SOLAR_APP === "1" ? "Solar" : "Orbit Bot" }) {
   const tray = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 20, height: 20 }),
     "889af657-21b5-4ec9-b5d0-cb798cbdfd30");
   let hidden = false;
@@ -17,11 +17,11 @@ export function createSystemTray({ Tray, Menu, nativeImage, iconPath, getWindow,
     return true;
   };
   const ownMenu = () => Menu.buildFromTemplate([
-    { label: "Open Orbit Bot", click: show },
+    { label: `Open ${appName}`, click: show },
     { type: "separator" },
-    { label: "Quit Orbit Bot", click: onQuit },
+    { label: `Quit ${appName}`, click: onQuit },
   ]);
-  tray.setToolTip("Orbit Bot");
+  tray.setToolTip(appName);
   tray.setContextMenu(ownMenu());
   tray.on("click", () => (lent ? lent.click() : show()));
   tray.on("double-click", show);

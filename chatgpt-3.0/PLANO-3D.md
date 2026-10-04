@@ -2,16 +2,16 @@
 
 ## Decisões confirmadas
 
-- Reutilizar o Orbit existente, que já tem frontend, backend e estrutura Electron.
+- Reutilizar o Solar existente, que já tem frontend, backend e estrutura Electron.
 - As duas imagens de robôs fornecidas pelo utilizador são referências visuais.
 - Fundo preto, robôs com volume e animações; discutir a composição antes de substituir a interface.
-- Manter as linguagens do Orbit: TypeScript/JavaScript, React e Node. Acrescentar tecnologia apenas onde necessária.
+- Manter as linguagens do Solar: TypeScript/JavaScript, React e Node. Acrescentar tecnologia apenas onde necessária.
 
 ## Arquitetura proposta
 
 O backend continua a gerir agentes, conversas, motores, ferramentas, aprovações e persistência. HTTP e SSE continuam a ligar o frontend ao backend. O estado visual é derivado desses eventos, sem inventar atividade.
 
-O frontend conserva os painéis HTML/React de chat, documentos, configurações e aprovação. O mapa atual (`src/orbit/scene.ts` e `characters.ts`) usa canvas 2D; a camada visual será substituída por uma cena Three.js. Uma cena e um renderer partilhados para o mapa inteiro, em vez de um contexto WebGL por robô. Começar com integração direta, porque o Orbit já tem um ciclo imperativo de cena; avaliar React Three Fiber se simplificar a integração com React.
+O frontend conserva os painéis HTML/React de chat, documentos, configurações e aprovação. O mapa atual (`src/orbit/scene.ts` e `characters.ts`) usa canvas 2D; a camada visual será substituída por uma cena Three.js. Uma cena e um renderer partilhados para o mapa inteiro, em vez de um contexto WebGL por robô. Começar com integração direta, porque o Solar já tem um ciclo imperativo de cena; avaliar React Three Fiber se simplificar a integração com React.
 
 Separar a interface da cena (foco, câmara, seleção, coordenadas projetadas, entidades e eventos) da implementação do renderer. Identidade do agente e execução pertencem ao domínio; modelo, materiais e animações pertencem à apresentação. Preservar controlos acessíveis em HTML e a navegação por teclado.
 
@@ -19,7 +19,7 @@ Não é preciso reescrever o backend, mudar para Unity/Unreal ou introduzir Pyth
 
 ## Composição proposta para discussão
 
-Um assistente coordenador no centro; líderes de equipa à volta; especialistas próximos do seu líder. A identidade central deve ser decidida: o Orbit distingue atualmente o utilizador central do assistente Orbit, no canto. Não fundir silenciosamente essas duas entidades no backend.
+Um assistente coordenador no centro; líderes de equipa à volta; especialistas próximos do seu líder. A identidade central deve ser decidida: o Solar distingue atualmente o utilizador central do assistente Solar, no canto. Não fundir silenciosamente essas duas entidades no backend.
 
 Perspetiva inclinada semelhante às imagens, com câmara ortográfica inicialmente para legibilidade. Fundo preto liso, pedestais escuros, pequenos anéis luminosos e cor por equipa. Luz ambiente e iluminação de estúdio revelam os materiais brancos. Bloom contido nos elementos emissivos; nomes e estados em HTML permanecem nítidos.
 

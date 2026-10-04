@@ -6,11 +6,11 @@
 
 Jarvis é o Sol. Os responsáveis são planetas. Os agentes de cada equipa são luas.
 
-[Funcionalidades](#um-workspace-para-a-tua-equipa) · [Começar](#começar) · [Histórico](CHANGELOG.md) · [Notas técnicas](chatgpt-3.0/ORBIT-FUNCIONALIDADES.md)
+[Funcionalidades](#um-workspace-para-a-tua-equipa) · [Começar](#começar) · [Histórico](CHANGELOG.md) · [Notas técnicas](chatgpt-3.0/SOLAR-FUNCIONALIDADES.md)
 
 </div>
 
-![Mapa Solar com Jarvis e um agente no workspace persistente](docs/verification-evidence/solar-installed-workspace.png)
+![Mapa Solar com Jarvis e um agente no workspace persistente](docs/verification-evidence/solar-workspace.png)
 
 O Solar transforma uma equipa de IA num sistema solar interativo. Vê quem faz parte da equipa, aproxima-te de um agente e abre a conversa. Organiza o mapa à tua maneira, acompanha os estados dos agentes e mantém os resultados junto do trabalho.
 
@@ -25,34 +25,23 @@ O Solar transforma uma equipa de IA num sistema solar interativo. Vê quem faz p
 | **Configuração da equipa** | Escolher motores e modelos, definir papéis e instruções, gerir memória, skills, ferramentas e aprovações. |
 | **Outros dispositivos** | Emparelhar um telefone para conversar pelo browser; os recursos remotos dependem da sua configuração e de uma ligação acessível. |
 
-As respostas reais exigem um motor de IA configurado. Contas externas, ferramentas, microfone e recursos remotos precisam das respetivas ligações e permissões. O [estado das funcionalidades](chatgpt-3.0/ORBIT-FUNCIONALIDADES.md) documenta as dependências e o que foi verificado.
+As respostas reais exigem um motor de IA configurado. Contas externas, ferramentas, microfone e recursos remotos precisam das respetivas ligações e permissões. O [estado das funcionalidades](chatgpt-3.0/SOLAR-FUNCIONALIDADES.md) documenta as dependências e o que foi verificado.
 
 ## Da conversa ao resultado
 
 O trabalho do agente pode aparecer no próprio workspace, ao lado da conversa.
 
-![Resultado HTML aberto ao lado do chat numa demonstração isolada](docs/verification-evidence/solar-agent-result.png)
 
 ## Código e conversa, lado a lado
 
 O espaço Desenvolvimento reúne os ficheiros e o editor sem perder o contexto do agente.
 
-![Editor e ficheiros do projeto ao lado da conversa com o agente](docs/verification-evidence/solar-live-identity.png)
 
-<details>
-<summary><strong>Ver a introdução e a ligação ao telefone</strong></summary>
+### Arranque da aplicação Windows
 
-### Primeira abertura
+![Ecrã de carregamento com nome e ícone Solar](docs/verification-evidence/solar-startup.png)
 
-![Introdução do Solar e configuração de voz](docs/verification-evidence/solar-welcome-voice.png)
-
-### Conversa no telefone
-
-![Conversa no browser móvel após emparelhamento numa demonstração isolada](docs/verification-evidence/solar-phone-browser-chat.png)
-
-</details>
-
-As capturas são da aplicação real, registadas em 3 de outubro de 2026. O mapa principal mostra um workspace persistente; as imagens de desenvolvimento, resultados e telefone usam dados de demonstração e um motor simulado. A quantidade de planetas e agentes depende da equipa criada.
+As capturas mostram a aplicação Windows e o seu ecrã de arranque, atualizados em 4 de outubro de 2026. A quantidade de planetas e agentes depende da equipa criada.
 
 ## Começar
 
@@ -82,7 +71,7 @@ O modo `preview` usa dados temporários e um motor simulado. Termina o modo ante
 
 Ainda não existe uma release com instalador disponível neste repositório. O instalador referido nas notas de desenvolvimento foi gerado no computador de origem e não está incluído no Git.
 
-A instalação Windows usa `%LOCALAPPDATA%/Programs/solar` e guarda o workspace em `%APPDATA%/Solar/workspace`. O Solar não recebe atualizações do repositório original Orbit.
+A instalação Windows usa `%LOCALAPPDATA%/Programs/solar` e guarda o workspace em `%APPDATA%/Solar/workspace`. O Solar não recebe atualizações do repositório da base original.
 
 <details>
 <summary><strong>Compilação, verificação e organização do código</strong></summary>
@@ -110,7 +99,7 @@ Verificações que alteram dados devem usar uma fixture isolada, seguindo [as in
 
 | Pasta | Conteúdo |
 | --- | --- |
-| `orbit-app/` | Frontend React, backend e componentes da base Orbit, adaptados ao Solar. |
+| `orbit-app/` | Frontend React, backend e componentes adaptados ao Solar. |
 | `chatgpt-3.0/` | Launcher, demonstração, documentação de design e estudos visuais. |
 | `docs/` | Notas de desenvolvimento e evidências visuais. |
 | `jarvis/`, `reference/` e protótipos na raiz | Iterações históricas; `npm run legacy` abre o protótipo anterior. |
@@ -129,6 +118,6 @@ As **tags** identificam versões e as **releases** podem reunir notas e instalad
 
 O GitHub guarda o código e a documentação. Dados dos agentes, contas, configurações locais, dependências e builds ficam excluídos. Para continuar noutro PC, atualiza o código antes de trabalhar e envia commits quando terminares; os dados locais precisam de backup ou transferência próprios. Ver [o fluxo entre computadores](docs/GITHUB-SOLAR.md).
 
-## Origem e licença
+## Licença e atribuições
 
-Desenvolvido sobre a base aberta [Orbit](https://github.com/DragonQLF/orbit), com identidade e interface Solar. A base conserva a licença [Apache-2.0](orbit-app/LICENSE) e os [avisos de atribuição](orbit-app/NOTICE). As dependências e os assets mantêm as respetivas licenças. A pesquisa de OpenDots serviu como referência de funcionalidades; o seu runtime, código e serviços externos não foram importados.
+O Solar conserva a licença [Apache-2.0](orbit-app/LICENSE) e os [avisos de atribuição da base original](orbit-app/NOTICE). As dependências e os assets mantêm as respetivas licenças. A pesquisa de OpenDots serviu como referência de funcionalidades; o seu runtime, código e serviços externos não foram importados.

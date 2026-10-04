@@ -41,7 +41,7 @@ export const brandSchema = z
 
 export type Brand = z.infer<typeof brandSchema>;
 
-export const DEFAULT_BRAND: Brand = { name: "Orbit" };
+export const DEFAULT_BRAND: Brand = { name: process.env.SOLAR_APP === "1" ? "Solar" : "Orbit" };
 
 export interface BrandStatus {
   brand: Brand;

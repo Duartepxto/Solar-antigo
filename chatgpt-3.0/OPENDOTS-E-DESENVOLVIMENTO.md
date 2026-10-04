@@ -2,11 +2,11 @@
 
 Referência analisada: [CopilotKit/OpenDots](https://github.com/CopilotKit/OpenDots), em 3 de outubro de 2026. O vídeo original ainda não foi identificado; esta análise usa o projeto público da CopilotKit, não uma ferramenta da OpenAI.
 
-O OpenDots junta documentos editáveis, conversas, computadores individuais e permissões por especialista. Destacam-se os rascunhos preservados quando falha uma gravação e a verificação de revisões para evitar sobrescrever alterações recentes. A base Orbit já cobre papéis, instruções, ferramentas, aprovações, computadores, voz e rotinas; o acrescento escolhido foi trabalhar em ficheiros junto da conversa. Não foi importado o runtime nem ligado nenhum serviço externo.
+O OpenDots junta documentos editáveis, conversas, computadores individuais e permissões por especialista. Destacam-se os rascunhos preservados quando falha uma gravação e a verificação de revisões para evitar sobrescrever alterações recentes. A base Solar já cobre papéis, instruções, ferramentas, aprovações, computadores, voz e rotinas; o acrescento escolhido foi trabalhar em ficheiros junto da conversa. Não foi importado o runtime nem ligado nenhum serviço externo.
 
 ## Implementado
 
-- A ação **Development / Desenvolvimento** abre um espaço no canvas, à esquerda da conversa existente. Usa a infraestrutura de stage do Orbit, sem substituir o chat.
+- A ação **Development / Desenvolvimento** abre um espaço no canvas, à esquerda da conversa existente. Usa a infraestrutura de stage do Solar, sem substituir o chat.
 - Navegação de pastas, leitura e edição de ficheiros de texto, criação de ficheiros, separadores e guardar com Ctrl/Cmd+S.
 - Pré-visualização de Markdown, HTML e SVG. HTML/SVG são estáticos, em iframe sandbox, sem executar scripts nem carregar recursos remotos automaticamente.
 - Ficheiros reais da pasta configurada para a conversa/agente. Sem pasta definida, usa `task-workspaces/<bot>/<thread>` no diretório de dados.
@@ -26,4 +26,4 @@ A função não está associada a nenhuma skin: a ação está disponível aos a
 
 No browser da fixture: abrir a lua, abrir Development sem modal, ler README, editar, fechar/reabrir e recuperar rascunho, guardar, abrir preview HTML e manter a conversa disponível. Nenhuma mensagem foi enviada ao agente para testar o editor. O build conserva o aviso preexistente de chunks maiores que 500 kB.
 
-Revisão visual: editor transparente, pílulas, divisores finos e identidade Solar; painel Computador junto dos ficheiros. Numa segunda fixture, um pedido ao motor fictício verificou a oferta e abertura de HTML real junto da conversa. O instalador Electron foi gerado e instalado neste Windows, com dados próprios. Voz usa Whisper.cpp local e vozes instaladas; a transcrição de áudio público passou, mas microfone físico e chamada completa com IA não foram exercitados. Ver `ORBIT-FUNCIONALIDADES.md` para a auditoria funcional e limites.
+Revisão visual: editor transparente, pílulas, divisores finos e identidade Solar; painel Computador junto dos ficheiros. Numa segunda fixture, um pedido ao motor fictício verificou a oferta e abertura de HTML real junto da conversa. O instalador Electron foi gerado e instalado neste Windows, com dados próprios. Voz usa Whisper.cpp local e vozes instaladas; a transcrição de áudio público passou, mas microfone físico e chamada completa com IA não foram exercitados. Ver `SOLAR-FUNCIONALIDADES.md` para a auditoria funcional e limites.

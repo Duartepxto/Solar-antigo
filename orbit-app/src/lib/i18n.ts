@@ -91,9 +91,10 @@ export function tFromServer(key: string | undefined, fallback: string | undefine
 export function t(key: LocaleKey, params?: Record<string, string | number>): string {
   let template = activePack[key] ?? en[key];
   // Solar keeps the original translation keys, not the original product name.
-  // The iOS download remains a third-party compatibility link, not a Solar release.
-  if (import.meta.env.VITE_JARVIS_SOLAR === 'true' && key !== 'sidebar.menu.getIos') {
-    template = template.replace(/\bOrbit\b/g, 'Solar');
+  if (import.meta.env.VITE_JARVIS_SOLAR === 'true') {
+    template = template.replace(/\bOrbit(?:Mobile| Bot)?\b/g, 'Solar').replace(/Jarvis 3\.0/g, 'Solar');
+    // This opens a compatible third-party companion, not a Solar iOS release.
+    if (key === 'sidebar.menu.getIos') template = activePack['sidebar.menu.iosCompanion'] ?? en['sidebar.menu.iosCompanion'];
     if (key === 'phone.code.detail') template = activePack['jarvis.phone.browserDetail'] ?? en['jarvis.phone.browserDetail'];
     if (key === 'phone.code.manualIntro') template = activePack['jarvis.phone.browserManual'] ?? en['jarvis.phone.browserManual'];
   }

@@ -138,7 +138,7 @@ export function QuickBar() {
 
   const running = phase === "sending" || phase === "streaming";
   const shown = stripPointTags(reply);
-  const name = target?.name ?? "Orbit";
+  const name = target?.name ?? (import.meta.env.VITE_JARVIS_SOLAR === "true" ? "Jarvis" : "Orbit");
   const color = target?.color ?? "#009957";
 
   const bar = (

@@ -1,12 +1,12 @@
-# Orbit — product and design rules
+# Solar — product and design rules
 
-Orbit is its owner's own app: a team of AI bots you see on a canvas, talk to,
+Solar is its owner's own app: a team of AI bots you see on a canvas, talk to,
 and let work. It began as a fork of [OpenMausBot](https://github.com/milind-soni/OpenMausBot)
 and replaced that app's interface with its own. Read this before you build a
 screen or port one from OpenMausBot: code that works but breaks these rules is
 not done.
 
-The design source is the Orbit prototype. Its handoff notes are in
+The design source is the Solar prototype. Its handoff notes are in
 [`docs/design/orbit/README.md`](docs/design/orbit/README.md) and the build spec
 in [`docs/design/orbit/ORBIT-BUILD-SPEC.md`](docs/design/orbit/ORBIT-BUILD-SPEC.md).
 Match the prototype closely for layout, visual language, motion and
@@ -79,7 +79,7 @@ interaction.
 
 ## Look
 
-- Use Orbit's tokens, never OpenMausBot's: text `text-ink`, `text-ink/55`
+- Use Solar's tokens, never OpenMausBot's: text `text-ink`, `text-ink/55`
   (secondary), `text-ink/40` (tertiary); fills `bg-ink/[0.04]`–`[0.1]`;
   borders `border-ink/[0.1]`; surfaces `bg-panel`; danger `#ff8a96` (text) and
   `#ff5667` (fill); radii `rounded-[14px]` for cards. Not: `bg-accent`,
@@ -100,17 +100,17 @@ interaction.
 - Plain, short, specific copy. Say what happens, not what the feature is
   called.
 
-## What Orbit is not
+## What Solar is not
 
-- **No hosted services.** Orbit has no sign-in service, no hosted connected
+- **No hosted services.** Solar has no sign-in service, no hosted connected
   apps broker, no analytics, no release feed. Connected apps are MCP servers
   the person adds (command or URL); there is no Composio integration.
-- **Orbit keeps no app catalog.** Plugins → Explore reads the public MCP
+- **Solar keeps no app catalog.** Plugins → Explore reads the public MCP
   registries (GitHub's curated one for Popular, the official one for search
-  and browse); the Orbit server fetches, caches and proxies logos. No
+  and browse); the Solar server fetches, caches and proxies logos. No
   hand-kept presets (the owner's call, 2026-09-27). The phone only lists the
   computer's servers; adding one stays on the computer.
-- **Orbit has one built-in agent, "Orbit"** (docs/design/orbit-agent.md):
+- **Solar has one built-in agent, "Solar"** (docs/design/orbit-agent.md):
   above the teams, in the map's bottom-left corner (not at You, not wired to
   the teams), summoned from anywhere by Ctrl+Option+Space (quick bar) or
   +Shift (a talking corner character, no chat window) or the menu-bar icon.
@@ -118,7 +118,7 @@ interaction.
   canvas" (the owner's call, 2026-09-29). It guides on screen by default and
   acts only when told; changes arrive as proposal cards.
   - **Talk mode is an island in the notch** (macOS, ⌥T, the menu bar's
-    "Talk to Orbit", the quick bar's mic), and it is only for hearing and
+    "Talk to Solar", the quick bar's mic), and it is only for hearing and
     answering: no bot or team status, no hover peek, nothing that opens on
     its own while agents work (the owner's call, 2026-09-30). The island's
     window is made on the first summon and hidden when talk is back at
@@ -126,7 +126,7 @@ interaction.
     a virtual one (184 × the menu bar's height), and moves with Coucou's
     timings and springs (src/shell/island-*.ts): out of the notch while it
     listens and for heard words or a notice; once the question is sent it
-    goes back into the notch while Orbit works and comes out only to speak
+    goes back into the notch while Solar works and comes out only to speak
     the answer; about 2.5 s after that (a notice, 15 s) it shrinks into the
     notch and the window goes. A click on it ends listening, stops the
     turn or quiets it; while it is shown main watches the pointer so the
@@ -144,12 +144,12 @@ interaction.
   When porting upstream, skip changes under `.github/workflows/` (the
   owner's call, 2026-09-29).
 - **Updates build from source.** The app knows the commit it was built from;
-  "Orbit update" appears when `origin/main` moves, and "Build update" rebuilds
+  "Solar update" appears when `origin/main` moves, and "Build update" rebuilds
   the app on that computer (`pnpm package:mac:local` on a Mac).
 - **Engines are the person's own CLIs** (Claude Code, Codex, OpenCode, pi and
-  others), each with its own login. Codex runs from Orbit's own Codex home, so
+  others), each with its own login. Codex runs from Solar's own Codex home, so
   it doesn't inherit the person's personal Codex servers or skills.
-- **Orbit is the only front end.** There is no classic sidebar UI to fall back
+- **Solar is the only front end.** There is no classic sidebar UI to fall back
   to and no flag to switch: restyle a component directly.
 
 ## Porting from OpenMausBot
@@ -158,14 +158,14 @@ OpenMausBot keeps shipping; the Upstream bot brings its work in. Behaviour and
 fixes come across; its interface doesn't.
 
 - A new or changed OpenMausBot screen is **adapted** to these rules, not
-  copied: its dialog opens in the column, its colours become Orbit's, its
-  copy goes through `t()`, and a screen Orbit replaced gets the behaviour in
-  Orbit's equivalent (or is skipped, and the report says so).
-- OpenMausBot names become Orbit's (`scripts/upstream-port.ts` does the
+  copied: its dialog opens in the column, its colours become Solar's, its
+  copy goes through `t()`, and a screen Solar replaced gets the behaviour in
+  Solar's equivalent (or is skipped, and the report says so).
+- OpenMausBot names become Solar's (`scripts/upstream-port.ts` does the
   renames). Hosted defaults stay out.
-- Tests that drive a screen Orbit replaced are rewritten to drive Orbit's.
+- Tests that drive a screen Solar replaced are rewritten to drive Solar's.
 
-## The team that maintains Orbit
+## The team that maintains Solar
 
 - **Pilot**, the Chief, routes requests and never reads the code. **Upstream**
   ports OpenMausBot's work. **Builder** builds what the owner asks for.
@@ -174,7 +174,7 @@ fixes come across; its interface doesn't.
 
 ## Keeping this file
 
-When the owner states a lasting preference about how Orbit looks or behaves,
+When the owner states a lasting preference about how Solar looks or behaves,
 it goes in this file in the same change that applies it, so the next piece of
 work, and the next port, follows it without being told again.
 

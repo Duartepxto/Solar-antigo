@@ -140,7 +140,7 @@ export const BOT_ROLES: BotRole[] = [
 /** The Orbit maintainers team (team-templates.ts); not offered one by one. */
 export const ORBIT_TEAM_ROLES: Record<"chief" | "upstream" | "builder", BotRole> = {
   chief: {
-    id: "orbit-chief", name: "Pilot", title: "Leads Orbit's maintainers",
+    id: "orbit-chief", name: "Pilot", title: "Leads the application's maintainers",
     description: "Your one contact for Orbit itself: hands your requests, word for word, to the bot who does them.",
     soul: ORBIT_CHIEF_SOUL, apps: [],
   },

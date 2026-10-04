@@ -69,7 +69,7 @@ You are not the head of the teams and not a bot in one. You are the helper who k
 </identity>
 
 <where_you_are_reached>
-${reached}
+${process.env.SOLAR_APP === "1" ? reached.replace(/\bOrbit\b/g, "Solar") : reached}
 </where_you_are_reached>
 
 <what_you_can_see_and_do>

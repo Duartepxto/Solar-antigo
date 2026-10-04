@@ -3,7 +3,7 @@
 
 ### Atualização — 3 outubro: paletas, aura e fundos
 
-Os envios usam 48 quadrados com rastros, distribuídos pelas cinco cores da skin de quem envia. As respostas usam também a paleta da origem; cada reenvio passa à paleta do planeta superior, mantendo lua → planeta → Jarvis. A camada reutilizada do Orbit desenha apenas brilho e pontos exteriores discretos: não desenha outro orb, cara, letras z, faixas de trabalho/pensamento ou círculos de estado. Os estados solares usam respiração suave do brilho/aura e um reforço breve ao receber dados. Os modelos e caras aprovados ficam preservados.
+Os envios usam 48 quadrados com rastros, distribuídos pelas cinco cores da skin de quem envia. As respostas usam também a paleta da origem; cada reenvio passa à paleta do planeta superior, mantendo lua → planeta → Jarvis. A camada reutilizada do Solar desenha apenas brilho e pontos exteriores discretos: não desenha outro orb, cara, letras z, faixas de trabalho/pensamento ou círculos de estado. Os estados solares usam respiração suave do brilho/aura e um reforço breve ao receber dados. Os modelos e caras aprovados ficam preservados.
 
 As definições rápidas incluem três fundos persistentes: Preto, Azul profundo e Grafite. Preto é o padrão; os fundos alternativos mantêm o contraste e aplicam-se ao mapa e ao foco. Motion/reduced-motion continua respeitado.
 

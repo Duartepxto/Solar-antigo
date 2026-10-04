@@ -1,6 +1,6 @@
-# Jarvis 3.0 — aplicação local
+# Solar — aplicação local
 
-A entrada ativa inicia o frontend e o backend do Orbit aprovado em `../orbit-app`. A pasta mantém o nome de trabalho anterior `chatgpt-3.0`.
+A entrada ativa inicia o frontend e o backend do Solar aprovado em `../orbit-app`. A pasta mantém o nome de trabalho anterior `chatgpt-3.0`.
 
 ## Arranque
 
@@ -11,7 +11,7 @@ cd C:\Users\duart\Documents\ChatGPT\jarvis\chatgpt-3.0
 node run.mjs
 ```
 
-Frontend: http://127.0.0.1:5200. Backend: http://127.0.0.1:8809; webhook: 8810. Dados persistentes: `.data/`. Para outras portas, definir `CHATGPT3_UI_PORT` e `CHATGPT3_API_PORT`. A aplicação usa os motores e autenticações que o Orbit detetar; não configura credenciais novas.
+Frontend: http://127.0.0.1:5200. Backend: http://127.0.0.1:8809; webhook: 8810. Dados persistentes: `.data/`. Para outras portas, definir `CHATGPT3_UI_PORT` e `CHATGPT3_API_PORT`. A aplicação usa os motores e autenticações que o Solar detetar; não configura credenciais novas.
 
 ## Página principal solar
 
@@ -23,13 +23,13 @@ O rato dirige ligeiramente o olhar e afunda os fragmentos próximos, com regress
 
 Arrastar um planeta transporta as suas luas. Cada corpo também pode ser movido sozinho. As setas movem o corpo focado; Shift aumenta a distância. As posições ficam guardadas no browser. Ctrl/⌘ Z desfaz alterações da sessão; o botão de reposição conserva uma etapa para desfazer. Há zoom, ajuste à janela e linhas de hierarquia opcionais. Abrir um astro entra na conversa existente; o campo inferior envia mensagens ao agente escolhido.
 
-A coleção atual usa 3900 fragmentos no Sol, 2700 por planeta e 900 por lua. Cada modelo tem uma superfície própria, cavidades e lentes de olhos ajustadas ao seu material. Os fragmentos próximos do rato afundam suavemente; partículas luminosas circundam todos os corpos e também reagem ao rato. Durante o arrasto, fragmentos com diferentes profundidades têm um pequeno atraso, que desaparece ao largar. Os círculos do sistema foram removidos; traços discretos como os do Orbit mostram a hierarquia e terminam junto dos corpos. O controlo inferior permite ocultá-los.
+A coleção atual usa 3900 fragmentos no Sol, 2700 por planeta e 900 por lua. Cada modelo tem uma superfície própria, cavidades e lentes de olhos ajustadas ao seu material. Os fragmentos próximos do rato afundam suavemente; partículas luminosas circundam todos os corpos e também reagem ao rato. Durante o arrasto, fragmentos com diferentes profundidades têm um pequeno atraso, que desaparece ao largar. Os círculos do sistema foram removidos; traços discretos como os do Solar mostram a hierarquia e terminam junto dos corpos. O controlo inferior permite ocultá-los.
 
 O botão de definições abre controlos rápidos de movimento, rato, partículas circundantes, ligações e brilho. O menu de criação tem ícones e descrições para agente, equipa e conversa. O microfone junto ao envio transcreve para o rascunho, com botão de parar e revisão antes de enviar. Usa o ditado nativo no macOS ou o reconhecimento fornecido pelo browser, quando disponível. O browser pode usar o seu serviço de voz; não foi acrescentado um serviço pago nem uma chave de API. A captura física de voz ainda precisa de um teste pelo utilizador. O [plano de design](PLANO-DE-DESIGN.md) regista o trabalho atual e os próximos passos.
 
 A rotação pausa quando a página está oculta e com movimento reduzido. Estados de trabalho, espera e bloqueio vêm do backend. Pulsos de envio/receção e fim de atividade são sinais inferidos, não garantias de sucesso de uma tarefa. A indisponibilidade WebGL mostra uma mensagem e miniaturas estáticas de recurso.
 
-O redesenho abrange a página principal. Conversas e páginas secundárias ainda usam componentes da base e serão trabalhadas posteriormente. O lançamento normal do Orbit continua disponível sem `VITE_JARVIS_SOLAR`.
+O redesenho abrange a página principal. Conversas e páginas secundárias ainda usam componentes da base e serão trabalhadas posteriormente. O lançamento normal do Solar continua disponível sem `VITE_JARVIS_SOLAR`.
 
 ## Pré-visualização e verificação isoladas
 
@@ -44,7 +44,7 @@ node run.mjs --smoke
 
 O estudo 2D continua em `/robot-studio/`. Os sprites solares rejeitados estão preservados em `experiments/solar-sprites/` e não são carregados pelo mapa. Os ficheiros do estúdio e `PLANO-3D.md` registam propostas anteriores; a direção atual é o mapa solar de fragmentos luminosos.
 
-O refinamento mais recente reduz a aura para 49 partículas no Sol, 22–29 por planeta e 16–20 por lua, distribuídas circularmente. As caras têm uma zona de contraste no próprio material, olhos maiores e boca luminosa. Saturno e Urano mantêm anéis de partículas com rotação e reação ao rato. As linhas reproduzem os parâmetros e avisos de espera do Orbit. A superfície continua com a densidade de fragmentos anterior.
+O refinamento mais recente reduz a aura para 49 partículas no Sol, 22–29 por planeta e 16–20 por lua, distribuídas circularmente. As caras têm uma zona de contraste no próprio material, olhos maiores e boca luminosa. Saturno e Urano mantêm anéis de partículas com rotação e reação ao rato. As linhas reproduzem os parâmetros e avisos de espera do Solar. A superfície continua com a densidade de fragmentos anterior.
 
 ## Caras sem máscara e flutuação suave — 3 de outubro de 2026
 
@@ -66,9 +66,9 @@ Verificação: lint do renderer sem avisos; build de produção Vite passou. Ins
 
 ## Vistas solares e satélites interativos — 3 de outubro de 2026
 
-O zoom segue o ponto sob o rato, com limites iguais aos do Orbit (0,12–3,2). Os corpos têm escala proporcional, sem mínimos visuais independentes; os alvos DOM conservam o mínimo acessível. O culling das malhas com deslocamento por shader foi desativado para evitar desaparecimento integral na margem. O mapa permanece montado e pausado ao abrir um agente, preservando a câmara no regresso; alterações de dimensão continuam a reajustar o enquadramento.
+O zoom segue o ponto sob o rato, com limites iguais aos do Solar (0,12–3,2). Os corpos têm escala proporcional, sem mínimos visuais independentes; os alvos DOM conservam o mínimo acessível. O culling das malhas com deslocamento por shader foi desativado para evitar desaparecimento integral na margem. O mapa permanece montado e pausado ao abrir um agente, preservando a câmara no regresso; alterações de dimensão continuam a reajustar o enquadramento.
 
-A identidade é centralizada em SolarIdentityProvider e OrbitFace: cabeçalhos, mensagens, listas, calendário, rotinas, equipas, utilização e restantes chamadas partilham o mesmo planeta ou lua atribuído no mapa. Instâncias fora do shell usam a ordem guardada. Agentes ausentes recebem uma lua neutra. O guia usa o Sol. A antiga cena Orbit fica invisível e suspensa nas vistas Jarvis.
+A identidade é centralizada em SolarIdentityProvider e OrbitFace: cabeçalhos, mensagens, listas, calendário, rotinas, equipas, utilização e restantes chamadas partilham o mesmo planeta ou lua atribuído no mapa. Instâncias fora do shell usam a ordem guardada. Agentes ausentes recebem uma lua neutra. O guia usa o Sol. A antiga cena Solar fica invisível e suspensa nas vistas Jarvis.
 
 O utilizador rejeitou a primeira composição convencional em lista. A composição desktop vigente é uma constelação de satélites de ferramentas: ícones reais sobre núcleos de vidro com pequenas asas, organizados em ramos assimétricos. As linhas são uma composição de navegação, não dependências de execução. O planeta continua no centro, com a face e aura aprovadas. Cada satélite abre o painel real, reage ao hover/seleção e pode ser arrastado. As posições normalizadas ficam em jarvis.solar.system-layout.v1.<agente>, exclusivamente locais, com reposição. Arrastar não abre o painel; cancelar restaura a posição anterior. O movimento decorativo respeita a preferência e reduced motion. Clicar no espaço vazio regressa ao mapa.
 

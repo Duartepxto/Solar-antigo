@@ -1,6 +1,6 @@
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, globalShortcut, Tray, WebContentsView, clipboard, desktopCapturer, dialog, ipcMain, Menu, nativeImage, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess } from "electron";
 const solarApplication = process.env.SOLAR_APP === "1" || ["Solar", "solar"].includes(app.getName());
-if (solarApplication) { app.setName("Solar"); process.env.SOLAR_APP = "1"; }
+if (solarApplication) { app.setName("Solar"); process.env.SOLAR_APP = "1"; if (process.platform === "win32") app.setAppUserModelId("com.solar.workspace"); }
 import { readBuildInfo } from "./source-updater.mjs";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -118,7 +118,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // resolve to ::1 and paint a black window
 const DEV_URL = process.env.ELECTRON_START_URL ?? "http://127.0.0.1:5199";
 let SERVER_PORT = 8799;
-const APP_ICON = path.join(__dirname, "resources/app-icon.png");
+const APP_ICON = path.join(__dirname, solarApplication ? "resources/solar-icon.png" : "resources/app-icon.png");
 let desktopViewerWindow = null;
 let desktopViewerOwner = null;
 let desktopViewerContextId = null;
@@ -231,7 +231,7 @@ if (process.platform === "linux") {
 // harness server on a fallback port and splits data dirs in two. The loser
 // exits before any child or window exists; the winner surfaces itself.
 if (!app.requestSingleInstanceLock()) {
-  console.log("[desktop] Orbit is already running — focusing that window");
+  console.log("[desktop] Solar is already running — focusing that window");
   process.exit(0);
 }
 
@@ -349,7 +349,7 @@ const serverSupervisor = createServerSupervisor({
     slog("server recovery paused after repeated failures; quit and reopen to retry");
     dialog.showErrorBox(
       "The bot server stopped",
-      "Automatic recovery could not restart the background server. Quit and reopen Orbit to try again. Interrupted chat turns were not resent.\n\n" +
+      "Automatic recovery could not restart the background server. Quit and reopen Solar to try again. Interrupted chat turns were not resent.\n\n" +
         `Server log: ${path.join(LOG_DIR, "server.log")}`,
     );
   },
@@ -1148,7 +1148,7 @@ async function runCompanyBackup(kind, input, scheduled = null) {
     const status = await localBackupStatus(proc);
     if (status.pendingRestore) {
       publishCompanyBackupState({ busy: false, pendingRestore: true });
-      throw new Error("Restart Orbit to finish the pending restore before starting another backup operation.");
+      throw new Error("Restart Solar to finish the pending restore before starting another backup operation.");
     }
     if (status.busy) throw companyBackupDeferred();
     const transfers = createCompanyBackups({
@@ -1372,8 +1372,8 @@ function buildErrorPage({ allPortsOccupied }) {
   const serverLogPath = path.join(LOG_DIR, "server.log");
   const serverLogHref = pathToFileURL(serverLogPath).href;
   const reason = allPortsOccupied
-    ? "Every Orbit port answered health checks from another process — likely a second copy of the app, or another program on ports 8799–28799. Quit that program, then quit and reopen Orbit."
-    : "The background server didn't come up in time — this is usually slow startup, not a port conflict. Quit and reopen Orbit.";
+    ? "Every Solar port answered health checks from another process — likely a second copy of the app, or another program on ports 8799–28799. Quit that program, then quit and reopen Solar."
+    : "The background server didn't come up in time — this is usually slow startup, not a port conflict. Quit and reopen Solar.";
   return (
     "data:text/html;charset=utf-8," +
     encodeURIComponent(
@@ -1436,7 +1436,7 @@ function desktopViewerErrorPage(message, retryUrl) {
 }
 
 function openDesktopViewer(owner, rawUrl, rawTitle, contextId) {
-  if (!owner || owner.isDestroyed()) throw new Error("The Orbit window is unavailable");
+  if (!owner || owner.isDestroyed()) throw new Error("The Solar window is unavailable");
   const url = desktopViewerUrl(rawUrl);
   const titleCandidate = Object.prototype.toString.call(rawTitle) === "[object String]" ? rawTitle.trim() : "";
   const title = titleCandidate ? titleCandidate.slice(0, 80) : "Live desktop";
@@ -1554,7 +1554,7 @@ function openDesktopViewer(owner, rawUrl, rawTitle, contextId) {
 }
 
 function ensureDesktopWorkspace(owner) {
-  if (!owner || owner.isDestroyed()) throw new Error("The Orbit window is unavailable");
+  if (!owner || owner.isDestroyed()) throw new Error("The Solar window is unavailable");
   if (desktopWorkspaceManager) {
     if (desktopWorkspaceOwner !== owner) {
       throw new Error("The desktop workspace belongs to another app window");
@@ -2993,8 +2993,8 @@ app.whenReady().then(async () => {
       });
     } catch (error) {
       dialog.showErrorBox(
-        "Orbit could not start safely",
-        error?.message ?? "Another process is using this Orbit data folder.",
+        "Solar could not start safely",
+        error?.message ?? "Another process is using this Solar data folder.",
       );
       app.quit();
       return;

@@ -9,7 +9,7 @@
 
 Referências analisadas: `orbit-app/docs/design/orbit/prototype/orbit.dc.html` (mood, drawFace, drawChar, streams e focus goal) e `orbit-app/src/orbit/scene.ts` (moodOf, reporting lines, permission links e delegations). A aparência continua a usar os fragmentos planetários aprovados.
 
-| Orbit | Jarvis solar | Origem do estado |
+| Solar | Jarvis solar | Origem do estado |
 | --- | --- | --- |
 | idle | Olhos calmos, piscar, gaze, deriva mínima, rotação e aura | Agente sem tarefa |
 | focused | Olhos ligeiramente estreitos, rotação ativa e satélite com ferramenta | Turno com ferramenta real |
@@ -31,7 +31,7 @@ A demonstração isolada (`VITE_JARVIS_PREVIEW=true`) começa automaticamente e 
 
 O close-up usa o mesmo SolarMap e a mesma instância WebGL. A câmara aproxima o agente mantendo as posições relativas e regressa à câmara guardada. Os vizinhos continuam no fundo, escurecidos; ferramentas e chat ficam numa camada superior. A navegação em quarto de círculo fica preservada como estudo para telemóvel; os satélites desktop permanecem provisórios a pedido do utilizador.
 
-As ligações recuperam a receita visual das ligações do Orbit: gradiente de origem/destino, 1.6px, segmentos 6/6, opacidade .6 (.4 nas luas) e avanço equivalente a 18px/s. Estes parâmetros substituem as linhas hierárquicas anteriores de opacidade .14/.07, que eram demasiado discretas para o pedido atual. O significado continua a ser o da hierarquia solar.
+As ligações recuperam a receita visual das ligações do Solar: gradiente de origem/destino, 1.6px, segmentos 6/6, opacidade .6 (.4 nas luas) e avanço equivalente a 18px/s. Estes parâmetros substituem as linhas hierárquicas anteriores de opacidade .14/.07, que eram demasiado discretas para o pedido atual. O significado continua a ser o da hierarquia solar.
 
 Tamanhos de base: Jarvis 178, planetas 144, luas 116 e lua gelada 108. São multiplicados pela escala da câmara. O brilho recebeu um pequeno reforço de luz ambiente e halo, sem substituir as texturas.
 
@@ -43,6 +43,6 @@ Validação: 32 testes de câmara, disposição, estados, interatividade e mater
 
 ### Atualização — 3 outubro: paletas, aura e fundos
 
-Os envios usam 48 quadrados com rastros, distribuídos pelas cinco cores da skin de quem envia. As respostas usam também a paleta da origem; cada reenvio passa à paleta do planeta superior, mantendo lua → planeta → Jarvis. A camada reutilizada do Orbit desenha apenas brilho e pontos exteriores discretos: não desenha outro orb, cara, letras z, faixas de trabalho/pensamento ou círculos de estado. Os estados solares usam respiração suave do brilho/aura e um reforço breve ao receber dados. Os modelos e caras aprovados ficam preservados.
+Os envios usam 48 quadrados com rastros, distribuídos pelas cinco cores da skin de quem envia. As respostas usam também a paleta da origem; cada reenvio passa à paleta do planeta superior, mantendo lua → planeta → Jarvis. A camada reutilizada do Solar desenha apenas brilho e pontos exteriores discretos: não desenha outro orb, cara, letras z, faixas de trabalho/pensamento ou círculos de estado. Os estados solares usam respiração suave do brilho/aura e um reforço breve ao receber dados. Os modelos e caras aprovados ficam preservados.
 
 As definições rápidas incluem três fundos persistentes: Preto, Azul profundo e Grafite. Preto é o padrão; os fundos alternativos mantêm o contraste e aplicam-se ao mapa e ao foco. Motion/reduced-motion continua respeitado.

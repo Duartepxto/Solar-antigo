@@ -209,17 +209,17 @@ export function createHotkeys({ globalShortcut, handlers, log = () => {}, ids = 
  * On Windows the notification-area icon: the app's own one (`hostTray`,
  * electron/system-tray.mjs) when it has it, else one of the shell's, in
  * colour; a left click there opens the quick bar. */
-export function createMenuBar({ Tray, Menu, nativeImage, iconPath, actions, isPaused, platform = "darwin", hostTray = null }) {
+export function createMenuBar({ Tray, Menu, nativeImage, iconPath, actions, isPaused, platform = "darwin", hostTray = null, appName = process.env.SOLAR_APP === "1" ? "Solar" : "Orbit" }) {
   const voice = voiceSupported(platform);
   const build = () => Menu.buildFromTemplate([
-    { label: "Ask Orbit…", click: () => actions.quick() },
-    ...(voice ? [{ label: "Talk to Orbit", click: () => actions.talk() }] : []),
+    { label: `Ask ${appName}…`, click: () => actions.quick() },
+    ...(voice ? [{ label: `Talk to ${appName}`, click: () => actions.talk() }] : []),
     { type: "separator" },
-    { label: "Open Orbit", click: () => actions.open() },
+    { label: `Open ${appName}`, click: () => actions.open() },
     { label: "Pause screen access", type: "checkbox", checked: isPaused(), click: () => actions.togglePaused() },
     { label: "Settings…", click: () => actions.settings() },
     { type: "separator" },
-    { label: "Quit Orbit", click: () => actions.quit() },
+    { label: `Quit ${appName}`, click: () => actions.quit() },
   ]);
   if (platform !== "darwin" && hostTray) {
     const loan = hostTray.lend({ menu: build(), click: () => actions.quick() });
@@ -232,7 +232,7 @@ export function createMenuBar({ Tray, Menu, nativeImage, iconPath, actions, isPa
   const icon = nativeImage.createFromPath(iconPath);
   if (platform === "darwin") icon.setTemplateImage?.(true);
   const tray = new Tray(platform === "darwin" ? icon : icon.resize?.({ width: 20, height: 20 }) ?? icon);
-  tray.setToolTip("Orbit");
+  tray.setToolTip(appName);
   if (platform !== "darwin") tray.on?.("click", () => actions.quick());
   tray.setContextMenu(build());
   return {

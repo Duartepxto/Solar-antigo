@@ -31,6 +31,6 @@ async function chooseRoot(): Promise<React.ReactNode> {
 }
 
 void Promise.all([bootstrapBrand(), chooseRoot()]).then(([branding, root]) => {
-  if (import.meta.env.VITE_JARVIS_SOLAR === 'true') applyBrand({ ...branding, brand: { ...branding.brand, name: 'Jarvis 3.0' } });
+  if (import.meta.env.VITE_JARVIS_SOLAR === 'true') applyBrand({ ...branding, brand: { ...branding.brand, name: 'Solar' } });
   createRoot(document.getElementById("root")!).render(<StrictMode>{root}</StrictMode>);
 });

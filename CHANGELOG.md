@@ -2,6 +2,13 @@
 
 Este registo resume os marcos confirmados no histórico Git. As entradas de 3 de outubro são commits de desenvolvimento, não releases publicadas. Os links permitem consultar o código e o diff de cada alteração.
 
+## 4 de outubro de 2026 — identidade Solar no Windows (0.1.87)
+
+- Nome Solar no cabeçalho, título da janela e boas-vindas.
+- Nome e ícone Solar no ecrã de carregamento e na área de notificação.
+- Identidade Solar nos menus nativos e metadados do pacote Windows.
+- Documentação principal revista e notas de funcionalidades renomeadas para Solar.
+
 ## 4 de outubro de 2026 — apresentação do projeto
 
 - README reorganizado com apresentação visual, capturas reais, funcionalidades e instruções de arranque.

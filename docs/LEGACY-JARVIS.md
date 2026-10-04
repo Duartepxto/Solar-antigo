@@ -1,6 +1,6 @@
 # Jarvis
 
-Protótipo local do assistente pessoal, construído sobre a interface Orbit recriada a partir do HTML de referência fornecido pelo utilizador. A nova base está em `jarvis/`; a reprodução anterior fica em `reference/`, e a primeira versão do Jarvis foi guardada em `versions/jarvis-orbit-v1.zip`.
+Protótipo local do assistente pessoal, construído sobre a interface Solar recriada a partir do HTML de referência fornecido pelo utilizador. A nova base está em `jarvis/`; a reprodução anterior fica em `reference/`, e a primeira versão do Jarvis foi guardada em `versions/jarvis-orbit-v1.zip`.
 
 ## Abrir
 

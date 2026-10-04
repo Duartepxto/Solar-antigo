@@ -74,9 +74,10 @@ function workspaceSummary(state) {
 
 /** Native identity must not depend on a hosted renderer's version/title. */
 function workspaceWindowTitle(state, companion) {
-  if (companion) return `Orbit — Connected to: ${companion.serverName} (${new URL(companion.endpoint).host})`;
+  const appName = process.env.SOLAR_APP === "1" ? "Solar" : "Orbit";
+  if (companion) return `${appName} — Connected to: ${companion.serverName} (${new URL(companion.endpoint).host})`;
   const active = activeEnvironment(state);
-  return active ? `Orbit — Hosted: ${active.name} (${new URL(active.origin).host})` : "Orbit";
+  return active ? `${appName} — Hosted: ${active.name} (${new URL(active.origin).host})` : appName;
 }
 
 /** Renderer navigation stays in the selected workspace. Switching is a main

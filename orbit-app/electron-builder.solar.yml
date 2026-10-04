@@ -5,6 +5,12 @@ artifactName: Solar-${version}-${arch}.${ext}
 extraMetadata:
   name: solar
   productName: Solar
+  description: Solar — espaço de trabalho local de agentes
+  desktopName: com.solar.workspace
+  homepage: https://github.com/Duartepxto/Solar
+  repository:
+    type: git
+    url: https://github.com/Duartepxto/Solar.git
 publish: null
 directories:
   output: release-solar
