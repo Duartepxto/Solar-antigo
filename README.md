@@ -1,27 +1,93 @@
+<div align="center">
+
 # Solar
 
-Aplicação local de agentes, com Jarvis como Sol, responsáveis como planetas e agentes de equipa como luas. Desenvolvida sobre a base aberta [Orbit](https://github.com/DragonQLF/orbit).
+**O teu universo de agentes. Um espaço para pensar, criar e trabalhar em equipa.**
 
-## Executar
+Jarvis é o Sol. Os responsáveis são planetas. Os agentes de cada equipa são luas.
 
-Requisitos: Node.js 24 ou superior e pnpm 10.33.0.
+[Funcionalidades](#um-workspace-para-a-tua-equipa) · [Começar](#começar) · [Histórico](CHANGELOG.md) · [Notas técnicas](chatgpt-3.0/ORBIT-FUNCIONALIDADES.md)
+
+</div>
+
+![Mapa Solar com Jarvis e um agente no workspace persistente](docs/verification-evidence/solar-installed-workspace.png)
+
+O Solar transforma uma equipa de IA num sistema solar interativo. Vê quem faz parte da equipa, aproxima-te de um agente e abre a conversa. Organiza o mapa à tua maneira, acompanha os estados dos agentes e mantém os resultados junto do trabalho.
+
+## Um workspace para a tua equipa
+
+| Funcionalidade | O que podes fazer |
+| --- | --- |
+| **Mapa vivo** | Organizar planetas e luas, navegar com zoom e reconhecer cada agente pela sua identidade visual e estado. |
+| **Conversas e resultados** | Falar com os agentes, usar threads e anexos e abrir HTML, imagens ou PDFs ao lado da conversa. |
+| **Desenvolvimento** | Explorar ficheiros do projeto, editar código, guardar alterações e ver previews estáticos. |
+| **Voz local no Windows** | Ditar um rascunho ou conversar por voz, com Whisper.cpp para transcrição e vozes instaladas no sistema para respostas. |
+| **Configuração da equipa** | Escolher motores e modelos, definir papéis e instruções, gerir memória, skills, ferramentas e aprovações. |
+| **Outros dispositivos** | Emparelhar um telefone para conversar pelo browser; os recursos remotos dependem da sua configuração e de uma ligação acessível. |
+
+As respostas reais exigem um motor de IA configurado. Contas externas, ferramentas, microfone e recursos remotos precisam das respetivas ligações e permissões. O [estado das funcionalidades](chatgpt-3.0/ORBIT-FUNCIONALIDADES.md) documenta as dependências e o que foi verificado.
+
+## Da conversa ao resultado
+
+O trabalho do agente pode aparecer no próprio workspace, ao lado da conversa.
+
+![Resultado HTML aberto ao lado do chat numa demonstração isolada](docs/verification-evidence/solar-agent-result.png)
+
+## Código e conversa, lado a lado
+
+O espaço Desenvolvimento reúne os ficheiros e o editor sem perder o contexto do agente.
+
+![Editor e ficheiros do projeto ao lado da conversa com o agente](docs/verification-evidence/solar-live-identity.png)
+
+<details>
+<summary><strong>Ver a introdução e a ligação ao telefone</strong></summary>
+
+### Primeira abertura
+
+![Introdução do Solar e configuração de voz](docs/verification-evidence/solar-welcome-voice.png)
+
+### Conversa no telefone
+
+![Conversa no browser móvel após emparelhamento numa demonstração isolada](docs/verification-evidence/solar-phone-browser-chat.png)
+
+</details>
+
+As capturas são da aplicação real, registadas em 3 de outubro de 2026. O mapa principal mostra um workspace persistente; as imagens de desenvolvimento, resultados e telefone usam dados de demonstração e um motor simulado. A quantidade de planetas e agentes depende da equipa criada.
+
+## Começar
+
+### Neste computador
+
+Requisitos: **Node.js 24 ou superior** e **pnpm 10.33.0**. O repositório é privado e requer autenticação GitHub.
 
 ```powershell
-cd orbit-app
-pnpm install
+git clone https://github.com/Duartepxto/Solar.git
+cd Solar/orbit-app
+pnpm install --frozen-lockfile
 cd ..
+npm run dev
+```
+
+Abrir **http://127.0.0.1:5200**. Este modo usa um workspace persistente em `chatgpt-3.0/.data/`. Na primeira utilização, configura o motor e cria a tua equipa.
+
+Para experimentar o mapa com uma equipa de demonstração:
+
+```powershell
 npm run preview
 ```
 
-Abrir http://127.0.0.1:5200. `preview` cria uma fixture temporária: Jarvis, oito planetas, cinco luas e motor simulado. As animações e estados da demonstração não representam trabalho real.
+O modo `preview` usa dados temporários e um motor simulado. Termina o modo anterior antes de iniciar outro na mesma porta.
 
-Para o workspace persistente, usar `npm run dev`. Os dados ficam em `chatgpt-3.0/.data/`, excluídos do Git. Motores e ferramentas precisam da sua configuração; publicar o código não configura credenciais nem liga serviços.
+### Aplicação Windows
 
-## Aplicação Windows
+Ainda não existe uma release com instalador disponível neste repositório. O instalador referido nas notas de desenvolvimento foi gerado no computador de origem e não está incluído no Git.
 
-O instalador local está em `orbit-app/release-solar/Solar-0.1.86-setup.exe`. A aplicação instala por utilizador em `%LOCALAPPDATA%/Programs/solar`, com dados em `%APPDATA%/Solar/workspace`. O Solar não recebe atualizações do repositório original Orbit.
+A instalação Windows usa `%LOCALAPPDATA%/Programs/solar` e guarda o workspace em `%APPDATA%/Solar/workspace`. O Solar não recebe atualizações do repositório original Orbit.
 
-Para preparar voz local e compilar o instalador:
+<details>
+<summary><strong>Compilação, verificação e organização do código</strong></summary>
+
+Para preparar a voz local e compilar o instalador, num ambiente Windows com os recursos de empacotamento preparados:
 
 ```powershell
 cd orbit-app
@@ -29,25 +95,9 @@ node scripts/prepare-solar-speech.mjs
 node scripts/build-solar.mjs
 ```
 
-O reconhecimento usa Whisper.cpp e modelo base multilingue, descarregados de fontes oficiais com checksum. As respostas podem usar as vozes instaladas no Windows. O motor de IA e os serviços externos continuam a precisar de configuração.
+O reconhecimento usa Whisper.cpp e um modelo base multilingue, obtidos de fontes oficiais com checksum. Os recursos nativos de navegador, computador, túnel e Android também têm de estar preparados para o empacotamento; estes comandos não os geram todos. O instalador é escrito em `orbit-app/release-solar/`.
 
-O espaço de desenvolvimento oferece ficheiros, edição e previews estáticos ao lado da conversa. A oferta de tela/resultado e os sistemas preservados estão documentados em [ORBIT-FUNCIONALIDADES.md](chatgpt-3.0/ORBIT-FUNCIONALIDADES.md).
-
-## Organização do código
-
-- `orbit-app/`: frontend React, backend e componentes funcionais da base Orbit, com o tema Solar.
-- `chatgpt-3.0/`: launcher, dados de demonstração, documentação de design e imagens das iterações.
-- `docs/`: notas de desenvolvimento e referências do projeto.
-- `jarvis/`, `reference/` e ficheiros HTML/JS da raiz: protótipos históricos, conservados como referência. `npm run legacy` abre o protótipo anterior.
-- `DESIGN.md`, `PRODUCT.md`: decisões e direção do produto. As revisões mais recentes prevalecem sobre os estudos anteriores.
-
-## Estado atual
-
-Mapa solar livremente organizado, aproximação ao agente, chat aberto, partículas com paletas de origem, fluxo lua → responsável → Jarvis e simulação pausável. A página de criação reaproveita os papéis e modelos de equipas do Orbit, com pesquisa e navegação por pílulas. As preferências solares estão nas definições completas de aparência; não existe painel de quick settings.
-
-O repositório guarda o código e a documentação. Dependências, compilações, bases de dados, configurações locais, credenciais e ficheiros de log ficam excluídos. Commits e envios são explícitos; ainda não há sincronização automática ou publicação de uma aplicação online.
-
-## Verificação
+Verificação do frontend e dos principais módulos do mapa:
 
 ```powershell
 cd orbit-app
@@ -56,12 +106,29 @@ pnpm exec vitest run --configLoader native src/orbit/SolarOrbitParticles.test.ts
 pnpm exec vite build --configLoader native
 ```
 
-Mutações de teste devem usar a fixture isolada, seguindo `orbit-app/docs/verification/README.md`.
+Verificações que alteram dados devem usar uma fixture isolada, seguindo [as instruções de verificação](orbit-app/docs/verification/README.md).
+
+| Pasta | Conteúdo |
+| --- | --- |
+| `orbit-app/` | Frontend React, backend e componentes da base Orbit, adaptados ao Solar. |
+| `chatgpt-3.0/` | Launcher, demonstração, documentação de design e estudos visuais. |
+| `docs/` | Notas de desenvolvimento e evidências visuais. |
+| `jarvis/`, `reference/` e protótipos na raiz | Iterações históricas; `npm run legacy` abre o protótipo anterior. |
+
+`DESIGN.md` e `PRODUCT.md` registam a direção do produto. As revisões mais recentes prevalecem sobre os estudos anteriores.
+
+Com a aplicação Windows em execução, `node chatgpt-3.0/run.mjs --installed` abre a página de desenvolvimento ligada ao mesmo workspace instalado.
+
+</details>
+
+## Histórico e dados
+
+Cada **commit** guarda um ponto do histórico do código: o que mudou, quando e por quem. Consulta [os commits](https://github.com/Duartepxto/Solar/commits/main/) ou o [histórico comentado](CHANGELOG.md).
+
+As **tags** identificam versões e as **releases** podem reunir notas e instaladores. Na revisão de 4 de outubro de 2026, o projeto já tinha sete commits de desenvolvimento, mas ainda não tinha tags, releases nem execuções de GitHub Actions. Os números `0.1.0` da raiz e `0.1.86` do pacote desktop são metadados dos pacotes; não correspondem, por si só, a releases publicadas.
+
+O GitHub guarda o código e a documentação. Dados dos agentes, contas, configurações locais, dependências e builds ficam excluídos. Para continuar noutro PC, atualiza o código antes de trabalhar e envia commits quando terminares; os dados locais precisam de backup ou transferência próprios. Ver [o fluxo entre computadores](docs/GITHUB-SOLAR.md).
 
 ## Origem e licença
 
-A base Orbit mantém os seus avisos e licença Apache-2.0 em `orbit-app/LICENSE`. Consultar também as licenças das dependências e dos assets. A pesquisa de OpenDots serve como referência de funcionalidades; não importámos o seu runtime, código ou serviços externos.
-
-## Versão de uso diário
-
-O Solar instalado abre o espaço de trabalho persistente em `%APPDATA%/Solar/workspace`, com os agentes reais e a introdução na primeira abertura. Não inclui showcase nem simulação automática. Para abrir a página de desenvolvimento ligada a esse mesmo espaço de trabalho, com o Solar em execução: `node chatgpt-3.0/run.mjs --installed`. Para verificar alterações, usar fixtures isoladas. Consultar [estado das funcionalidades](chatgpt-3.0/ORBIT-FUNCIONALIDADES.md) para dependências e validação.
+Desenvolvido sobre a base aberta [Orbit](https://github.com/DragonQLF/orbit), com identidade e interface Solar. A base conserva a licença [Apache-2.0](orbit-app/LICENSE) e os [avisos de atribuição](orbit-app/NOTICE). As dependências e os assets mantêm as respetivas licenças. A pesquisa de OpenDots serviu como referência de funcionalidades; o seu runtime, código e serviços externos não foram importados.
