@@ -3,6 +3,11 @@
 Última sessão: **6 de outubro de 2026**. O utilizador pediu para guardar todo o
 trabalho no GitHub e continuar mais tarde.
 
+Código e relatórios: [branch codex/solar-android-and-chat](https://github.com/Duartepxto/Solar/tree/codex/solar-android-and-chat).
+APK corrigido: [pré-lançamento Android de 6/10](https://github.com/Duartepxto/Solar/releases/tag/solar-android-preview-2026-10-06).
+O hash do ficheiro publicado corresponde ao APK verificado e instalado. A branch
+`main` foi preservada; retomar nesta branch para incluir todas as alterações.
+
 ## Estado entregue
 
 - Solar Windows instalado e aberto; `/api/health` respondeu 200.

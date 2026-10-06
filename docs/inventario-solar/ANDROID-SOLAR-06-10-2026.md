@@ -17,6 +17,7 @@ Os ícones Android antigos e a sua regeneração foram removidos.
 ## Artefacto e verificações
 
 - APK: `orbit-app/release-solar/android/Solar-Android-preview.apk`.
+- Cópia no GitHub: [Solar Android Preview](https://github.com/Duartepxto/Solar/releases/tag/solar-android-preview-2026-10-06). O digest do asset publicado corresponde ao SHA-256 abaixo.
 - Build: Gradle 9.5.0, JDK 17 local e SDK Android 37.0; sem alterar o Java global do Windows.
 - Protocolo nativo: **625 testes aprovados**, incluindo o formato QR Solar.
 - Aplicação: **955 testes aprovados**.
