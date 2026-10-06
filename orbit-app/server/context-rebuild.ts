@@ -1,3 +1,5 @@
+import { DEFAULT_CONTEXT_WINDOW, replayBudgetBytes } from "./context-budget.ts";
+
 /** A bounded replay of the active branch. Native resumes still receive
  * deltas; this selection is for sessions that need history rebuilt. */
 export interface ReplayEntry {
@@ -15,7 +17,6 @@ export interface CompactionRecord {
   by: "person" | "harness";
 }
 
-export const DEFAULT_REBUILD_BYTES = 24_000;
 export const MAX_SUMMARY_BYTES = 6_000;
 const OMITTED_TEXT = "\n[Text shortened for context; the original remains in this conversation.]";
 
@@ -42,8 +43,8 @@ export function selectReplay(
   history: readonly ReplayEntry[],
   options: { budgetBytes?: number; maxMessages?: number; excludedIds?: ReadonlySet<string>; compaction?: CompactionRecord & { id: string } } = {},
 ): { transcript: ReplayEntry[]; representedIds: string[]; dropped: number; compacted: number; shortened: string[] } {
-  const budget = options.budgetBytes ?? DEFAULT_REBUILD_BYTES;
-  const maxMessages = options.maxMessages ?? 40;
+  const budget = options.budgetBytes ?? replayBudgetBytes(DEFAULT_CONTEXT_WINDOW);
+  const maxMessages = options.maxMessages ?? Number.MAX_SAFE_INTEGER;
   if (!Number.isSafeInteger(budget) || budget < 1_024 || !Number.isSafeInteger(maxMessages) || maxMessages < 1) {
     throw new Error("invalid context replay budget");
   }

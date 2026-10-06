@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      The launcher background: the icon's dark ground, under Orbit's icon art
-      (drawable-nodpi/ic_launcher_foreground.png).
+      Solar's dark launcher background under the gold vector sun.
     -->
     <color name="launcher_background">#FF050506</color>
 </resources>

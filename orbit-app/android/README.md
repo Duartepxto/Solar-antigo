@@ -1,13 +1,23 @@
-# Orbit Android companion
+# Solar Android companion
 
 The Android counterpart to the iOS companion app: pair a phone with a computer
-running Orbit, then read and answer from the phone.
+running Solar, then read and answer from the phone. This reuses the native
+OpenMausBot/Orbit client already included in Solar; it does not add a third client.
 
-- `applicationId` — `com.orbit.companion`
+- `applicationId` — `com.solar.companion`
 - `minSdk` 26 (Android 8.0), `targetSdk` / `compileSdk` 37
 - Deep-link scheme — `orbit`
 - Two modules: `:core` (protocol, ported from `ios/Sources/CompanionCore`) and
   `:app` (Compose UI, Android platform)
+
+The `com.orbit.companion` Kotlin namespace and `orbit` pairing protocol remain
+compatible with the PC. The app label, Android package and launcher icon identify Solar.
+
+On this Windows workspace, `scripts/build-solar-android.ps1` uses the JDK/SDK
+under `.orbit-scratch/android-tools`, runs both test suites and builds the signed
+preview APK at `release-solar/android/Solar-Android-preview.apk`. It sets build
+environment variables only for its process. `scripts/install-solar-android.ps1`
+installs and opens it on one authorized USB device without erasing app data.
 
 ## Build and test
 
@@ -35,7 +45,7 @@ cd android
 ```
 
 Install `app/build/outputs/apk/preview/app-preview.apk`. Its launcher name is
-**Orbit Preview**, its application ID is `com.orbit.companion.preview`,
+**Solar Preview**, its application ID is `com.solar.companion.preview`,
 and its version ends in `-threads-preview`. Gradle signs it with the local debug
 key, so no release signing material is needed. It installs beside the released
 app with separate pairing, preferences and messages; it does not update that app.

@@ -340,7 +340,10 @@ function withResolvedSandbox(params: CodexApprovalParams, session: unknown): Cod
   if (!sandbox || typeof sandbox.type !== "string") {
     throw new Error("Codex did not return its resolved sandbox policy. Update Codex, then retry; the turn was not started because its permissions could not be verified.");
   }
-  if (sandbox.type !== requested.type) {
+  // Windows can resolve workspace-write to read-only when the native write
+  // sandbox is unavailable. Retain this tighter boundary on turn/start.
+  const stricterReadOnly = requested.type === "workspaceWrite" && sandbox.type === "readOnly";
+  if (sandbox.type !== requested.type && !stricterReadOnly) {
     throw new Error("Codex did not apply the requested sandbox mode; cannot safely start the turn.");
   }
   return { ...params, turn: { ...params.turn, sandboxPolicy: sandbox } };

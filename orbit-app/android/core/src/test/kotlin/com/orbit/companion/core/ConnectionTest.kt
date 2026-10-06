@@ -151,9 +151,9 @@ class ConnectionTest {
         // here would measure the machine, not Connection — so skip instead.
         val ipv6Interface = Collections.list(NetworkInterface.getNetworkInterfaces())
             .firstOrNull { candidate ->
-                Collections.list(candidate.inetAddresses).any { it is Inet6Address }
+                Collections.list(candidate.inetAddresses).any { it is Inet6Address && it.isLinkLocalAddress }
             }
-        assumeTrue(ipv6Interface != null, "this JVM exposes no IPv6-capable interface")
+        assumeTrue(ipv6Interface != null, "this JVM exposes no IPv6 interface with a link-local scope")
         val networkInterface = assertNotNull(ipv6Interface)
         var fallbackCalled = false
         val fallback = object : Dns {

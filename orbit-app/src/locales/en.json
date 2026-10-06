@@ -1,4 +1,10 @@
 {
+  "solar.voice.brand": "Solar",
+  "solar.voice.finishSpeaking": "Finish speaking",
+  "solar.voice.idle": "Ready",
+  "solar.voice.listening": "Listening",
+  "solar.voice.thinking": "Thinking",
+  "solar.voice.talking": "Speaking",
   "voice.grok.label": "Grok (xAI)",
   "voice.grok.host": "Host · Grok",
   "voice.grok.sharedKey": "Grok uses the workspace’s existing xAI key.",

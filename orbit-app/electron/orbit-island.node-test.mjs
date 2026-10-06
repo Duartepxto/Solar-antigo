@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { EventEmitter } from "node:events";
 import { createOrbitSummon, displayAt, TALK_SIZE } from "./orbit-summon.mjs";
 
 // Scratch inside the repo's ignored folder, never /tmp (the owner's rule).
-const scratchRoot = path.join(path.dirname(new URL(import.meta.url).pathname), "..", ".orbit-scratch", "node-tests");
+const scratchRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".orbit-scratch", "node-tests");
 
 class FakeWindow extends EventEmitter {
   static all = [];
@@ -265,7 +266,7 @@ test("the pointer watch stops, and says the pointer left, once the talk window h
 });
 
 test("no island on a platform without a voice engine", async () => {
-  for (const platform of ["win32", "linux"]) {
+  for (const platform of ["linux"]) {
     const { summon, talkWindow, cleanup } = fixture({ platform });
     summon.start();
     await settle();

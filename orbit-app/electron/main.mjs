@@ -10,6 +10,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { startCua, stopCua, registerCuaIpc, setCuaStateListener } from "./cua.mjs";
 import { createAndroidDeviceController } from "./android-device.mjs";
+import { createSpeechLease } from "./speech-owner.mjs";
 import {
   finishSpeech,
   listSpeechInputs,
@@ -2538,6 +2539,22 @@ ipcMain.handle("desktop:relaunch", localOnly("desktop:relaunch", (event) => {
 // another window's session tells that window ("preempted"), and the talk
 // character never takes a session the app window is using.
 const speechWatchedSenders = new WeakSet();
+const localSpeechLease = createSpeechLease();
+ipcMain.handle("speech:claim-local", localOnly("speech:claim-local", (event) => {
+  if (process.platform !== "win32" || process.env.SOLAR_APP !== "1") return null;
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return null;
+  if (!speechWatchedSenders.has(event.sender)) {
+    speechWatchedSenders.add(event.sender);
+    const release = () => localSpeechLease.release(win);
+    event.sender.once("destroyed", release);
+    event.sender.on("did-navigate", release);
+    event.sender.on("render-process-gone", release);
+  }
+  return localSpeechLease.claim(win);
+}));
+ipcMain.handle("speech:release-local", localOnly("speech:release-local", (event, token) =>
+  localSpeechLease.release(BrowserWindow.fromWebContents(event.sender), token)));
 ipcMain.handle("speech:start", localOnly("speech:start", (event, options) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (!win) return;

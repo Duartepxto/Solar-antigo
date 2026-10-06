@@ -8,10 +8,10 @@ it('persists the welcome agent name, colour and instructions through the real cr
   try{
     const response=await fetch(fixture.info.url+'/api/bots',{method:'POST',headers:{'content-type':'application/json',origin:fixture.info.url},body:JSON.stringify({name:'Welcome Luna',settings:{color:'blue',soul:'Keep my work organised.'}})});
     expect(response.status).toBe(201);
-    const {bot}=await response.json();
+    const {bot}=await response.json() as {bot:{id:string}};
     const stored=JSON.parse(readFileSync(join(fixture.info.dataDir,'bots.json'),'utf8'));
     expect(stored.find((row:{id:string})=>row.id===bot.id)).toMatchObject({name:'Welcome Luna',color:'blue',soul:'Keep my work organised.'});
-    const roster=await (await fetch(fixture.info.url+'/api/bots')).json();
+    const roster=await (await fetch(fixture.info.url+'/api/bots')).json() as {bots:{id:string}[]};
     expect(roster.bots.find((row:{id:string})=>row.id===bot.id)).toMatchObject({name:'Welcome Luna',soul:'Keep my work organised.'});
   }finally{await fixture.close();}
 },20_000);

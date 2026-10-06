@@ -1,0 +1,4708 @@
+{
+  "version": "0.1.87",
+  "commit": "7ac1c04",
+  "date": "2026-10-05",
+  "reviewed": false,
+  "groups": [
+    {
+      "title": "Mapa solar e navegação",
+      "sources": [
+        "src/orbit/SolarMap.tsx",
+        "src/orbit/SolarChrome.tsx",
+        "src/orbit/solar-interaction.js",
+        "src/orbit/solar-renderer.js"
+      ],
+      "tech": "React + renderização Three.js/WebGL + preferências locais",
+      "condition": "Solar desktop/browser; mapa depende dos agentes existentes",
+      "items": [
+        {
+          "id": "SOL-001",
+          "feature": "Ver Jarvis como Sol, responsáveis como planetas e agentes como luas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-002",
+          "feature": "Abrir o foco e a conversa de um agente ao clicar no seu corpo ou rótulo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-003",
+          "feature": "Arrastar um agente para reorganizar o mapa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-004",
+          "feature": "Mover planetas com as suas luas associadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-005",
+          "feature": "Mover agentes com teclas de seta e acelerar com Shift.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-006",
+          "feature": "Aumentar o zoom.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-007",
+          "feature": "Diminuir o zoom.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-008",
+          "feature": "Enquadrar todo o sistema.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-009",
+          "feature": "Mostrar ou ocultar linhas de hierarquia.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-010",
+          "feature": "Restaurar a disposição inicial do mapa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-011",
+          "feature": "Conservar a disposição local do mapa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-012",
+          "feature": "Adaptar o mapa ao tamanho e orientação do ecrã.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-013",
+          "feature": "Mostrar os estados de repouso, pensamento, trabalho, espera, falha e desligado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-014",
+          "feature": "Animar olhar, piscar, boca e sono dos retratos de acordo com o estado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-015",
+          "feature": "Pesquisar agentes e tarefas a partir do cabeçalho.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-016",
+          "feature": "Escolher destinatário, pesquisar e enviar uma mensagem diretamente no mapa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-017",
+          "feature": "Iniciar e parar o ditado no compositor do mapa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-018",
+          "feature": "Voltar ao mapa pelo botão Team map, fundo ou Escape.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-019",
+          "feature": "Redimensionar a área de chat e repor a largura com duplo clique.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-020",
+          "feature": "Abrir o menu Criar: agente, equipa ou canal.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Criação e identidade dos agentes",
+      "sources": [
+        "src/orbit/detail/NewBotPanel.tsx",
+        "src/orbit/detail/ProfilePanels.tsx",
+        "src/components/ChatHeader.tsx",
+        "src/lib/bot-roles.ts"
+      ],
+      "tech": "Formulários React + registos persistentes de bots + SOUL.md",
+      "condition": "Algumas ações são reservadas ao proprietário/admin; Jarvis integrado tem regras próprias",
+      "items": [
+        {
+          "id": "SOL-021",
+          "feature": "Criar um agente em branco.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-022",
+          "feature": "Criar um agente a partir de um papel predefinido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-023",
+          "feature": "Pesquisar papéis e modelos de equipas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-024",
+          "feature": "Criar uma equipa vazia ou a partir de um modelo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-025",
+          "feature": "Definir o nome do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-026",
+          "feature": "Definir a função/papel do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-027",
+          "feature": "Definir a descrição curta do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-028",
+          "feature": "Editar as instruções permanentes em SOUL.md.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-029",
+          "feature": "Escolher a cor/identidade visual do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-030",
+          "feature": "Definir quem vê o agente: todos, administradores ou emails/domínios específicos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-031",
+          "feature": "Abrir o perfil pelo retrato/cabeçalho.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-032",
+          "feature": "Ver a visão geral: o que faz, alcança e não faz.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-033",
+          "feature": "Pré-visualizar o prompt/instruções que o modelo recebe e a estimativa de tokens.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-034",
+          "feature": "Executar /setup para o agente entrevistar o utilizador e preparar o seu papel.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-035",
+          "feature": "Fixar ou desafixar um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-036",
+          "feature": "Marcar um agente como não lido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-037",
+          "feature": "Mover um agente para outra equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-038",
+          "feature": "Promover um agente a responsável de equipa ou retirar essa função.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-039",
+          "feature": "Duplicar um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-040",
+          "feature": "Ocultar um agente do mapa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-041",
+          "feature": "Arquivar um agente, respeitando as restrições do responsável e do último agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-042",
+          "feature": "Consultar e recuperar agentes arquivados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-043",
+          "feature": "Apagar um agente mediante confirmação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-044",
+          "feature": "Consultar o histórico de alterações do perfil e definições.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Jarvis integrado e assistência da aplicação",
+      "sources": [
+        "src/orbit/OrbitShell.tsx",
+        "server/orbit-agent.ts",
+        "electron/orbit-summon.mjs",
+        "src/shell/QuickBar.tsx",
+        "src/components/OrbitAssistantSettings.tsx"
+      ],
+      "tech": "Agente integrado + ferramentas de propostas + shell Electron",
+      "condition": "Jarvis preserva identidade interna; shell e voz variam com plataforma",
+      "items": [
+        {
+          "id": "SOL-045",
+          "feature": "Conversar com o assistente integrado que trabalha entre equipas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-046",
+          "feature": "Abrir os seis sistemas do Jarvis: motor, aprovações, skills, memória, voz e Sistema.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-047",
+          "feature": "Pedir diagnóstico do estado de agentes, motores e rotinas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-048",
+          "feature": "Pedir leitura de logs e contexto autorizado de threads.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-049",
+          "feature": "Receber propostas de alterações de definições, em cartões de confirmação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-050",
+          "feature": "Receber propostas para adicionar um servidor MCP.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-051",
+          "feature": "Receber propostas de alteração de perfil e modelo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-052",
+          "feature": "Receber propostas para criar ou alterar rotinas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-053",
+          "feature": "Abrir a barra rápida por atalho global, incluindo Alt+O no Windows.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-054",
+          "feature": "Alterar ou desligar os atalhos globais.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-055",
+          "feature": "Usar o guia/pointer no ecrã quando o shell e permissões o permitem.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-056",
+          "feature": "Consultar permissões e pausar o acesso do assistente ao ecrã.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-057",
+          "feature": "Usar o modo de voz flutuante/island no macOS quando suportado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-058",
+          "feature": "Abrir, ocultar, restaurar e sair da aplicação pelo ícone de bandeja.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Conversa, mensagens e compositor",
+      "sources": [
+        "src/components/ChatView.tsx",
+        "src/components/Composer.tsx",
+        "src/components/ChatMarkdown.tsx",
+        "src/components/MessageActions.tsx",
+        "src/components/ComposerQueuedMessages.tsx"
+      ],
+      "tech": "Chat React + eventos do servidor + adaptador do motor",
+      "condition": "Respostas reais requerem motor autenticado/configurado; capacidades diferem por motor",
+      "items": [
+        {
+          "id": "SOL-059",
+          "feature": "Enviar mensagens ao agente selecionado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-060",
+          "feature": "Receber texto e atividade de ferramentas durante a execução.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-061",
+          "feature": "Inserir uma nova linha sem enviar com Shift+Enter.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-062",
+          "feature": "Editar uma mensagem enviada e reenviar a alteração.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-063",
+          "feature": "Editar a última mensagem pelo atalho de seta para cima com o compositor vazio.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-064",
+          "feature": "Copiar o conteúdo de uma mensagem.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-065",
+          "feature": "Responder com uma citação de mensagem.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-066",
+          "feature": "Guardar uma mensagem na memória com Remember this.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-067",
+          "feature": "Ler uma resposta em voz alta quando há voz disponível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-068",
+          "feature": "Ver Markdown, tabelas, links e blocos de código.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-069",
+          "feature": "Alternar entre Markdown apresentado e texto original.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-070",
+          "feature": "Interromper o turno em curso com Stop.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-071",
+          "feature": "Enviar mensagens para a fila enquanto o agente está ocupado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-072",
+          "feature": "Introduzir uma mensagem no turno em curso quando o motor permite steering.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-073",
+          "feature": "Consultar e gerir mensagens na fila.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-074",
+          "feature": "Recuperar o rascunho após falha de envio, repetir ou dispensar a falha.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-075",
+          "feature": "Conservar rascunhos por conversa no browser.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-076",
+          "feature": "Ver indicadores de atividade, espera, erro e trabalho de outros agentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-077",
+          "feature": "Carregar mensagens anteriores e posteriores em históricos paginados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-078",
+          "feature": "Voltar à mensagem mais recente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-079",
+          "feature": "Pesquisar dentro da conversa e navegar entre resultados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-080",
+          "feature": "Pesquisar mensagens de várias conversas na paleta global.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-081",
+          "feature": "Mencionar agentes com @ e escolher os destinatários.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-082",
+          "feature": "Inserir referências a outras threads e abrir os respetivos links.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-083",
+          "feature": "Abrir comandos /setup, /learn e /goal quando aplicáveis.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-084",
+          "feature": "Descarregar a conversa em Markdown.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-085",
+          "feature": "Copiar a transcrição completa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-086",
+          "feature": "Copiar o link da thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-087",
+          "feature": "Copiar o identificador da conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Anexos e resultados apresentados",
+      "sources": [
+        "src/components/ComposerAttachments.tsx",
+        "src/components/AttachmentGallery.tsx",
+        "src/components/AttachmentPreview.tsx",
+        "src/orbit/ArtifactCard.tsx",
+        "src/orbit/artifacts.ts",
+        "server/message-file.ts"
+      ],
+      "tech": "Anexos de conversa + rotas limitadas à mensagem + viewers + iframe sandbox",
+      "condition": "Imagens aceites dependem do motor; os resultados têm de existir e ser partilhados",
+      "items": [
+        {
+          "id": "SOL-088",
+          "feature": "Anexar um ficheiro pelo seletor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-089",
+          "feature": "Arrastar ficheiros para o compositor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-090",
+          "feature": "Colar imagens da área de transferência.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-091",
+          "feature": "Transformar colagens longas em anexos quando aplicável.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-092",
+          "feature": "Ver e remover anexos antes do envio.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-093",
+          "feature": "Apresentar imagens anexadas e abrir a galeria.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-094",
+          "feature": "Navegar entre imagens na galeria.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-095",
+          "feature": "Abrir e descarregar ficheiros partilhados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-096",
+          "feature": "Mostrar HTML como resultado numa área ao lado do chat.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-097",
+          "feature": "Mostrar um PDF partilhado ao lado do chat.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-098",
+          "feature": "Mostrar uma imagem partilhada ao lado do chat.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-099",
+          "feature": "Ver o convite/oferta de resultado do agente no mapa e no foco.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-100",
+          "feature": "Aceitar ou fechar a apresentação do resultado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-101",
+          "feature": "Usar uma apresentação isolada para HTML e restringir o acesso ao ficheiro da mensagem.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Threads, pastas e gestão de trabalho",
+      "sources": [
+        "src/components/TaskPicker.tsx",
+        "src/components/SidebarThreadRow.tsx",
+        "src/components/BotProjects.tsx",
+        "src/components/ThreadControls.tsx"
+      ],
+      "tech": "Estado por thread + agrupamento por pastas + filas e limites",
+      "condition": "Modelos, acessos e pasta de trabalho podem estar fixados por thread",
+      "items": [
+        {
+          "id": "SOL-102",
+          "feature": "Criar uma nova thread/conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-103",
+          "feature": "Mudar entre threads do mesmo agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-104",
+          "feature": "Ver threads ativas e arquivadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-105",
+          "feature": "Pesquisar threads pelo título.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-106",
+          "feature": "Renomear uma thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-107",
+          "feature": "Fixar/desafixar uma thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-108",
+          "feature": "Arquivar e desarquivar uma thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-109",
+          "feature": "Apagar uma thread e a sua conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-110",
+          "feature": "Adiar uma thread até nova atividade, até às 18h ou até às 9h do dia seguinte.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-111",
+          "feature": "Retirar o adiamento de uma thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-112",
+          "feature": "Copiar o link de uma thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-113",
+          "feature": "Criar uma pasta para organizar threads.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-114",
+          "feature": "Mudar o nome e ícone/emoji de uma pasta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-115",
+          "feature": "Mover uma thread para uma pasta ou para fora dela.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-116",
+          "feature": "Alterar a ordem das pastas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-117",
+          "feature": "Marcar uma pasta como lida.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-118",
+          "feature": "Criar uma nova thread diretamente numa pasta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-119",
+          "feature": "Apagar uma pasta mantendo as conversas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-120",
+          "feature": "Escolher motor/modelo para a thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-121",
+          "feature": "Escolher nível de aprovação para a thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-122",
+          "feature": "Escolher o destino de computador da thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-123",
+          "feature": "Ver threads com trabalho, mensagens na fila e aprovações pendentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-124",
+          "feature": "Definir o número máximo de threads paralelas por agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Equipas, responsáveis e canais",
+      "sources": [
+        "src/orbit/detail/HubPanels.tsx",
+        "src/components/TeamDialog.tsx",
+        "src/components/NewChannelDialog.tsx",
+        "src/components/ManageMembersPanel.tsx",
+        "src/components/GroupView.tsx"
+      ],
+      "tech": "Registos de equipas/canais + coordenação de agentes",
+      "condition": "Membros, audiência e papel de responsável condicionam o acesso",
+      "items": [
+        {
+          "id": "SOL-125",
+          "feature": "Criar e renomear uma equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-126",
+          "feature": "Editar as instruções partilhadas da equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-127",
+          "feature": "Escolher e mudar o responsável da equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-128",
+          "feature": "Definir as equipas geridas pelo responsável.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-129",
+          "feature": "Adicionar e retirar agentes da equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-130",
+          "feature": "Escolher os computadores da equipa e os destinos predefinidos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-131",
+          "feature": "Consultar as rotinas da equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-132",
+          "feature": "Apagar uma equipa com confirmação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-133",
+          "feature": "Criar um canal/conversa de grupo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-134",
+          "feature": "Adicionar e remover membros do canal.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-135",
+          "feature": "Criar canais com agentes de várias equipas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-136",
+          "feature": "Definir um responsável de resposta do canal.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-137",
+          "feature": "Escolher respostas de todos, apenas @menções ou um agente específico.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-138",
+          "feature": "Editar instruções partilhadas do canal.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-139",
+          "feature": "Definir a pasta de trabalho de um canal antes de a thread a fixar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-140",
+          "feature": "Renomear o canal ou a sua thread.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-141",
+          "feature": "Mover um canal para outra equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-142",
+          "feature": "Fixar e desafixar mensagens do canal.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-143",
+          "feature": "Responder a mensagens do canal com citação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-144",
+          "feature": "Pesquisar, copiar ou exportar a conversa de grupo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-145",
+          "feature": "Apagar uma conversa de grupo, sem apagar os agentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-146",
+          "feature": "Ver custos/tokens do trabalho do grupo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Delegação e objetivos de equipa",
+      "sources": [
+        "server/drivers/agents-catalog.ts",
+        "server/group-goal-run.ts",
+        "server/room-handoffs.ts",
+        "src/components/GoalRunCard.tsx",
+        "src/components/Composer.tsx"
+      ],
+      "tech": "Ferramentas agents/MCP + orquestração de turnos, handoffs e retornos",
+      "condition": "Disponibilidade do motor, permissões, membros e slots de trabalho",
+      "items": [
+        {
+          "id": "SOL-147",
+          "feature": "Descobrir colegas e salas que o agente pode consultar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-148",
+          "feature": "Pedir conselho a outro agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-149",
+          "feature": "Delegar uma tarefa concreta a outro agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-150",
+          "feature": "Coordenar vários agentes com briefs próprios.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-151",
+          "feature": "Consultar o estado e resultado de uma delegação quando o perfil o permite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-152",
+          "feature": "Receber resultados dos colegas e retomar a coordenação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-153",
+          "feature": "Publicar uma mensagem de agente num canal autorizado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-154",
+          "feature": "Criar uma thread para trabalho separado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-155",
+          "feature": "Criar um especialista por ferramenta quando o papel permite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-156",
+          "feature": "Propor a configuração de uma equipa para revisão humana.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-157",
+          "feature": "Propor a remoção de um agente para revisão humana.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-158",
+          "feature": "Executar /goal ou Finish together até o objetivo assentar num resultado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-159",
+          "feature": "Escolher grupo e líder de um objetivo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-160",
+          "feature": "Ver progresso, participantes, resultados e bloqueios num cartão de objetivo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-161",
+          "feature": "Cancelar um objetivo em execução.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-162",
+          "feature": "Aplicar limites/timeout aos turnos de grupo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Motores e modelos de IA",
+      "sources": [
+        "server/drivers/builtIn.ts",
+        "src/components/EnginesSettings.tsx",
+        "src/components/EngineLibrary.tsx",
+        "src/components/EngineSetup.tsx",
+        "src/components/ModelPicker.tsx",
+        "src/orbit/detail/BotPanels.tsx"
+      ],
+      "tech": "Drivers CLI, ACP e API + catálogos e snapshots",
+      "condition": "18 drivers registados no código; 14 motores visíveis nesta instalação, 1 pronto; não equivalem a 18 contas ligadas",
+      "items": [
+        {
+          "id": "SOL-163",
+          "feature": "Detetar motores instalados e verificar novamente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-164",
+          "feature": "Ver versão, estado, autenticação e capacidades do motor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-165",
+          "feature": "Configurar Claude/Claude Code.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-166",
+          "feature": "Configurar Codex/OpenAI.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-167",
+          "feature": "Configurar Grok por API e Grok Agent.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-168",
+          "feature": "Configurar Gemini Agent.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-169",
+          "feature": "Configurar Kimi Agent.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-170",
+          "feature": "Configurar Droid/Factory Agent.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-171",
+          "feature": "Configurar Cursor Agent.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-172",
+          "feature": "Configurar OpenCode.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-173",
+          "feature": "Configurar Qwen Agent.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-174",
+          "feature": "Configurar Hermes Agent.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-175",
+          "feature": "Configurar um motor ACP personalizado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-176",
+          "feature": "Configurar Pi.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-177",
+          "feature": "Configurar uma API compatível com OpenAI, incluindo gateway próprio/local.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-178",
+          "feature": "Configurar Antigravity.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-179",
+          "feature": "Configurar Boat-hosted agent.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-180",
+          "feature": "Configurar MiniMax.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-181",
+          "feature": "Configurar Mistral.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-182",
+          "feature": "Escolher o modelo de cada agente ou conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-183",
+          "feature": "Definir o esforço/raciocínio quando o motor o suporta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-184",
+          "feature": "Escolher um ícone de fornecedor para cada instância de motor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-185",
+          "feature": "Carregar um ícone personalizado PNG/JPEG/WebP de até 128 KB para o motor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-186",
+          "feature": "Definir o caminho de um executável CLI específico, versão ou wrapper quando o motor está parado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-187",
+          "feature": "Atualizar o catálogo de modelos e consultar opções personalizadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-188",
+          "feature": "Mostrar a disponibilidade não verificada de modelos obtidos por fallback.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-189",
+          "feature": "Gerir várias contas Claude e as contas Codex disponibilizadas pelo painel.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-190",
+          "feature": "Iniciar os fluxos de login de conta ou código de dispositivo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-191",
+          "feature": "Instalar/atualizar motores nos fluxos que o motor e sistema suportam.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-192",
+          "feature": "Escolher um modelo de recuperação automático para falha de arranque ACP.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-193",
+          "feature": "Repetir a tentativa no backup uma vez sem reproduzir trabalho que possa já ter acontecido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Chaves e ligações de fornecedores",
+      "sources": [
+        "src/components/ApiKeys.tsx",
+        "src/components/ClaudeAccountSettings.tsx",
+        "src/components/CodexAccountSettings.tsx"
+      ],
+      "tech": "Configuração de chaves + login externo + SSH config",
+      "condition": "Credenciais necessárias consoante fornecedor; testes de chave/catálogo não provam conversa",
+      "items": [
+        {
+          "id": "SOL-194",
+          "feature": "Guardar, substituir ou retirar uma chave Anthropic.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-195",
+          "feature": "Guardar, substituir ou retirar uma chave de API OpenAI-compatible.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-196",
+          "feature": "Definir o endereço base da API compatível com OpenAI.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-197",
+          "feature": "Guardar, substituir ou retirar uma chave xAI.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-198",
+          "feature": "Guardar, substituir ou retirar uma chave Mistral.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-199",
+          "feature": "Guardar a ligação/chave de Boat/Box para computador cloud.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-200",
+          "feature": "Guardar a chave OpenCode Go.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-201",
+          "feature": "Testar conectividade/autenticação/catálogo conforme o fornecedor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-202",
+          "feature": "Mostrar configuração existente sem revelar valores secretos guardados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-203",
+          "feature": "Definir ou remover o alias SSH de um VPS próprio.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-204",
+          "feature": "Gerir login, estado e desconexão das contas nos painéis suportados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Aprovações, cartões e credenciais pedidas",
+      "sources": [
+        "src/components/ApprovalModeSelector.tsx",
+        "src/components/PendingApproval.tsx",
+        "src/components/CommandAllowlistDialog.tsx",
+        "src/components/QuestionCard.tsx",
+        "src/components/SecretRequestCard.tsx",
+        "src/components/VerifyCard.tsx"
+      ],
+      "tech": "Política de ferramentas + aprovações por turno + propostas estruturadas",
+      "condition": "As opções variam por motor, ação e papel; não foram alteradas nesta inspeção",
+      "items": [
+        {
+          "id": "SOL-205",
+          "feature": "Escolher Ask, Auto ou Full access quando suportado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-206",
+          "feature": "Escolher Edits/auto-accept edits quando esse nível é disponibilizado pelo motor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-207",
+          "feature": "Configurar se o agente pede aprovação antes de contactar outros agentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-208",
+          "feature": "Rever avisos e confirmar mudanças para modos mais permissivos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-209",
+          "feature": "Permitir uma ação uma vez.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-210",
+          "feature": "Negar uma ação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-211",
+          "feature": "Cancelar o turno a partir da aprovação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-212",
+          "feature": "Permitir uma ação durante a conversa ou sessão quando o motor permite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-213",
+          "feature": "Guardar uma autorização para um comando exato no agente, fornecedor e pasta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-214",
+          "feature": "Consultar, editar e retirar comandos da allowlist.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-215",
+          "feature": "Navegar entre várias aprovações pendentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-216",
+          "feature": "Ver argumentos e detalhes de uma ferramenta antes de decidir.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-217",
+          "feature": "Responder a cartões de perguntas e opções criados pelo agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-218",
+          "feature": "Rever uma skill antes de a ativar ou atualizar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-219",
+          "feature": "Rever uma alteração de perfil antes de a confirmar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-220",
+          "feature": "Rever uma rotina/alteração de agenda antes de a confirmar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-221",
+          "feature": "Rever pedidos de uso de uma sessão de navegador autenticada.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-222",
+          "feature": "Responder a pedidos de credenciais num cartão próprio.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-223",
+          "feature": "Confirmar verificações de execução/identidade nos fluxos respetivos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-224",
+          "feature": "Ver os registos de decisões e autoria das aprovações.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Computador, ecrã e controlo humano",
+      "sources": [
+        "src/components/ComputerPanel.tsx",
+        "src/components/LocalScreenPreview.tsx",
+        "src/components/remote-desktop-panel.tsx",
+        "server/computer-control.ts",
+        "electron/cua.mjs"
+      ],
+      "tech": "Driver @trycua + capabilities + previews e leases de controlo",
+      "condition": "Destino e capacidade do motor; driver e permissões do SO; não testado com ações reais",
+      "items": [
+        {
+          "id": "SOL-225",
+          "feature": "Escolher Auto, cloud, VM local, este computador, navegador ou desligado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-226",
+          "feature": "Ver o destino realmente usado por uma conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-227",
+          "feature": "Ver capacidades e motivos de indisponibilidade de um destino.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-228",
+          "feature": "Ver a pré-visualização do ecrã do computador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-229",
+          "feature": "Iniciar a captura de pré-visualização quando separada das ações do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-230",
+          "feature": "Abrir o desktop ao vivo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-231",
+          "feature": "Receber o convite do agente para mostrar o seu ecrã.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-232",
+          "feature": "Aceitar ou dispensar um pedido de intervenção humana.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-233",
+          "feature": "Assumir o controlo e bloquear os cliques/teclas do agente durante o lease.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-234",
+          "feature": "Devolver o controlo ao agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-235",
+          "feature": "Clicar, escrever e navegar no desktop interativo conforme o backend.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-236",
+          "feature": "Escolher outro destino a partir das definições/compositor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-237",
+          "feature": "Definir e guardar a pasta de trabalho do agente no painel Computador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-238",
+          "feature": "Consultar recuperação e diagnóstico de controlo local por plataforma.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-239",
+          "feature": "Colocar o computador cloud em repouso quando suportado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-240",
+          "feature": "Redimensionar o painel de computador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "VM local, Boat cloud e VPS próprio",
+      "sources": [
+        "src/components/LocalVmWorkspace.tsx",
+        "src/components/LocalComputerSection.tsx",
+        "src/components/RemoteComputerSection.tsx",
+        "server/boat.ts",
+        "server/vps-computer.ts",
+        "server/local-vm-inventory.ts"
+      ],
+      "tech": "Backend Boat; VPS por SSH/containers; VM local e inventário de seats",
+      "condition": "Destinos condicionados pela plataforma, virtualização, chaves e recursos preparados",
+      "items": [
+        {
+          "id": "SOL-241",
+          "feature": "Preparar e criar a VM privada de um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-242",
+          "feature": "Abrir o espaço de trabalho da VM local.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-243",
+          "feature": "Ver dois desktops de VM em conjunto quando suportado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-244",
+          "feature": "Substituir uma VM local preservando o workspace durável previsto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-245",
+          "feature": "Apagar uma VM local com confirmação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-246",
+          "feature": "Gerir disponibilidade, leases e capacidade das VMs locais.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-247",
+          "feature": "Usar um computador Boat existente da equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-248",
+          "feature": "Criar/abrir um computador cloud Boat mediante configuração.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-249",
+          "feature": "Acordar um computador cloud em repouso.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-250",
+          "feature": "Ver estados de espera, arranque, falta de recursos e falha.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-251",
+          "feature": "Preparar o computador containerizado num VPS próprio.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-252",
+          "feature": "Iniciar um computador VPS parado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-253",
+          "feature": "Substituir um container VPS de versão antiga com confirmação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-254",
+          "feature": "Mostrar os avisos sobre dados que vivem apenas no container descartável.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-255",
+          "feature": "Reutilizar em Auto um destino existente sem criar recursos silenciosamente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Navegador integrado e perfis autenticados",
+      "sources": [
+        "src/components/BrowserPanel.tsx",
+        "src/components/BrowserViewport.tsx",
+        "src/components/BrowserProfilesManager.tsx",
+        "server/browser-runtime.ts",
+        "server/browser-bundle-release.ts"
+      ],
+      "tech": "agent-browser + Chromium headless + frames/input + perfis persistentes",
+      "condition": "Experimental browser ligado, runtime disponível e motor compatível; gestão restrita",
+      "items": [
+        {
+          "id": "SOL-256",
+          "feature": "Ativar/desativar o navegador integrado globalmente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-257",
+          "feature": "Ativar/desativar o navegador para um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-258",
+          "feature": "Abrir a vista do navegador do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-259",
+          "feature": "Escrever um endereço e navegar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-260",
+          "feature": "Voltar à página anterior.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-261",
+          "feature": "Avançar na navegação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-262",
+          "feature": "Recarregar a página.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-263",
+          "feature": "Criar uma nova aba.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-264",
+          "feature": "Gerir/selecionar as abas expostas pelo painel.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-265",
+          "feature": "Fechar uma aba do navegador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-266",
+          "feature": "Expandir o navegador para ecrã inteiro quando disponível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-267",
+          "feature": "Clicar, fazer scroll e introduzir texto na página por input remoto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-268",
+          "feature": "Abrir a caixa auxiliar de escrita/colagem para a página.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-269",
+          "feature": "Reconectar a vista de frames.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-270",
+          "feature": "Reiniciar o navegador mediante fluxo próprio.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-271",
+          "feature": "Escolher o perfil privado do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-272",
+          "feature": "Escolher uma sessão temporária sem guardar logins em disco.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-273",
+          "feature": "Criar um perfil partilhado entre agentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-274",
+          "feature": "Renomear um perfil partilhado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-275",
+          "feature": "Selecionar o perfil usado por um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-276",
+          "feature": "Apagar um perfil e os seus dados/login mediante confirmação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-277",
+          "feature": "Ver os agentes que usam cada perfil.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-278",
+          "feature": "Pedir consentimento para usar uma sessão autenticada.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Android por USB",
+      "sources": [
+        "src/components/AndroidDevicePanel.tsx",
+        "electron/android-device.mjs",
+        "server/drivers/phone-proxy.ts"
+      ],
+      "tech": "Android platform-tools/ADB + ligação USB + Phone Harness",
+      "condition": "Android desbloqueado, depuração USB autorizada e motor compatível; diferente do companion remoto",
+      "items": [
+        {
+          "id": "SOL-279",
+          "feature": "Descobrir e apresentar o dispositivo Android ligado por USB.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-280",
+          "feature": "Mostrar instruções para ativar Developer options e USB debugging.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-281",
+          "feature": "Mostrar estado de autorização, offline ou desconexão.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-282",
+          "feature": "Ver o ecrã Android na aplicação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-283",
+          "feature": "Clicar para tocar no ecrã do telefone.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-284",
+          "feature": "Arrastar/fazer scroll no telefone.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-285",
+          "feature": "Introduzir texto num campo selecionado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-286",
+          "feature": "Usar o botão Android Back.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-287",
+          "feature": "Usar o botão Android Home.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-288",
+          "feature": "Usar o botão Android Recent apps.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-289",
+          "feature": "Permitir tarefas do agente no Android através do mesmo USB autorizado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-290",
+          "feature": "Carregar o Phone Harness para pedidos relacionados com telefone.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Ditado, chamadas e reprodução de voz",
+      "sources": [
+        "src/orbit/useSolarDictation.ts",
+        "src/components/CallView.tsx",
+        "src/components/GroupCallView.tsx",
+        "src/components/VoiceSettings.tsx",
+        "server/solar-speech.ts",
+        "server/tts/index.ts"
+      ],
+      "tech": "Solar Windows: Whisper.cpp v1.9.0 + modelo base multilingue + vozes do sistema; restantes adaptadores TTS",
+      "condition": "Microfone/permissões, voz instalada e motor de IA; group call/island têm condições de plataforma",
+      "items": [
+        {
+          "id": "SOL-291",
+          "feature": "Ditar um rascunho sem o enviar automaticamente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-292",
+          "feature": "Parar a captura e rever a transcrição.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-293",
+          "feature": "Apresentar erros de permissão, silêncio ou captura indisponível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-294",
+          "feature": "Escolher o microfone.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-295",
+          "feature": "Iniciar uma chamada com um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-296",
+          "feature": "Capturar a fala, enviar o turno ao motor e ler a resposta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-297",
+          "feature": "Ver fases de escuta, transcrição, pensamento e fala.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-298",
+          "feature": "Interromper a fala/resposta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-299",
+          "feature": "Desligar a chamada.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-300",
+          "feature": "Repetir o arranque do microfone depois de uma falha.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-301",
+          "feature": "Escolher uma voz instalada no sistema.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-302",
+          "feature": "Ouvir uma amostra da voz.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-303",
+          "feature": "Ativar/desativar a leitura automática de respostas do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-304",
+          "feature": "Ativar/desativar alertas quando o agente termina ou precisa de uma resposta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-305",
+          "feature": "Permitir ou impedir notas de voz enviadas pelo agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-306",
+          "feature": "Escolher voz neste dispositivo ou voz configurada no host quando disponível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-307",
+          "feature": "Escolher/configurar Grok/xAI como motor de voz.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-308",
+          "feature": "Escolher/configurar um servidor Chatterbox e o respetivo modelo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-309",
+          "feature": "Usar adaptadores de ElevenLabs e Fish presentes no backend, conforme configuração e UI disponível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-310",
+          "feature": "Criar/enviar notas de voz pelo agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-311",
+          "feature": "Iniciar chamadas de grupo no fluxo/plataforma suportados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-312",
+          "feature": "Direcionar uma chamada de grupo a um nome ou a todos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-313",
+          "feature": "Ouvir os participantes em sequência e interromper a chamada de grupo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-314",
+          "feature": "Agendar chamadas individuais ou de grupo no calendário.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-315",
+          "feature": "Processar confirmações faladas com regras de consentimento explícito.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Ficheiros, editor e Desenvolvimento Solar",
+      "sources": [
+        "src/orbit/SolarDevelopmentWorkspace.tsx",
+        "server/solar-workspace.ts"
+      ],
+      "tech": "Editor textarea React + API de ficheiros com revisão + sessionStorage + iframe",
+      "condition": "Projeto local do agente/thread; preview estático; não é um IDE completo",
+      "items": [
+        {
+          "id": "SOL-316",
+          "feature": "Abrir o espaço Desenvolvimento junto da conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-317",
+          "feature": "Alternar entre Ficheiros e Computador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-318",
+          "feature": "Listar ficheiros e pastas do projeto permitido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-319",
+          "feature": "Entrar numa pasta e voltar à pasta superior.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-320",
+          "feature": "Atualizar a listagem.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-321",
+          "feature": "Abrir um ficheiro de texto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-322",
+          "feature": "Ter vários documentos abertos em abas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-323",
+          "feature": "Criar um novo ficheiro indicando o nome.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-324",
+          "feature": "Editar o código/conteúdo UTF-8.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-325",
+          "feature": "Guardar pelo botão Save ou Ctrl+S.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-326",
+          "feature": "Mostrar se um documento tem alterações por guardar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-327",
+          "feature": "Manter rascunhos durante a sessão.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-328",
+          "feature": "Recarregar o ficheiro de disco.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-329",
+          "feature": "Usar revisão de conteúdo para detetar conflito de escrita.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-330",
+          "feature": "Ver o preview Markdown do rascunho.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-331",
+          "feature": "Ver o preview HTML estático isolado do rascunho.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-332",
+          "feature": "Mostrar caminho, número de linhas e estado de gravação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-333",
+          "feature": "Fechar o espaço Desenvolvimento e continuar a conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Memória e contexto pessoal",
+      "sources": [
+        "src/orbit/detail/MemoryPanel.tsx",
+        "src/components/AboutMeSettings.tsx",
+        "server/memory-upkeep.ts",
+        "server/memory-tidy.ts",
+        "server/routes/bot-memory.ts"
+      ],
+      "tech": "Ficheiros Markdown MEMORY.md + tópicos + journal + upkeep por modelo",
+      "condition": "Parte da manutenção semântica requer chamadas background de motores compatíveis",
+      "items": [
+        {
+          "id": "SOL-334",
+          "feature": "Consultar e editar a memória permanente MEMORY.md do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-335",
+          "feature": "Criar tópicos de memória.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-336",
+          "feature": "Abrir e editar ficheiros de tópicos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-337",
+          "feature": "Apagar um tópico com possibilidade de recuperação pelo histórico.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-338",
+          "feature": "Ver o diário diário do agente em modo de leitura.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-339",
+          "feature": "Ver o histórico de alterações da memória.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-340",
+          "feature": "Desfazer uma alteração de memória.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-341",
+          "feature": "Resolver conflitos: recarregar ou sobrescrever com o rascunho próprio.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-342",
+          "feature": "Ativar/desativar a manutenção automática da memória.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-343",
+          "feature": "Executar a organização/limpeza da memória imediatamente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-344",
+          "feature": "Arquivar notas expiradas e fundir duplicados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-345",
+          "feature": "Organizar factos e tratar contradições quando o motor o permite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-346",
+          "feature": "Consultar o estado/resumo da última limpeza.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-347",
+          "feature": "Editar About me, contexto pessoal partilhado entre agentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-348",
+          "feature": "Remover factos pessoais no respetivo painel.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-349",
+          "feature": "Abrir os ficheiros de memória no Obsidian se estiver instalado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-350",
+          "feature": "Mostrar a pasta de memória no gestor de ficheiros do sistema quando a integração está disponível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-351",
+          "feature": "Pesquisar/ler sessões anteriores autorizadas por ferramenta do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Skills e playbooks",
+      "sources": [
+        "src/orbit/detail/SkillsPanel.tsx",
+        "src/components/SkillRequestPreview.tsx",
+        "server/skill-learn.ts",
+        "server/installed-playbooks.ts",
+        "server/drivers/agents-catalog.ts"
+      ],
+      "tech": "SKILL.md + imports GitHub + propostas de authoring + playbooks de equipa",
+      "condition": "Skills importadas chegam desligadas; authoring é opção experimental",
+      "items": [
+        {
+          "id": "SOL-352",
+          "feature": "Listar skills e contar as ativas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-353",
+          "feature": "Ler os conteúdos e ficheiros de uma skill.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-354",
+          "feature": "Importar uma skill por URL GitHub ou owner/repo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-355",
+          "feature": "Ativar/desativar uma skill para um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-356",
+          "feature": "Remover uma skill com confirmação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-357",
+          "feature": "Explorar playbooks da equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-358",
+          "feature": "Pedir /learn para criar uma skill a partir da conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-359",
+          "feature": "Rever o rascunho da skill num cartão.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-360",
+          "feature": "Guardar uma execução de verificação como skill a partir do cartão Verify.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-361",
+          "feature": "Pedir /create-verification-skill nos motores/fluxos suportados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-362",
+          "feature": "Confirmar a ativação ou atualização de uma skill proposta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-363",
+          "feature": "Gerir skills por ferramenta autorizada do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-364",
+          "feature": "Ativar/desativar a funcionalidade experimental de autoria de skills.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Plugins, Apps e servidores MCP",
+      "sources": [
+        "src/components/PluginsPanel.tsx",
+        "src/components/McpExplore.tsx",
+        "src/components/McpServersPanel.tsx",
+        "server/mcp-registry.ts",
+        "server/mcp-oauth.ts"
+      ],
+      "tech": "MCP stdio, Streamable HTTP/SSE + OAuth + registries GitHub/oficial",
+      "condition": "Cada servidor é software/serviço externo; conta, credenciais e ferramentas próprias",
+      "items": [
+        {
+          "id": "SOL-365",
+          "feature": "Abrir Plugins e alternar Explore/Installed.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-366",
+          "feature": "Pesquisar servidores no catálogo MCP.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-367",
+          "feature": "Consultar a seleção popular do registry GitHub.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-368",
+          "feature": "Explorar categorias e carregar mais resultados do registry oficial.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-369",
+          "feature": "Abrir página, código-fonte e instruções de um servidor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-370",
+          "feature": "Usar a última lista em cache se o registry estiver indisponível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-371",
+          "feature": "Adicionar um servidor a partir do catálogo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-372",
+          "feature": "Adicionar um servidor local por comando, argumentos e variáveis de ambiente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-373",
+          "feature": "Adicionar um servidor por URL Streamable HTTP.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-374",
+          "feature": "Adicionar um servidor SSE legado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-375",
+          "feature": "Configurar headers/autenticação de um servidor HTTP.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-376",
+          "feature": "Colar blocos mcpServers de Claude Code, Cursor ou Claude Desktop.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-377",
+          "feature": "Configurar OAuth, client ID e secret quando exigidos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-378",
+          "feature": "Iniciar e terminar a ligação OAuth do servidor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-379",
+          "feature": "Testar a ligação e consultar as ferramentas anunciadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-380",
+          "feature": "Ativar/desativar um servidor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-381",
+          "feature": "Editar e remover um servidor MCP.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-382",
+          "feature": "Escolher os servidores acessíveis a cada agente: todos, seleção ou nenhum.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-383",
+          "feature": "Optar por usar também os servidores pessoais Claude Code no motor Claude.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-384",
+          "feature": "Aplicar allowlists de servidores da organização quando há gestão empresarial.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-385",
+          "feature": "Manter os servidores pessoais Codex separados da superfície de ferramentas Solar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-386",
+          "feature": "Consumir ferramentas, imagens e resultados de MCP dentro do turno do agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Rotinas agendadas e calendário",
+      "sources": [
+        "src/components/RoutineCalendarPage.tsx",
+        "src/components/routines/CronScheduleFields.tsx",
+        "src/components/routines/ResultsDestination.tsx",
+        "server/routines.ts"
+      ],
+      "tech": "Scheduler + regras de agenda/cron + runs persistentes",
+      "condition": "Aplicação/backend tem de estar disponível; destinos cloud e voz exigem configuração",
+      "items": [
+        {
+          "id": "SOL-387",
+          "feature": "Criar uma tarefa agendada para um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-388",
+          "feature": "Criar um objetivo agendado para uma equipa com líder.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-389",
+          "feature": "Criar uma chamada agendada.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-390",
+          "feature": "Definir título, instruções, agente/grupo e início.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-391",
+          "feature": "Agendar uma execução única.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-392",
+          "feature": "Agendar repetição diária.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-393",
+          "feature": "Agendar dias específicos da semana.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-394",
+          "feature": "Agendar repetição por intervalo de 5 a 1440 minutos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-395",
+          "feature": "Limitar o intervalo a dias da semana e a uma janela horária.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-396",
+          "feature": "Definir data de fim de um intervalo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-397",
+          "feature": "Configurar repetição mensal e anual através dos campos de calendário/cron.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-398",
+          "feature": "Definir expressão cron e timezone IANA.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-399",
+          "feature": "Escolher dia do mês ou último dia e tratar meses sem a data.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-400",
+          "feature": "Escolher duração de chamada.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-401",
+          "feature": "Escolher o nível de aprovação da execução da rotina.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-402",
+          "feature": "Definir um limite opcional de duração da execução.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-403",
+          "feature": "Escolher saltar uma ocorrência ocupada ou enfileirar no máximo uma.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-404",
+          "feature": "Escolher o setup atual do agente ou o runner Boat-hosted.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-405",
+          "feature": "Adicionar anexos à rotina individual quando permitido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-406",
+          "feature": "Escolher thread/pasta onde ficam os resultados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-407",
+          "feature": "Criar uma thread dedicada de resultados reutilizada pelas execuções.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-408",
+          "feature": "Editar, pausar, retomar ou apagar uma rotina.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-409",
+          "feature": "Executar manualmente uma rotina quando disponível no respetivo fluxo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-410",
+          "feature": "Ver calendário em dia, três dias ou semana.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-411",
+          "feature": "Alternar calendário e lista.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-412",
+          "feature": "Navegar para datas anteriores, seguintes e hoje.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-413",
+          "feature": "Filtrar por agente e consultar rotinas pausadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-414",
+          "feature": "Redimensionar/mudar eventos pelos controlos do calendário.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-415",
+          "feature": "Consultar execuções em curso e cancelar uma execução.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-416",
+          "feature": "Abrir resultado, thread de execução e logs.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-417",
+          "feature": "Pesquisar logs e filtrar problemas/estados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-418",
+          "feature": "Ver falhas consecutivas e ocorrências saltadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-419",
+          "feature": "Marcar problemas/resultados como lidos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-420",
+          "feature": "Manter o computador acordado para trabalho agendado quando ativado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-421",
+          "feature": "Reutilizar opcionalmente um relatório limitado da execução anterior no contexto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Webhooks e eventos externos",
+      "sources": [
+        "src/components/WebhooksPanel.tsx",
+        "server/webhooks.ts",
+        "server/webhook-ingress.ts"
+      ],
+      "tech": "Endpoint privado de ingress + fila de tarefas + registo de entregas",
+      "condition": "URL acessível ao emissor e backend em execução; criar não liga serviços externos sozinho",
+      "items": [
+        {
+          "id": "SOL-422",
+          "feature": "Criar um webhook para um agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-423",
+          "feature": "Escolher instruções predefinidas ou usar a tarefa enviada no pedido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-424",
+          "feature": "Escolher computador local ou cloud.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-425",
+          "feature": "Restringir os tipos de evento aceites.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-426",
+          "feature": "Definir o máximo de tarefas pendentes/em curso.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-427",
+          "feature": "Ver e copiar instruções/comando de envio do webhook.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-428",
+          "feature": "Ativar/desativar um webhook.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-429",
+          "feature": "Editar a configuração do webhook.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-430",
+          "feature": "Rodar a URL privada e invalidar a anterior.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-431",
+          "feature": "Consultar entregas aceites e recusadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-432",
+          "feature": "Abrir a thread criada por uma entrega.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-433",
+          "feature": "Apagar o webhook.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Integração Slack",
+      "sources": [
+        "src/components/bot-settings/SlackSection.tsx",
+        "src/components/bot-settings/useSlackManagement.ts",
+        "server/hosted-slack.ts",
+        "server/routes/hosted-slack.ts"
+      ],
+      "tech": "Integração hosted Slack + link para gestão no Admin externo",
+      "condition": "A secção Solar é um deep link; criação/configuração da app Slack é feita no Admin da organização",
+      "items": [
+        {
+          "id": "SOL-434",
+          "feature": "Mostrar a secção Slack apenas quando o servidor oferece um URL de gestão.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-435",
+          "feature": "Abrir a gestão Slack desse agente no Admin externo da organização.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-436",
+          "feature": "Consultar e sincronizar a associação Slack através das rotas hosted previstas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-437",
+          "feature": "Receber mensagens/eventos Slack e encaminhá-los ao agente autorizado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-438",
+          "feature": "Enviar as respostas através da integração configurada.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-439",
+          "feature": "Gerir criação/remoção da ligação no serviço externo; não há formulário local de tokens nesta secção.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Telefone companion e acesso remoto",
+      "sources": [
+        "src/components/CompanionSection.tsx",
+        "src/components/PhoneSetupFlow.tsx",
+        "companion/src/solar-browser.ts",
+        "companion/src/routes.ts",
+        "electron/managed-companion-tunnel.mjs"
+      ],
+      "tech": "Companion autenticado + pairing/QR + rede Wi-Fi/Tailscale/HTTPS + túnel",
+      "condition": "Rotas seguras dependem de serviços/conta; QR Solar abre /solar no browser; não é Android USB",
+      "items": [
+        {
+          "id": "SOL-440",
+          "feature": "Ativar/desativar o acesso de dispositivos remotos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-441",
+          "feature": "Gerar um código/QR temporário de emparelhamento.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-442",
+          "feature": "Escolher o escopo da sessão de pairing: Full access ou Chat and approvals only no formulário que o expõe.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-443",
+          "feature": "Gerar um novo código quando o anterior expira.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-444",
+          "feature": "Ver detalhes de emparelhamento manual/endereço.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-445",
+          "feature": "Emparelhar diretamente no mesmo Wi-Fi acessível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-446",
+          "feature": "Emparelhar através de Tailscale com MagicDNS.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-447",
+          "feature": "Configurar a rota HTTPS/túnel seguro nos fluxos suportados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-448",
+          "feature": "Iniciar/verificar login por código de email para o serviço de acesso seguro.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-449",
+          "feature": "Consultar estado da rota e repetir a preparação em falha.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-450",
+          "feature": "Abrir o cliente Solar /solar no browser do telefone.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-451",
+          "feature": "Confirmar explicitamente a ligação do browser pelo código.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-452",
+          "feature": "Ver os agentes e ler conversas no cliente browser Solar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-453",
+          "feature": "Enviar mensagens e receber respostas no cliente browser Solar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-454",
+          "feature": "Usar o cliente companion nativo para chat, aprovações e chamadas que a plataforma suporta.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-455",
+          "feature": "Consultar dispositivos emparelhados e última atividade.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-456",
+          "feature": "Revogar/remover um dispositivo emparelhado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-457",
+          "feature": "Permitir ou retirar a vista/controlo de computador por dispositivo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-458",
+          "feature": "Manter o host acordado enquanto o acesso remoto está ativo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-459",
+          "feature": "Consultar descoberta próxima, rotas locais e diagnóstico avançado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-460",
+          "feature": "Configurar domínio próprio/HTTPS num servidor preparado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Workspaces ligados e computadores partilhados",
+      "sources": [
+        "src/components/ConnectedWorkspacesSettings.tsx",
+        "src/components/ComputerSharingSettings.tsx",
+        "electron/menu.mjs",
+        "electron/computer-sharing.mjs",
+        "server/shared-computers.ts"
+      ],
+      "tech": "Cliente desktop remoto + sessão persistente + grants de desktop",
+      "condition": "Só pastas e capacidades explicitamente partilhadas são expostas; não mudadas nesta inspeção",
+      "items": [
+        {
+          "id": "SOL-461",
+          "feature": "Ligar a um workspace hosted por endereço ou link de pairing.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-462",
+          "feature": "Guardar a ligação ao workspace neste computador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-463",
+          "feature": "Alternar entre workspace local e remotos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-464",
+          "feature": "Consultar o workspace atual.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-465",
+          "feature": "Retirar/Forget uma ligação guardada.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-466",
+          "feature": "Adicionar um servidor através de um link de pairing copiado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-467",
+          "feature": "Entrar numa organização pelo menu de servidor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-468",
+          "feature": "Abrir a gestão de acesso deste computador para um workspace remoto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-469",
+          "feature": "Escolher pastas locais para partilhar, inicialmente só leitura.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-470",
+          "feature": "Permitir edição nas pastas escolhidas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-471",
+          "feature": "Dar separadamente acesso a terminal sem restrição.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-472",
+          "feature": "Dar separadamente acesso ao ecrã/controlo de computador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-473",
+          "feature": "Parar a partilha e bloquear novos pedidos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-474",
+          "feature": "Listar computadores partilhados online por ferramenta de agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-475",
+          "feature": "Listar, ler e escrever ficheiros partilhados por folder IDs e revisão/hash.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-476",
+          "feature": "Executar comandos ou ferramentas de controlo apenas com o grant separado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-477",
+          "feature": "Consultar atividade de uso/emprestimo do computador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Backups e reposição de workspace",
+      "sources": [
+        "src/components/WorkspaceBackupSettings.tsx",
+        "server/workspace-backup.ts",
+        "server/workspace-backup-http.ts"
+      ],
+      "tech": "Arquivo .orbitbackup cifrado + validação + substituição com cópia de segurança",
+      "condition": "Não inclui credenciais guardadas, logins CLI externos ou discos VM remotos",
+      "items": [
+        {
+          "id": "SOL-478",
+          "feature": "Exportar um backup completo do workspace com password.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-479",
+          "feature": "Incluir agentes, threads, mensagens, ficheiros, instruções e definições não secretas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-480",
+          "feature": "Incluir rascunhos e preferências deste browser no backup.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-481",
+          "feature": "Descarregar o arquivo cifrado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-482",
+          "feature": "Escolher um arquivo para importar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-483",
+          "feature": "Introduzir a password e validar antes de alterar o workspace.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-484",
+          "feature": "Ver resumo, versão, quantidades, tamanho e exclusões do backup.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-485",
+          "feature": "Confirmar a substituição escrevendo REPLACE.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-486",
+          "feature": "Guardar uma cópia de segurança recuperável antes da substituição.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-487",
+          "feature": "Restaurar agentes, permissões, instruções e skills do arquivo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-488",
+          "feature": "Restaurar rotinas, webhooks e chamadas em estado pausado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-489",
+          "feature": "Restaurar rascunhos/preferências do browser ou manter os atuais.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-490",
+          "feature": "Mostrar que é necessário sair completamente/reiniciar após reposição.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Templates, biblioteca e partilha de equipas",
+      "sources": [
+        "src/components/TeamLibraryPanel.tsx",
+        "src/components/ShareTeamDialog.tsx",
+        "server/package-import.ts",
+        "server/bot-package.ts"
+      ],
+      "tech": "Templates Markdown/JSON + pacotes/backup de equipa + repositório comunitário",
+      "condition": "Importa cópias; não transfere contas nem ligações autenticadas",
+      "items": [
+        {
+          "id": "SOL-491",
+          "feature": "Explorar modelos de equipas incluídos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-492",
+          "feature": "Pesquisar e carregar modelos da comunidade.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-493",
+          "feature": "Abrir o repositório público de templates.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-494",
+          "feature": "Pré-visualizar membros, instruções, playbooks, skills e dependências de um template.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-495",
+          "feature": "Criar uma equipa a partir de um template.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-496",
+          "feature": "Importar .mausbackup.json, BotMRR .md ou .mausteam.json legado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-497",
+          "feature": "Importar um template/equipa por link GitHub ou JSON direto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-498",
+          "feature": "Arrastar um ficheiro de equipa para importar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-499",
+          "feature": "Importar a equipa como nova cópia e numerar nomes duplicados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-500",
+          "feature": "Adicionar skills desligadas e rotinas pausadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-501",
+          "feature": "Mostrar as ligações que ainda precisam de configuração.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-502",
+          "feature": "Exportar/partilhar uma equipa inteira como ficheiro sem conversas nem segredos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-503",
+          "feature": "Escolher a equipa a partilhar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-504",
+          "feature": "Começar a partir de uma pasta de projeto e obter sugestão de equipa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-505",
+          "feature": "Selecionar agentes da sugestão e criar uma conversa de grupo no projeto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-506",
+          "feature": "Abrir deep links de instalação de pacotes quando suportados pelo desktop.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Consumo, custos e faturação",
+      "sources": [
+        "src/components/UsageSection.tsx",
+        "src/components/UsageHistory.tsx",
+        "src/components/UsageBudget.tsx",
+        "server/usage-ledger.ts",
+        "server/model-prices.ts"
+      ],
+      "tech": "Ledger por turno + tokens/preços reportados ou estimados",
+      "condition": "Custos de subscrição podem ser equivalentes, não cobranças; budgets/billing são enterprise",
+      "items": [
+        {
+          "id": "SOL-507",
+          "feature": "Ver tokens, turnos e custo por agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-508",
+          "feature": "Ver consumo da thread e do grupo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-509",
+          "feature": "Ver totais de todos os agentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-510",
+          "feature": "Consultar histórico por período: mês atual, anterior ou últimos 30 dias.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-511",
+          "feature": "Agrupar o histórico pelas opções disponibilizadas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-512",
+          "feature": "Distinguir origem direta, agente-a-agente e rotina.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-513",
+          "feature": "Ver tokens de entrada, saída e cache.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-514",
+          "feature": "Assinalar estimativas e modelos sem preço conhecido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-515",
+          "feature": "Exportar o histórico de consumo em CSV.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-516",
+          "feature": "Definir um teto mensal do workspace quando a licença permite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-517",
+          "feature": "Definir percentagem de aviso e bloquear novos turnos ao atingir o teto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-518",
+          "feature": "Configurar preços de venda por modelo e preço default quando a licença permite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-519",
+          "feature": "Definir moeda e preços de input/output/cache por milhão de tokens.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-520",
+          "feature": "Consultar a coluna faturável e exportá-la em CSV.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Pessoas, audiência e auditoria",
+      "sources": [
+        "src/components/PeopleSection.tsx",
+        "src/components/ActivitySection.tsx",
+        "server/bot-visibility.ts",
+        "server/admin-activity.ts",
+        "server/request-auth.ts"
+      ],
+      "tech": "Contas/sessões + owner/admin/member + filtros de audiência + audit log",
+      "condition": "Painéis condicionados pelo modo hosted e papel; listas locais não concedem acesso hosted",
+      "items": [
+        {
+          "id": "SOL-521",
+          "feature": "Consultar pessoas com acesso/atividade neste workspace.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-522",
+          "feature": "Ver papel, última atividade, dispositivos e consumo por pessoa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-523",
+          "feature": "Convidar um email ou domínio quando o modo de servidor o permite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-524",
+          "feature": "Copiar o link de convite de login por código email.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-525",
+          "feature": "Mudar o papel de membro/admin quando permitido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-526",
+          "feature": "Remover acesso e sessões de uma pessoa quando permitido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-527",
+          "feature": "Gerir pessoas no Admin externo em deployments de organização.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-528",
+          "feature": "Definir audiência por agente e respeitar a visibilidade na interface/API.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-529",
+          "feature": "Consultar o registo de alterações de pessoas, definições, acessos e agentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-530",
+          "feature": "Consultar quem respondeu a aprovações.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-531",
+          "feature": "Filtrar auditoria por pessoa, ação e intervalo de datas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-532",
+          "feature": "Ver dados antes/depois nos eventos suportados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-533",
+          "feature": "Exportar o registo de auditoria em CSV.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Organização, modelos e backups cloud empresariais",
+      "sources": [
+        "src/components/OrganizationSettings.tsx",
+        "src/components/CompanyModels.tsx",
+        "src/components/CompanyBackupSettings.tsx",
+        "electron/company-backups.mjs",
+        "server/managed-policy.ts"
+      ],
+      "tech": "Admin/gateway externo + licença + sessão desktop + backups service-managed",
+      "condition": "Requer uma organização/serviço configurado; nada foi ligado nesta inspeção",
+      "items": [
+        {
+          "id": "SOL-534",
+          "feature": "Entrar com email de trabalho através do browser.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-535",
+          "feature": "Escolher URL de portal Admin personalizada.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-536",
+          "feature": "Comparar código de verificação do desktop e browser.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-537",
+          "feature": "Cancelar, repetir ou reabrir o fluxo de login.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-538",
+          "feature": "Ver organização ligada e validade/estado da licença.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-539",
+          "feature": "Usar modelos Company no seletor, além dos modelos pessoais.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-540",
+          "feature": "Aplicar políticas de motores, modelos, MCP e acessos geridos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-541",
+          "feature": "Atualizar o estado da organização.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-542",
+          "feature": "Desligar a organização e parar os turnos Company em curso.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-543",
+          "feature": "Criar um backup cloud manual para a conta da organização.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-544",
+          "feature": "Consultar snapshots, espaço, progresso e uploads/limpezas pendentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-545",
+          "feature": "Cancelar uma transferência de backup.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-546",
+          "feature": "Ativar/desativar backups diários com consentimento específico.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-547",
+          "feature": "Ver próxima tentativa e último backup agendado.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-548",
+          "feature": "Descarregar e validar um snapshot antes de restaurar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-549",
+          "feature": "Repor um snapshot com preview e REPLACE.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-550",
+          "feature": "Apagar um snapshot cloud com DELETE.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-551",
+          "feature": "Pausar backups diários quando a conta/organização deixam de corresponder.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Servidor multi-workspace e camada enterprise",
+      "sources": [
+        "src/components/WorkspacesSection.tsx",
+        "server/fleet.ts",
+        "server/fleet-cli.ts",
+        "enterprise/server/index.ts",
+        "enterprise/FEATURES"
+      ],
+      "tech": "Fleet/instâncias isoladas + licenças Ed25519 + branding",
+      "condition": "Só deployments preparados com direitos adequados; SSO/OIDC genérico está planeado, não implementado como entitlement",
+      "items": [
+        {
+          "id": "SOL-552",
+          "feature": "Listar workspaces de clientes/tenants de um servidor.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-553",
+          "feature": "Criar um workspace com nome, admin, membros e opções de chave/limite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-554",
+          "feature": "Consultar estado, consumo e problemas de recuperação de um workspace.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-555",
+          "feature": "Adicionar/remover pessoas na lista de acesso de um tenant.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-556",
+          "feature": "Suspender e retomar um workspace.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-557",
+          "feature": "Apagar um workspace escolhendo manter a pasta de dados quando disponível.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-558",
+          "feature": "Atualizar todos os workspaces do servidor pela ação Upgrade all.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-559",
+          "feature": "Aplicar nome, tagline, accent, logo e link de suporte white-label por brand.json.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-560",
+          "feature": "Ver edição, direitos e expiração da licença.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-561",
+          "feature": "Mostrar avisos de expiração e período de tolerância da licença.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-562",
+          "feature": "Aplicar direitos admin, budgets e billing quando concedidos pela licença.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-563",
+          "feature": "Administrar o fleet pela CLI nos fluxos de operador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Definições gerais, aparência e onboarding",
+      "sources": [
+        "src/components/SettingsModal.tsx",
+        "src/orbit/SolarAppearance.tsx",
+        "src/components/onboarding/WelcomeFlow.tsx",
+        "src/components/ThreadCleanupSettings.tsx"
+      ],
+      "tech": "Preferências/config do workspace + locale + fluxos de boas-vindas",
+      "condition": "Algumas preferências ficam no browser e outras no host; Solar substitui skins da base",
+      "items": [
+        {
+          "id": "SOL-564",
+          "feature": "Editar o nome e email do utilizador.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-565",
+          "feature": "Escolher língua da interface ou usar a do sistema.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-566",
+          "feature": "Escolher esforço predefinido para novos agentes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-567",
+          "feature": "Escolher fundo Solar preto, azul profundo ou grafite.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-568",
+          "feature": "Ativar/desativar movimento.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-569",
+          "feature": "Ativar/desativar reação/interação visual.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-570",
+          "feature": "Ativar/desativar partículas/debris envolventes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-571",
+          "feature": "Ativar/desativar ligações visuais.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-572",
+          "feature": "Ajustar a intensidade de glow.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-573",
+          "feature": "Escolher a fonte nas opções disponíveis.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-574",
+          "feature": "Mostrar/ocultar chips/listas de threads conforme a preferência.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-575",
+          "feature": "Configurar sons/notificações de atividade/conclusão quando expostos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-576",
+          "feature": "Configurar a apresentação de chamadas de ferramentas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-577",
+          "feature": "Ativar/desativar rotinas na conversa conforme a definição.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-578",
+          "feature": "Configurar timeout de turnos de grupo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-579",
+          "feature": "Configurar o limite de threads paralelas por agente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-580",
+          "feature": "Ativar e escolher motor/modelo de recuperação automático.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-581",
+          "feature": "Eliminar event logs antigos de threads terminadas/arquivadas após um prazo.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-582",
+          "feature": "Limitar o tamanho dos event logs sem apagar transcrições.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-583",
+          "feature": "Percorrer ou saltar a introdução Solar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-584",
+          "feature": "Criar/configurar o primeiro agente e motor pelos passos de onboarding.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-585",
+          "feature": "Reabrir a introdução/tour a partir de Sistema.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-586",
+          "feature": "Abrir a ajuda de atalhos e pesquisar atalhos.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-587",
+          "feature": "Abrir Sobre com versão, créditos, licenças e atribuições.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    },
+    {
+      "title": "Desktop, diagnóstico, atualizações e APIs",
+      "sources": [
+        "electron/main.mjs",
+        "electron/menu.mjs",
+        "electron/diagnostics.mjs",
+        "electron/updater.mjs",
+        "src/components/InspectorPanel.tsx",
+        "server/harness/http.ts",
+        "server/message-db.ts"
+      ],
+      "tech": "Electron + Node 24 + SQLite/FTS5 + HTTP/eventos + updater adaptado",
+      "condition": "Solar não recebe updates Orbit; existência de botão não prova canal Solar publicado",
+      "items": [
+        {
+          "id": "SOL-588",
+          "feature": "Arrancar com ecrã de carregamento Solar.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-589",
+          "feature": "Impedir múltiplas instâncias e trazer a janela existente à frente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-590",
+          "feature": "Ocultar/restaurar a janela pela bandeja e sair completamente.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-591",
+          "feature": "Conservar/restaurar geometria da janela.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-592",
+          "feature": "Usar menus nativos de ficheiro, edição, visualização e janela.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-593",
+          "feature": "Usar menu contextual nativo para copiar, colar e selecionar texto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-594",
+          "feature": "Escolher caminhos de gravação/download sem substituir inadvertidamente nomes.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-595",
+          "feature": "Ver banners de atualização e consultar o estado do updater.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-596",
+          "feature": "Pedir verificação de atualizações nos clientes em que o bridge existe.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-597",
+          "feature": "Exportar um ficheiro de diagnóstico com versão, estados e log redigido.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-598",
+          "feature": "Ver o Inspector de uma conversa.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-599",
+          "feature": "Ver o run log e recarregá-lo do disco.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-600",
+          "feature": "Ver eventos de ferramentas e narração de trabalho no chat.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-601",
+          "feature": "Persistir mensagens e pesquisar por SQLite FTS5.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-602",
+          "feature": "Reconstruir contexto/compactar histórico conforme o motor e orçamento de contexto.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-603",
+          "feature": "Reconectar eventos do servidor e recuperar escritas/filas após falhas conforme a implementação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-604",
+          "feature": "Expor APIs HTTP autenticadas para clientes e ferramentas.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-605",
+          "feature": "Expor a superfície MCP/control CLI para integração e verificação.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-606",
+          "feature": "Receber deep links de pairing, organização, pacotes e threads nos fluxos suportados.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        },
+        {
+          "id": "SOL-607",
+          "feature": "Executar fixtures isoladas para testes, separadas dos dados reais.",
+          "decision": null,
+          "priority": null,
+          "tested": false
+        }
+      ]
+    }
+  ]
+}

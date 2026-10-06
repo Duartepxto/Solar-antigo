@@ -30,10 +30,11 @@ export const QUICK_MAX_HEIGHT = 520;
 // The window the island is drawn in, as large as it grows (Coucou's panel,
 // 720 × 320: the 640-pt expanded island plus room for its shadow).
 export const TALK_SIZE = { width: 720, height: 320 };
+export const SIDE_TALK_SIZE = { width: 340, height: 460 };
 // Platforms the floating shell runs on (Linux keeps the app window only).
 const SHELL_PLATFORMS = new Set(["darwin", "win32"]);
-// Platforms with a speech-to-text engine for talk mode (the macOS helper).
-const VOICE_PLATFORMS = new Set(["darwin"]);
+// Platforms with speech recognition: macOS helper and Solar's local Whisper.
+const VOICE_PLATFORMS = new Set(["darwin", "win32"]);
 
 export function shellSupported(platform) {
   return SHELL_PLATFORMS.has(platform);
@@ -79,11 +80,11 @@ export const POINTER_NEAR_TOP = 80;
 /** Where the island is on screen, as the page last reported its size,
  * grown by 6 pt: the island is centred in its window and hangs from its
  * top. null until the page has said how big it is. */
-export function islandHoverRect(windowBounds, size, inset = ISLAND_HOVER_INSET) {
+export function islandHoverRect(windowBounds, size, inset = ISLAND_HOVER_INSET, side = false) {
   if (!windowBounds || !size || !(size.width > 0) || !(size.height > 0)) return null;
   return {
-    x: windowBounds.x + (windowBounds.width - size.width) / 2 - inset,
-    y: windowBounds.y - inset,
+    x: windowBounds.x + (side ? windowBounds.width - size.width - 16 : (windowBounds.width - size.width) / 2) - inset,
+    y: windowBounds.y + (side ? (windowBounds.height - size.height) / 2 : 0) - inset,
     width: size.width + 2 * inset,
     height: size.height + 2 * inset,
   };
@@ -268,6 +269,13 @@ export function islandFrame(display, notch = null, size = TALK_SIZE) {
     bounds: talkBounds(display.bounds, size, notch),
     topInset: notch ? notch.height : Math.max(0, display.workArea.y - display.bounds.y),
   };
+}
+
+export function sideTalkFrame(display) {
+  const area = display.workArea;
+  const width = Math.min(SIDE_TALK_SIZE.width, area.width);
+  const height = Math.min(SIDE_TALK_SIZE.height, area.height);
+  return { x: area.x + area.width - width, y: Math.round(area.y + (area.height - height) / 2), width, height };
 }
 
 /** Centred at the bottom of the work area, above the Dock, like the map's
@@ -543,7 +551,7 @@ export function createOrbitSummon(deps) {
     // enableLargerThanScreen: Electron then leaves a frameless window's frame
     // exactly where it is put, so the island can start at the very top edge,
     // over the notch; without it macOS pushes it below the menu bar.
-    talk = panel({ surface: "talk", ...TALK_SIZE, focusable: false, ...largerThanScreen });
+    talk = panel({ surface: "talk", ...(isMac ? TALK_SIZE : SIDE_TALK_SIZE), focusable: false, ...largerThanScreen });
     // Forwarded moves are only a second source for the page: macOS
     // forwards none to a click-through panel over the notch or the menu
     // bar, so while talk is shown main watches the pointer itself
@@ -565,7 +573,7 @@ export function createOrbitSummon(deps) {
    * mouse only over the island. */
   function showTalk(display, notch) {
     if (!talk || talk.isDestroyed()) createTalk();
-    talk.setBounds(islandFrame(display, notch).bounds);
+    talk.setBounds(isMac ? islandFrame(display, notch).bounds : sideTalkFrame(display));
     // one step above the screen's green border, which would tint the
     // island's black where they meet
     floatEverywhere(talk, "screen-saver", 1);
@@ -609,7 +617,7 @@ export function createOrbitSummon(deps) {
     try {
       point = screen.getCursorScreenPoint();
       under = displayAt(screen.getAllDisplays(), point);
-      rect = islandHoverRect(talk.getBounds(), islandLook);
+      rect = islandHoverRect(talk.getBounds(), islandLook, ISLAND_HOVER_INSET, !isMac);
       setHover(pointInRect(point, rect));
     } catch (error) {
       log(`orbit pointer watch: ${error?.message ?? error}`);

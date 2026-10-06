@@ -106,7 +106,7 @@ export function prepareOrbitCodexHome(env: Record<string, string | undefined>, d
     if (exists(link)) continue;
     // history lives in the person's home; a first-ever Codex user gets it there too
     mkdirSync(origin, { recursive: true });
-    try { symlinkSync(origin, link, "dir"); } catch { /* another launch linked it first */ }
+    try { symlinkSync(origin, link, process.platform === "win32" ? "junction" : "dir"); } catch { /* another launch linked it first */ }
   }
   return dir;
 }

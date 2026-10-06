@@ -20,12 +20,26 @@ export function compactBudget(window: number, compactAt?: number, nativeCompactA
   return Math.max(1, Math.floor(Math.min(configured, window * 0.9, positive(nativeCompactAt) ? nativeCompactAt * 0.9 : Infinity)));
 }
 
-export function shouldCompact(input: { contextTokens?: number; estimatedBytes: number; budget: number; floor?: number; window: number; nativeCompactAt?: number }): boolean {
+/** Rebuilds use at most a quarter of the window, leaving room for stable
+ * instructions, memory, tool definitions, output and native reasoning. Two
+ * bytes per estimated token is deliberately conservative; this is a fallback
+ * budget, not a tokenizer or a claim about the provider's actual usage. */
+export function replayBudgetBytes(window: number, incomingBytes = 0, configured?: number): number {
+  if (!positive(window) || !Number.isFinite(incomingBytes) || incomingBytes < 0) throw new Error("invalid replay context budget");
+  if (configured !== undefined && (!Number.isSafeInteger(configured) || configured < 1_024)) throw new Error("invalid replay context budget");
+  const available = Math.max(1_024, Math.floor(window * 0.25 * 2 - incomingBytes));
+  return Math.min(available, configured ?? 1_000_000);
+}
+
+export function shouldCompact(input: { contextTokens?: number; estimatedBytes: number; incomingBytes?: number; budget: number; floor?: number; window: number; nativeCompactAt?: number }): boolean {
   // Summed input across tool rounds is NOT a context-window measurement.
   const size = positive(input.contextTokens) ? input.contextTokens : Math.ceil(input.estimatedBytes / 4);
   // Regrowth avoids repeatedly folding an irreducible prompt, but cannot
   // delay the harness beyond a known provider-native compaction boundary.
   const ceiling = compactBudget(input.window, input.window, input.nativeCompactAt);
   const threshold = Math.min(ceiling, positive(input.floor) ? Math.max(input.budget, input.floor * 1.25) : input.budget);
-  return size >= threshold;
+  // Last-turn telemetry cannot include the user message that arrived next.
+  // Account for that message on both the measured and estimated paths.
+  const incoming = Number.isFinite(input.incomingBytes) && (input.incomingBytes ?? 0) > 0 ? Math.ceil(input.incomingBytes! / 2) : 0;
+  return size + incoming >= threshold;
 }

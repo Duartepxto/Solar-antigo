@@ -1567,8 +1567,10 @@ export class RoutineManager {
         // A webhook is an incoming message, so make its task the bot's live
         // chat immediately. Scheduled work stays in its own task unless the
         // workspace has asked for runs to join the conversation they report to.
-        const joined = run.target === "room-goal" ? null : this.options.joinConversation?.(run) || null;
-        const task = joined
+        let task: { threadId: string } | null;
+        try {
+          const joined = run.target === "room-goal" ? null : this.options.joinConversation?.(run) || null;
+          task = joined
           ? { threadId: joined }
           : run.target === "room-goal"
           ? run.groupId
@@ -1576,6 +1578,10 @@ export class RoutineManager {
             : null
           : this.options.createTask(run.botId, run.routineName, run.triggerSource === "webhook",
             this.routines.find((routine) => routine.id === run.routineId)?.approvalMode);
+        } catch (error) {
+          this.failRun(run, `Could not create a task for this run: ${error instanceof Error ? error.message : String(error)}`);
+          continue;
+        }
         if (!task) {
           this.failRun(run, run.target === "room-goal"
             ? "Could not create a room task for this goal"

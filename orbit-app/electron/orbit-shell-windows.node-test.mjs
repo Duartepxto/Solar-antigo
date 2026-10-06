@@ -1,18 +1,19 @@
 // The Orbit shell on Windows, against fake Electron modules: the same shell
-// with Windows window mechanics, no talk mode, and not one macOS-only call.
+// with Windows window mechanics, local voice, and no macOS-only calls.
 // Each test also runs the darwin fixture where macOS must keep its behaviour.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { EventEmitter } from "node:events";
 import {
-  createMenuBar, createOrbitSummon, displayAt, hotkeyIdsFor, islandFrame, shellSupported, voiceSupported, TALK_SIZE,
+  createMenuBar, createOrbitSummon, displayAt, hotkeyIdsFor, islandFrame, sideTalkFrame, islandHoverRect, shellSupported, voiceSupported, TALK_SIZE,
 } from "./orbit-summon.mjs";
 import { createSystemTray } from "./system-tray.mjs";
 
 // Scratch inside the repo's ignored folder, never /tmp (the owner's rule).
-const scratchRoot = path.join(path.dirname(new URL(import.meta.url).pathname), "..", ".orbit-scratch", "node-tests");
+const scratchRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".orbit-scratch", "node-tests");
 
 class FakeWindow extends EventEmitter {
   static all = [];
@@ -156,9 +157,9 @@ test("the shell runs on macOS and Windows, talk mode only where there is a voice
   assert.equal(shellSupported("win32"), true);
   assert.equal(shellSupported("linux"), false, "Linux keeps the app window only");
   assert.equal(voiceSupported("darwin"), true);
-  assert.equal(voiceSupported("win32"), false);
+  assert.equal(voiceSupported("win32"), true);
   assert.deepEqual(hotkeyIdsFor("darwin"), ["quick", "talk"]);
-  assert.deepEqual(hotkeyIdsFor("win32"), ["quick"]);
+  assert.deepEqual(hotkeyIdsFor("win32"), ["quick", "talk"]);
 });
 
 test("macOS: talk's island hangs from the top edge, over the notch, with the menu bar as its band", () => {
@@ -167,39 +168,40 @@ test("macOS: talk's island hangs from the top edge, over the notch, with the men
   assert.equal(islandFrame(mac, { x: 663, width: 186, height: 38 }).bounds.x, Math.round(663 + 93 - TALK_SIZE.width / 2));
 });
 
-test("Windows: no island at all, from the start or when displays change", async () => {
+test("Windows: talk stays hidden until summoned, including after display changes", async () => {
   const { summon, surface, screen, setDisplays, cleanup } = fixture();
   summon.start();
   await settle();
-  assert.equal(surface("talk"), undefined, "no talk window: Windows has no voice engine");
+  assert.equal(surface("talk")?.isVisible() ?? false, false);
   setDisplays([topTaskbar, primary], topTaskbar);
   screen.emit("display-added");
   screen.emit("display-metrics-changed");
   await settle();
   await settle();
-  assert.equal(surface("talk"), undefined);
+  assert.equal(surface("talk")?.isVisible() ?? false, false);
   assert.equal(summon.state().island, undefined, "and no setting for one");
   cleanup();
 });
 
-test("Windows: only the quick bar hotkey, and no talk summon from anywhere", async () => {
+test("Windows: Alt+T summons the voice pill at the right centre of the work area", async () => {
   const { summon, surface, handlers, registered, cleanup } = fixture();
   summon.start();
   await settle();
-  assert.deepEqual([...registered.keys()], ["Alt+O"], "Alt+O only: no Alt+T, never Alt+Space");
+  assert.deepEqual([...registered.keys()], ["Alt+O", "Alt+T"]);
   const state = summon.state();
-  assert.equal(state.voice, false);
+  assert.equal(state.voice, true);
   assert.equal(state.platform, "win32");
-  assert.deepEqual({ accelerator: state.hotkeys.talk.accelerator, registered: state.hotkeys.talk.registered }, { accelerator: "", registered: false });
-  await assert.rejects(async () => handlers.get("orbit-shell:set-hotkey")({}, "talk", "Alt+K"), /orbit-shell:unsupported/);
-  // Alt+T is free for the quick bar: the unused talk default can't collide
-  const next = handlers.get("orbit-shell:set-hotkey")({}, "quick", "Alt+T");
-  assert.equal(next.hotkeys.quick.accelerator, "Alt+T");
-  assert.deepEqual([...registered.keys()], ["Alt+T"]);
+  assert.equal(state.hotkeys.talk.accelerator, "Alt+T");
+  assert.equal(state.hotkeys.talk.registered, true);
 
   await summon.summonTalk();
   await settle();
-  assert.equal(surface("talk"), undefined, "talk never starts, so its island never comes");
+  const talk = surface("talk");
+  assert.equal(talk.isVisible(), true);
+  assert.deepEqual(talk.getBounds(), sideTalkFrame(primary));
+  assert.deepEqual(islandHoverRect(talk.getBounds(), { width: 84, height: 244 }, 6, true), { x: 1814, y: 392, width: 96, height: 256 });
+  assert.equal(sideTalkFrame(topTaskbar).y, 514);
+  assert.equal(talk.focused, undefined, "summoning never steals focus from the current app");
   cleanup();
 });
 
@@ -254,7 +256,7 @@ test("Windows: the app's notification-area icon carries the shell's menu; a left
   summon.start();
   assert.equal(FakeTray.made.length, 0, "one icon, not a second one");
   const labels = trayIcon.menu.filter((item) => item.label).map((item) => item.label);
-  assert.deepEqual(labels, ["Ask Orbit…", "Open Orbit", "Pause screen access", "Settings…", "Quit Orbit"], "no Talk without a voice engine");
+  assert.deepEqual(labels, ["Ask Orbit…", "Talk to Orbit", "Open Orbit", "Pause screen access", "Settings…", "Quit Orbit"]);
   trayIcon.emit("click");
   assert.equal(surface("quick").isVisible(), true, "left click: the quick bar");
   trayIcon.menu.find((item) => item.label === "Pause screen access").click();
@@ -280,7 +282,7 @@ test("Windows without the app's icon: the shell makes its own, in colour", () =>
   assert.deepEqual(tray.icon.resized, { width: 20, height: 20 });
   tray.emit("click");
   assert.equal(menu.fired, "quick");
-  assert.equal(menu.some((item) => item.label === "Talk to Orbit"), false);
+  assert.equal(menu.some((item) => item.label === "Talk to Orbit"), true);
   bar.destroy();
 });
 

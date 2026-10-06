@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { EventEmitter } from "node:events";
 import { captureDisplay, clearCaptureDir, fitCaptureSize, serialized } from "./orbit-capture.mjs";
@@ -11,7 +12,7 @@ import { createSpeechOwner } from "./speech-owner.mjs";
 
 // Scratch space inside the repo's ignored scratch folder, never /tmp: the
 // owner's rule is that nothing of Orbit's lands there.
-const scratchRoot = path.join(path.dirname(new URL(import.meta.url).pathname), "..", ".orbit-scratch", "node-tests");
+const scratchRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".orbit-scratch", "node-tests");
 function scratch() {
   fs.mkdirSync(scratchRoot, { recursive: true });
   return fs.mkdtempSync(path.join(scratchRoot, "orbit-shell-"));

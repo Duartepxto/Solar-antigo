@@ -176,6 +176,8 @@ const bridge = {
       ipcRenderer.invoke("android-device:input", serial, payload).then(() => undefined),
   },
   speechStart: (options) => ipcRenderer.invoke("speech:start", options),
+  speechClaimLocal: () => ipcRenderer.invoke("speech:claim-local"),
+  speechReleaseLocal: (token) => ipcRenderer.invoke("speech:release-local", token),
   speechStop: () => ipcRenderer.invoke("speech:stop"),
   speechFinish: () => ipcRenderer.invoke("speech:finish"),
   onSpeechTranscript: (cb) => {

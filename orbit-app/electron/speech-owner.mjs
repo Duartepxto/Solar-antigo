@@ -73,3 +73,23 @@ export function createSpeechOwner({ launch, notify }) {
     },
   };
 }
+
+/** Renderer-side Whisper keeps the microphone through transcription. A
+ * token prevents a late cleanup from releasing a newer recording. */
+export function createSpeechLease() {
+  let active = null;
+  let sequence = 0;
+  return {
+    claim(owner) {
+      if (active) return null;
+      const token = String(++sequence);
+      active = { owner, token };
+      return token;
+    },
+    release(owner, token) {
+      if (!active || active.owner !== owner || (token !== undefined && active.token !== token)) return false;
+      active = null;
+      return true;
+    },
+  };
+}

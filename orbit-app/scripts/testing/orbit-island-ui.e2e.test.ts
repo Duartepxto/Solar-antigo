@@ -171,6 +171,40 @@ it.skipIf(!enabled)("talk mode's island listens, tucks in while Orbit thinks, an
 
     // no team status was ever asked for: no thread reads, no cards answered
     expect(requests.filter((request) => /\/api\/threads\/|\/respond/.test(request))).toEqual([]);
+    // Windows reuses the same voice workflow in a right-centred vertical
+    // pill. A completed answer reopens the microphone; hanging up stops it.
+    await browser("open", `${preview.previewUrl}?layout=side`);
+    await browser("set", "viewport", "340", "460");
+    await waitFor("Boolean(window.__talk?.summon)");
+    await evalJs("window.__talk.summon({ id: 20, capture: { ok: false, reason: 'paused' }, display: { id: '1', bounds: {}, topInset: 0, notch: null } })");
+    await waitFor("window.__island.talkState.at(-1) === 'listening'");
+    await browser("wait", "500");
+    expect(await evalJs("(() => { const r = document.querySelector('.solar-talk-pill').getBoundingClientRect(); return [Math.round(r.right), Math.round(r.y+r.height/2)]; })()")).toEqual([324, 230]);
+    await browser("screenshot", join(EVIDENCE, "7-windows-listening.png"));
+    expect(await evalJs("document.querySelector('.solar-talk-pill canvas')")).toBe(null);
+    await evalJs("document.querySelector('.solar-voice-notice button').click()");
+    await browser("wait", "400");
+    expect(await evalJs("(() => { const r=document.querySelector('.solar-talk-pill').getBoundingClientRect(); return [Math.round(r.width),Math.round(r.height)]; })()")).toEqual([48, 108]);
+    await browser("screenshot", join(EVIDENCE, "8-solar-compact.png"));
+    await evalJs("window.__talk.end({ code: 0 })");
+    await waitFor("window.__island.starts === 2 && window.__island.talkState.at(-1) === 'listening'");
+    expect(sent).toHaveLength(1);
+    await evalJs("window.__talk.transcript({ text: 'hello from the Windows pill' }); window.__talk.end({ code: 0 })");
+    for (let waited = 0; sent.length < 2 && waited < 8_000; waited += 100) await pause(100);
+    expect(sent[1]).toMatchObject({ surface: "talk", text: "hello from the Windows pill" });
+    expect(await evalJs("getComputedStyle(document.querySelector('.solar-talk-pill')).opacity")).toBe("1");
+    expect(await evalJs("document.querySelector('.solar-voice-transcript').textContent")).toBe("hello from the Windows pill");
+    await browser("screenshot", join(EVIDENCE, "9-solar-thinking.png"));
+    push({ kind: "message", threadId: "t-orbit", message: { id: "a2", role: "bot", kind: "text", text: "Hello, I am ready." } });
+    push({ kind: "runtime", event: { type: "turn.completed", threadId: "t-orbit" } });
+    await waitFor("window.__island.spoken.includes('Hello, I am ready.')");
+    expect(await evalJs("document.querySelector('.solar-voice-transcript').textContent")).toBe("Hello, I am ready.");
+    await waitFor("window.__island.starts === 3 && window.__island.talkState.at(-1) === 'listening'");
+    await evalJs("document.querySelector('button[aria-label=\"Hang up\"]').click()");
+    await waitFor("window.__island.dismissed === 1");
+    await browser("wait", "3000");
+    expect(await evalJs("({ starts: window.__island.starts, stops: window.__island.stops, dismissed: window.__island.dismissed })")).toMatchObject({ starts: 3, dismissed: 1 });
+    expect(await evalJs("window.__island.stops")).toBeGreaterThan(0);
     const logs = await browser("console");
     expect(logs.messages.filter((message: { type: string }) => message.type === "error")).toEqual([]);
   } finally {

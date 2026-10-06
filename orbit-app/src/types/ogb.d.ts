@@ -205,6 +205,8 @@ const __APP_VERSION__: string;
        * finalizes a turn; composer dictation omits it and remains manual. */
       speechStart(options?: { endpointMs?: number }): Promise<void>;
       speechStop(): Promise<void>;
+      speechClaimLocal?(): Promise<string | null>;
+      speechReleaseLocal?(token: string): Promise<boolean>;
       /** Finish capture and emit the recognizer's final transcript. */
       speechFinish?(): Promise<void>;
       onSpeechTranscript(

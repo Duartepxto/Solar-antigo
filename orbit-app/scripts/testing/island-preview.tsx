@@ -11,6 +11,9 @@ import "../../src/styles.css";
 import "../../src/shell/shell.css";
 
 const record = {
+  starts: 0,
+  stops: 0,
+  summons: 0,
   interactive: [] as boolean[],
   talkState: [] as string[],
   look: [] as unknown[],
@@ -18,6 +21,7 @@ const record = {
   spoken: [] as string[],
 };
 const noop = () => () => {};
+const side = new URLSearchParams(location.search).get("layout") === "side";
 // what runs while the island rests: every frame and timer the page asks for
 const load = { frames: 0, timers: 0 };
 const frame = window.requestAnimationFrame.bind(window);
@@ -43,10 +47,11 @@ Object.assign(window, {
   __load: load,
   __talk: talk,
   ogb: {
+    platform: side ? "win32" : "darwin",
     onSpeechTranscript: keep("transcript"),
     onSpeechEnd: keep("end"),
-    speechStart: async () => {},
-    speechStop: async () => {},
+    speechStart: async () => { record.starts += 1; },
+    speechStop: async () => { record.stops += 1; },
     speechFinish: async () => {},
     orbitShell: {
       onVisibility: (cb: (visible: boolean) => void) => { cb(true); return () => {}; },
@@ -55,7 +60,7 @@ Object.assign(window, {
       onIslandHover: keep("hover"),
       talkState: async (phase: string) => { record.talkState.push(phase); },
       talkDismiss: async () => { record.dismissed += 1; },
-      talkSummon: async () => {},
+      talkSummon: async () => { record.summons += 1; if (side) talk.summon?.({ id: record.summons + 10, capture: { ok: false, reason: "paused" }, display: { id: "1", bounds: {}, topInset: 0, notch: null } }); },
       screenHeld: async () => {},
       point: async () => false,
       onTalkSummon: keep("summon"),
@@ -64,6 +69,6 @@ Object.assign(window, {
     },
   },
 });
-document.body.style.cssText = "margin:0;width:720px;height:320px;background:#56708a";
-document.getElementById("root")!.style.cssText = "width:720px;height:320px";
+document.body.style.cssText = `margin:0;width:${side ? 340 : 720}px;height:${side ? 460 : 320}px;background:#56708a`;
+document.getElementById("root")!.style.cssText = `width:${side ? 340 : 720}px;height:${side ? 460 : 320}px`;
 createRoot(document.getElementById("root")!).render(<TalkSurface />);

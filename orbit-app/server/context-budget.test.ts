@@ -1,5 +1,19 @@
 import { expect, it } from "vitest";
-import { compactBudget, contextWindowFor, shouldCompact, DEFAULT_CONTEXT_WINDOW } from "./context-budget.ts";
+import { compactBudget, contextWindowFor, replayBudgetBytes, shouldCompact, DEFAULT_CONTEXT_WINDOW } from "./context-budget.ts";
+
+it("compacts before a large incoming request even with a smaller previous measurement", () => {
+  expect(shouldCompact({ contextTokens: 7_000, estimatedBytes: 0, incomingBytes: 2_000, budget: 8_000, window: 10_000 })).toBe(true);
+  expect(shouldCompact({ contextTokens: 7_000, estimatedBytes: 0, incomingBytes: 1_000, budget: 8_000, window: 10_000 })).toBe(false);
+});
+
+it("adapts replay to the model and incoming request while respecting an explicit cap", () => {
+  expect(replayBudgetBytes(128_000)).toBe(64_000);
+  expect(replayBudgetBytes(1_000_000)).toBe(500_000);
+  expect(replayBudgetBytes(8_000, 1_000, 24_000)).toBe(3_000);
+  expect(replayBudgetBytes(128_000, 0, 32_000)).toBe(32_000);
+  expect(replayBudgetBytes(8_000, 20_000)).toBe(1_024);
+  expect(() => replayBudgetBytes(NaN)).toThrow();
+});
 
 it("keeps compaction reachable below small model windows", () => {
   expect(compactBudget(8_000)).toBe(6_400);

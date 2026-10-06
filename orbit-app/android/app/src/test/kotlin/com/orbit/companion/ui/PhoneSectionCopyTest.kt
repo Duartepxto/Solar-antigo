@@ -35,13 +35,13 @@ class PhoneSectionCopyTest {
     )
 
     @Test
-    fun `pairing sends the person to Settings then Phone`() {
+    fun `pairing sends the person to the Solar remote phone section`() {
         val source = sourceFile("ui/PairingScreen.kt").readText()
 
-        // Step one of setup. Upstream: `ios/App/OnboardingViews.swift:137`.
+        // Solar's desktop exposes this system through Jarvis, rather than Orbit Settings.
         assertTrue(
-            source.contains("1.  Open Orbit → Settings → Phone"),
-            "the setup steps must name the Phone section",
+            source.contains("1.  Open Solar → Jarvis → System → Remote / phone"),
+            "the setup steps must name Solar's actual remote phone section",
         )
         // A discovered computer that answered without an address.
         assertTrue(

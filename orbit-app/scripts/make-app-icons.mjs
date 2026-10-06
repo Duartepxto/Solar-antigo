@@ -95,12 +95,7 @@ writeFileSync(join(root, "public", "app-icon.svg"), svg(128, png(128)));
 execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-i", bleed, "-pix_fmt", "rgb24",
   join(root, "ios", "App", "Assets.xcassets", "AppIcon.appiconset", "icon-1024.png")]);
 
-// Android: the adaptive icon's foreground and themed (monochrome) layer; the
-// launcher draws its own shape over the background colour
-const res = join(root, "android", "app", "src", "main", "res", "drawable-nodpi");
-mkdirSync(res, { recursive: true });
-execFileSync("sips", ["-z", "432", "432", foreground, "--out", join(res, "ic_launcher_foreground.png")], { stdio: "ignore" });
-copyFileSync(join(res, "ic_launcher_foreground.png"), join(res, "ic_launcher_monochrome.png"));
+// Android uses its own Solar vector adaptive icon; don't regenerate retired Orbit bitmaps.
 
 rmSync(work, { recursive: true, force: true });
 console.log("app icons written from build/icon-1024.png");

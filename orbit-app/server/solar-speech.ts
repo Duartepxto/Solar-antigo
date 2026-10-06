@@ -5,6 +5,13 @@ import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
+/** Pure Whisper sound annotations must not become assistant commands. */
+export function solarSpokenText(value: string): string {
+  const text = value.trim();
+  const labels = /[\[(]\s*(?:(?:background|soft|instrumental)\s+)?(?:music|musica(?:\s+de\s+fundo)?|silence|silencio|applause|aplausos|laughter|risos|noise|ruido)(?:\s+playing)?\s*[\])]/gi;
+  const normalized = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return normalized.replace(labels, '').trim() ? text : '';
+}
 let active = false;
 export function solarSpeechDirectory() { return process.env.SOLAR_SPEECH_DIR || resolve('dist-native/solar-speech'); }
 export function solarSpeechReady() { const root = solarSpeechDirectory(); return existsSync(join(root,'whisper-cli.exe')) && existsSync(join(root,'ggml-base.bin')); }
@@ -25,7 +32,7 @@ export async function transcribeSolarVoice(audio: unknown, language: unknown) {
     const path = join(directory,'recording.wav'), output = join(directory,'transcript'); writeFileSync(path,bytes);
     const root = solarSpeechDirectory();
     await run(join(root,'whisper-cli.exe'), ['-m',join(root,'ggml-base.bin'),'-f',path,'-l',lang,'-otxt','-of',output,'-nt','-np','-t','4'], { timeout: 90_000, maxBuffer: 500_000, windowsHide: true });
-    return { text: readFileSync(output+'.txt','utf8').trim() };
+    return { text: solarSpokenText(readFileSync(output+'.txt','utf8')) };
   } finally {
     active = false;
     if(dirname(resolve(directory)) === resolve(tmpdir()) && directory.startsWith(join(tmpdir(),'solar-voice-'))) rmSync(directory,{recursive:true,force:true});

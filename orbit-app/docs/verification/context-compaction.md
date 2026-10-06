@@ -42,10 +42,18 @@ temporary home. No live account, computer or user workspace is touched.
 
 `context` settings in config.json are optional. `autoCompact: false` disables
 automatic folding, `compactAt` is a fraction below 1 or a token count, and
-`rebuildBytes` controls replay size (default 24,000 bytes). Context-only settings
+`rebuildBytes` caps replay size. The default now adapts to the selected model:
+one quarter of its window at a conservative two bytes per estimated token,
+less the incoming text, with a 1 MB maximum and a 1 KB minimum. An explicit
+cap can reduce this budget but cannot expand it past the adaptive headroom.
+Replay no longer discards fitting messages solely because there are more
+than forty. These byte bounds are estimates, not exact token counts.
+Context-only settings
 do not reload provider processes. The default threshold is 80% of the known
 model window; a real latest-prompt measurement wins over a transcript estimate.
 Summed input tokens across tool rounds are never treated as context size.
+The next user request is included in the projected size before dispatch;
+previous-turn telemetry alone cannot account for a new large request.
 For Claude, the threshold and post-compaction regrowth floor also leave 10%
 headroom below the selected account's numeric native-compaction setting.
 That account's setting takes precedence over the inherited launch environment.
@@ -53,7 +61,11 @@ Native `auto`/`off` settings supply no known numeric bound; other engines keep
 their own model-window threshold. The native CLI setting itself is unchanged.
 
 The selected account's tool-free helper can produce a historical summary, with
-a 20-second timeout and source-labelled fallback when unavailable. Summaries
+a shared 20-second timeout and source-labelled fallback when unavailable.
+Long histories are processed in chronological, bounded batches, carrying the
+previous summary forward. Source text is split without breaking UTF-8; the
+old head/tail cut that skipped the middle is removed. Multiple batches may
+use multiple helper calls inside the same overall timeout. Summaries
 are capped at 6,000 bytes and retain recent source corrections. The helper may
 incur provider usage; its one-shot cost is not separately reported by the current
 provider interface. Summaries are not verified facts and can omit details.

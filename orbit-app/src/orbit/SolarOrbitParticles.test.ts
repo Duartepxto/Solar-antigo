@@ -2,12 +2,12 @@ import {describe,it,expect,vi} from 'vitest';
 import {SolarOrbitParticles,type SolarParticleBody} from './SolarOrbitParticles';
 
 const bodies:SolarParticleBody[]=[{id:'moon',x:80,y:150,radius:30,color:'#fcfcfc',state:'ready',alpha:1,signalAge:10},{id:'planet',x:330,y:150,radius:40,color:'#ffb454',state:'ready',alpha:1,signalAge:10},{id:'jarvis',x:610,y:150,radius:45,color:'#ffb454',state:'ready',alpha:1,signalAge:10}];
-const context=()=>({beginPath:vi.fn(),moveTo:vi.fn(),lineTo:vi.fn(),stroke:vi.fn(),rect:vi.fn(),fill:vi.fn()}) as unknown as CanvasRenderingContext2D;
+const context=()=>({save:vi.fn(),restore:vi.fn(),beginPath:vi.fn(),moveTo:vi.fn(),lineTo:vi.fn(),stroke:vi.fn(),rect:vi.fn(),fill:vi.fn()}) as unknown as CanvasRenderingContext2D;
 describe('original Orbit streams in solar scene',()=>{
   it('sends 48 squares using the sender palette, including results',()=>{
     const effect=new SolarOrbitParticles(),ctx=context(),arrive=vi.fn();
     const coloured=bodies.map(b=>({...b,colors:b.id==='moon'?['#b0d0ee','#e3efff']:['#ffb454']}));
-    const fills:string[]=[];Object.defineProperty(ctx,'fillStyle',{set:value=>fills.push(value)});
+    const fills:string[]=[];(ctx.fill as ReturnType<typeof vi.fn>).mockImplementation(()=>fills.push(String(ctx.fillStyle)));
     effect.draw(ctx,coloured,800,400,0,0,true,false,arrive);effect.emit('moon','planet','#38d591',[],true);
     effect.draw(ctx,coloured,800,400,0,0,false,false,arrive);
     expect(fills).toEqual(['#b0d0ee','#e3efff']);

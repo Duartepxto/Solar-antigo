@@ -134,6 +134,19 @@ it("automatically folds old exchanges while keeping the two latest and the incom
   expect(f.turns().at(-1).resumed).toBe(false);
 }), 70_000);
 
+it("compacts before dispatching a large new request below the previous-turn threshold", () => fixture(async f => {
+  await f.send("FIRST keep the original goal");
+  await f.send("SECOND keep the restriction");
+  await f.send("THIRD latest correction");
+  expect((await f.messages()).filter(m => m.kind === "compaction")).toHaveLength(0);
+  await f.send(`INCOMING_LARGE ${"x".repeat(20_000)}`);
+  const records = (await f.messages()).filter(m => m.kind === "compaction");
+  expect(records).toHaveLength(1);
+  expect(records[0].compaction.summary).not.toContain("INCOMING_LARGE");
+  expect(String(f.turns().at(-1).prompt.message.content)).toContain("INCOMING_LARGE");
+  expect(f.turns().at(-1).resumed).toBe(false);
+}, false, { FAKE_CLAUDE_CONTEXT_TOKENS: "150000" }), 70_000);
+
 it("Stop cancels a stalled summary without writing a late record or starting an agent", () => fixture(async f => {
   await f.send("Keep this original chat intact");
   const before = await f.messages();

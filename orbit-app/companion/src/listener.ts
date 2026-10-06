@@ -19,13 +19,13 @@ import { delimiter, join } from "node:path";
  * the list, because the tailnet one is exactly what a phone off-network
  * dials — but a phone on the same wifi can reach none of them, so none of
  * them may come first. */
-const VIRTUAL_INTERFACES = /^(utun|tun|tap|bridge|vmnet|awdl|llw|feth)/;
+const VIRTUAL_INTERFACES = /^(utun|tun|tap|bridge|vmnet|awdl|llw|feth|vEthernet|Teredo)|\b(VPN|VirtualBox|VMware|Hyper-V|ZeroTier|Hamachi|Tailscale|WireGuard|OpenVPN)\b/i;
 
 /** Lower sorts earlier. `en0`, `en1`, … are macOS's built-in wifi and
  * ethernet — the networks a phone is actually standing on. */
 const interfaceRank = (name: string): number => {
-  if (/^en\d+$/.test(name)) return 0;
   if (VIRTUAL_INTERFACES.test(name)) return 2;
+  if (/^(en\d+|eth\d+|wlan\d+|wlp\w+|enp\w+|Wi-?Fi(?:\s.*)?|Ethernet(?:\s\d+)?)$/i.test(name)) return 0;
   return 1;
 };
 

@@ -29,22 +29,29 @@ const bridge: Bridge = {
     const token = generation;
     let stream: MediaStream | null = null, context: AudioContext | null = null, processor: ScriptProcessorNode | null = null;
     const controller = new AbortController();
+    let lease: string | null = null;
+    const releaseLease = () => { if (lease) { void window.ogb?.speechReleaseLocal?.(lease); lease = null; } };
     const cleanup = () => { if(processor){processor.onaudioprocess=null;processor.disconnect();}stream?.getTracks().forEach(track=>track.stop());void context?.close().catch(()=>{}); };
-    release=()=>{controller.abort();cleanup();};
-    const report = (reason: string) => { if(token!==generation)return;cleanup();release=null;finish=null;for(const callback of transcripts)callback({error:reason});for(const callback of endings)callback({code:1,reason}); };
+    release=()=>{controller.abort();cleanup();releaseLease();};
+    const report = (reason: string) => { if(token!==generation)return;cleanup();releaseLease();release=null;finish=null;for(const callback of transcripts)callback({error:reason});for(const callback of endings)callback({code:1,reason}); };
     try {
+      if (window.ogb?.speechClaimLocal) {
+        lease = await window.ogb.speechClaimLocal();
+        if (token !== generation) { releaseLease(); return; }
+        if (!lease) { report('busy-elsewhere'); return; }
+      }
       stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
       if(token!==generation){cleanup();return;}
       context=new AudioContext({sampleRate:16000}); await context.resume();
       const source=context.createMediaStreamSource(stream); processor=context.createScriptProcessor(1024,1,1); const silence=context.createGain();silence.gain.value=0;source.connect(processor);processor.connect(silence);silence.connect(context.destination);
       const chunks:Float32Array[]=[],started=performance.now();let spoke=false,lastVoice=started,finishing=false;
-      const endpoint=Math.max(400,Math.min(2000,options?.endpointMs??850));
+      const endpoint=Math.max(400,Math.min(3000,options?.endpointMs??850));
       finish=async()=>{
         if(finishing||token!==generation)return;finishing=true;cleanup();
         try {
           let text='';
           if(spoke){const bytes=encodeSolarWav(chunks,context!.sampleRate);let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));const result=await api<{text:string}>('/api/solar-voice/transcribe',{method:'POST',body:JSON.stringify({audio:btoa(binary),language:navigator.language.split('-')[0]}),signal:controller.signal});text=result.text;}
-          if(token!==generation)return;release=null;finish=null;for(const callback of transcripts)callback({text,partial:false});if(token===generation)for(const callback of endings)callback({code:0,reason:'completed'});
+          if(token!==generation)return;releaseLease();release=null;finish=null;for(const callback of transcripts)callback({text,partial:false});if(token===generation)for(const callback of endings)callback({code:0,reason:'completed'});
         }catch(e){if(!controller.signal.aborted)report(e instanceof Error?e.message:String(e));}
       };
       processor.onaudioprocess=event=>{

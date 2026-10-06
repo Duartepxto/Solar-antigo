@@ -18,7 +18,7 @@ export interface OrbitShellState {
   supported: boolean;
   /** The computer's platform ("darwin" | "win32"); older mains leave it out. */
   platform?: string;
-  /** Talk mode has a voice engine (macOS only for now). */
+  /** Talk mode has a voice engine (native macOS or local Whisper on Windows). */
   voice?: boolean;
   hotkeys: Record<HotkeyId, HotkeyStatus>;
   screenPaused: boolean;
@@ -93,9 +93,9 @@ export function shellPlatform(): string {
   return (typeof window === "undefined" ? undefined : window.ogb?.platform) ?? "darwin";
 }
 
-/** Talk mode listens through the macOS speech helper: no voice elsewhere yet. */
+/** Talk mode uses the shared speech bridge for its platform. */
 export function shellHasVoice(platform: string = shellPlatform()): boolean {
-  return platform === "darwin";
+  return platform === "darwin" || platform === "win32";
 }
 
 interface KeyLike {

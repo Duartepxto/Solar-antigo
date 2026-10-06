@@ -764,6 +764,23 @@ describe("nextOccurrence", () => {
 });
 
 describe("RoutineManager", () => {
+  it("reports a task creation failure and dispatches the next queued routine", async () => {
+    const h = harness();
+    const createTask = h.options.createTask;
+    h.options.createTask = (bot, title, ...rest) => {
+      if (title === "Broken task") throw new Error("fixture task store unavailable");
+      return createTask(bot, title, ...rest);
+    };
+    const definition = { prompt: "Report fixture status", botId: "maus-1", enabled: false, schedule: { type: "daily" as const, time: "09:00", weekdays: [1] } };
+    const first = h.manager.create({ ...definition, name: "Broken task" });
+    const second = h.manager.create({ ...definition, name: "Healthy task" });
+    h.manager.runNow(first.id);
+    h.manager.runNow(second.id);
+    await h.manager.tick();
+    expect(h.manager.listRuns().find(run => run.routineId === first.id)).toMatchObject({ status: "failed", error: "Could not create a task for this run: fixture task store unavailable" });
+    expect(h.manager.listRuns().find(run => run.routineId === second.id)).toMatchObject({ status: "running" });
+    expect(h.started).toHaveLength(1);
+  });
   it("accepts five-minute windows and preserves the manager's clamping semantics", () => {
     const h = harness();
     const create = (name: string, durationMinutes?: number) => h.manager.create({

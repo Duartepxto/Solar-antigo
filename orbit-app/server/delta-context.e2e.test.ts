@@ -580,7 +580,8 @@ it("gives a replacement session an earlier round's result that its rebuild could
     // Teammate work stays outstanding, so wait for this turn's own reply —
     // and for the turn to end, or the next send steers into it.
     await sourceWaiting();
-    expect((await f.send(`chat ${i}`)).steered).toBeUndefined();
+    // Exceed the adaptive byte budget rather than assuming a 40-message cap.
+    expect((await f.send(`chat ${i}\n${"fixture history ".repeat(400)}`)).steered).toBeUndefined();
     await expect.poll(() => f.turns().length, { timeout: 20_000 }).toBe(4 + i);
     await expect.poll(async () => (await f.messages()).some((m: any) => m.text === `chat reply ${i}` && m.turnTerminal), { timeout: 10_000 }).toBe(true);
   }

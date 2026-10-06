@@ -188,7 +188,7 @@ fun PairingScreen(onCancel: () -> Unit) {
             onCancel = { showingScanner = false },
             validate = { payload ->
                 if (PairingInvite.parse(payload) == null) {
-                    "That isn't an Orbit pairing QR code."
+                    "That isn't a Solar pairing QR code."
                 } else {
                     // Session decides whether this invite may be accepted at all
                     // (already paired, credential already burned) and publishes
@@ -426,8 +426,8 @@ internal fun pairingFailureDisposition(
 @Composable
 private fun SetupSection(onScan: () -> Unit) {
     SectionCard(title = "On your computer") {
-        Text("1.  Open Orbit → Settings → Phone", fontSize = 15.sp)
-        Text("2.  Choose Set up a phone", fontSize = 15.sp)
+        Text("1.  Open Solar → Jarvis → System → Remote / phone", fontSize = 15.sp)
+        Text("2.  Choose the Android pairing QR", fontSize = 15.sp)
         Button(onClick = onScan, modifier = Modifier.fillMaxWidth()) {
             Text("Scan QR Code")
         }

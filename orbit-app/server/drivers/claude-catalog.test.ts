@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { fileURLToPath } from "node:url";
 import { claudeCatalogFromCli } from "./claude-catalog.ts";
 import { STATIC_CLAUDE_MODELS } from "./claude.ts";
 
@@ -45,7 +46,7 @@ describe("the Claude catalog from the CLI's handshake", () => {
 });
 
 describe("asking the installed CLI", () => {
-  const FAKE_CLI = new URL("../testing/fake-claude-cli.ts", import.meta.url).pathname;
+  const FAKE_CLI = fileURLToPath(new URL("../testing/fake-claude-cli.ts", import.meta.url));
 
   it("reads the list from the handshake without starting a turn", async () => {
     const { chmodSync } = await import("node:fs");
@@ -65,7 +66,7 @@ describe("asking the installed CLI", () => {
 });
 
 describe("each model's context window", () => {
-  const FAKE_CLI = new URL("../testing/fake-claude-cli.ts", import.meta.url).pathname;
+  const FAKE_CLI = fileURLToPath(new URL("../testing/fake-claude-cli.ts", import.meta.url));
 
   it("comes from the CLI and overrides the fallback", async () => {
     const { chmodSync } = await import("node:fs");

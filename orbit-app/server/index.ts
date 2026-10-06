@@ -15,9 +15,9 @@ import { extname, join, resolve as resolvePath } from "node:path";
 import { authorizeExternalRuntime, externalRuntimeIsActive, type ExternalRuntimeGrant } from "./external-runtime.ts";
 
 import { z } from "zod";
-import { selectReplay, DEFAULT_REBUILD_BYTES, MAX_SUMMARY_BYTES } from "./context-rebuild.ts";
+import { selectReplay, MAX_SUMMARY_BYTES } from "./context-rebuild.ts";
 import { draftSummary, foldPoint } from "./compaction-summary.ts";
-import { compactBudget, contextWindowFor, shouldCompact } from "./context-budget.ts";
+import { compactBudget, contextWindowFor, replayBudgetBytes, shouldCompact } from "./context-budget.ts";
 import { autoCompactWindow } from "./drivers/claude.ts";
 import { provenRequestPerson, SharedComputers, sharedComputerOperation, sharedComputerRegistration } from "./shared-computers.ts";
 import { SharedComputerControl } from "./shared-computer-control.ts";
@@ -7170,7 +7170,7 @@ function directContext(bot: BotRecord, threadId: string, messages: Message[]): C
 async function compactConversation(input: {
   bot: BotRecord; threadId: string; generation: string;
   instance: NonNullable<ReturnType<typeof turnInstance>>; model: string;
-  excludedIds: ReadonlySet<string>; manual: boolean;
+  excludedIds: ReadonlySet<string>; manual: boolean; incomingBytes: number;
 }): Promise<void> {
   const { bot, threadId, generation, instance, model, excludedIds, manual } = input;
   const task = store.taskByThread(bot.id, threadId);
@@ -7199,7 +7199,7 @@ async function compactConversation(input: {
   // known numeric boundary; other providers do not inherit Claude's limit.
   const nativeCompactAt = instance.driverKind === "claudeAgent"
     ? Number(autoCompactWindow({ ...process.env, ...cfg.instances?.[instance.instanceId]?.environment })) : undefined;
-  if (!manual && !shouldCompact({ contextTokens: measurement?.tokens, estimatedBytes: bytes,
+  if (!manual && !shouldCompact({ contextTokens: measurement?.tokens, estimatedBytes: bytes, incomingBytes: input.incomingBytes,
     budget: compactBudget(window, cfg.context?.compactAt, nativeCompactAt), floor, window, nativeCompactAt })) return;
   const fold = manual ? { folded: history, firstKeptId: "" } : foldPoint(history);
   if (!fold) return;
@@ -8224,7 +8224,8 @@ async function startTurn(
         if (!readiness.ready) throw new Error(readiness.reason ?? "The cloud computer is not ready");
       }
       await compactConversation({ bot, threadId, generation: dispatchClaimId, instance, model,
-        excludedIds: new Set([userMessage.id, ...(opts?.excludeMessageIds ?? [])]), manual: opts?.compactOnly === true });
+        excludedIds: new Set([userMessage.id, ...(opts?.excludeMessageIds ?? [])]), manual: opts?.compactOnly === true,
+        incomingBytes: Buffer.byteLength(providerText) });
       if (!directTurnClaimIsCurrent(bot.id, dispatchClaimId, threadId)) throw new DirectTurnSetupCancelled("turn stopped during context setup");
       if (opts?.compactOnly) {
         clearDirectTurnDispatch(threadId, dispatchClaimId);
@@ -8256,7 +8257,9 @@ async function startTurn(
       const contextOrder = context.map(m => m.id);
       const replayable = context.filter(m => !skipTranscript.has(m.id));
       const record = latestCompaction(activeMessages);
-      const selection = selectReplay(context, { budgetBytes: cfg.context?.rebuildBytes ?? DEFAULT_REBUILD_BYTES, excludedIds: skipTranscript, compaction: record });
+      const measuredWindow = task.lastContextModel === `${instance.instanceId}:${model}` && !task.rewound ? task.usage?.context?.window : undefined;
+      const replayBudget = replayBudgetBytes(contextWindowFor(model, instance.models, measuredWindow), Buffer.byteLength(providerText), cfg.context?.rebuildBytes);
+      const selection = selectReplay(context, { budgetBytes: replayBudget, excludedIds: skipTranscript, compaction: record });
       const transcript = selection.transcript.map(({ role, text }) => ({ role, text }));
       const contextReset = selection.compacted > 0 && record?.id !== task.appliedCompactionId;
       // The record is durable even if a crash occurs before this bookkeeping.

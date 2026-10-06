@@ -395,7 +395,20 @@ describe("CodexDriver turns (fake app-server)", () => {
     expect(calls.find((call: { method: string }) => call.method === "turn/start").params.sandboxPolicy).toEqual(sandbox);
   });
 
-  it.each([false, true].flatMap(resumed => [null, {}, { type: "dangerFullAccess" }].map(sandbox => ({ resumed, sandbox }))))("refuses an absent or mismatched resolved sandbox: %j", async ({ resumed, sandbox }) => {
+  it.each([false, true])("preserves a stricter native read-only sandbox (resumed=%s)", async (resumed) => {
+    await create({ mode: "resume" });
+    const dump = join(scratch, "read-only-sandbox.json");
+    process.env.FAKE_CODEX_DUMP = dump;
+    const sandbox = { type: "readOnly", networkAccess: false };
+    process.env.FAKE_CODEX_RESOLVED_SANDBOX = JSON.stringify(sandbox);
+    await instance.adapter.sendTurn({ threadId: "t-read-only", text: "continue", approvalMode: "ask", ...(resumed ? { resumeCursor: "codex-thread-1" } : {}) });
+    await recorder.until((event) => event.type === "turn.completed");
+    expect(recorder.events.at(-1)).toMatchObject({ ok: true });
+    const calls = JSON.parse(readFileSync(dump, "utf8")).calls;
+    expect(calls.find((call: { method: string }) => call.method === "turn/start").params.sandboxPolicy).toEqual(sandbox);
+  });
+
+  it.each([false, true].flatMap(resumed => [null, {}, { type: "dangerFullAccess" }, { type: "externalSandbox" }].map(sandbox => ({ resumed, sandbox }))))("refuses an absent or mismatched resolved sandbox: %j", async ({ resumed, sandbox }) => {
     await create({ mode: "resume" });
     const dump = join(scratch, "invalid-sandbox.json");
     process.env.FAKE_CODEX_DUMP = dump;

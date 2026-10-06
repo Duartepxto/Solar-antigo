@@ -35,7 +35,7 @@ const fakeExec = (log) => (command, cwd) => {
   return loginShellExec(command, cwd, { shell: "/bin/sh", path: process.env.PATH });
 };
 
-test("offers, builds and swaps in an update when origin moves past the build", async () => {
+test("offers, builds and swaps in an update when origin moves past the build", { skip: process.platform === "win32" && "Source updater fixture requires /bin/sh" }, async () => {
   const f = fixture();
   try {
     const states = [];
@@ -75,7 +75,7 @@ test("offers, builds and swaps in an update when origin moves past the build", a
   }
 });
 
-test("warns when the new build lost the running app's signing team", async () => {
+test("warns when the new build lost the running app's signing team", { skip: process.platform === "win32" && "Source updater fixture requires /bin/sh" }, async () => {
   // An ad hoc build (certificate missing or expired) makes macOS forget
   // Screen Recording and Microphone permission for Orbit.
   const f = fixture();
@@ -96,7 +96,7 @@ test("warns when the new build lost the running app's signing team", async () =>
   }
 });
 
-test("builds origin's main in its own copy, whatever the checkout is doing", async () => {
+test("builds origin's main in its own copy, whatever the checkout is doing", { skip: process.platform === "win32" && "Source updater fixture requires /bin/sh" }, async () => {
   // Seen for real, twice: the checkout left on a local branch ("git rev-parse
   // origin/fix/phone-polish failed"), then an Xcode-rewritten file in it
   // ("git pull --ff-only failed"). People and bots work in that checkout.
@@ -134,7 +134,7 @@ test("builds origin's main in its own copy, whatever the checkout is doing", asy
   }
 });
 
-test("never offers a checkout that is behind or unrelated to the build", async () => {
+test("never offers a checkout that is behind or unrelated to the build", { skip: process.platform === "win32" && "Source updater fixture requires /bin/sh" }, async () => {
   const f = fixture();
   try {
     const states = [];
@@ -171,7 +171,7 @@ test("records and reads the build commit, and finds the running bundle", () => {
   }
 });
 
-test("finds pnpm where npm's ~/.npmrc prefix put it, from an app's bare PATH", async () => {
+test("finds pnpm where npm's ~/.npmrc prefix put it, from an app's bare PATH", { skip: process.platform === "win32" && "POSIX shell/PATH discovery is macOS-specific" }, async () => {
   // an app opened from the Dock: macOS's bare PATH, and a shell setup that
   // never names npm's global folder
   const home = mkdtempSync(join(tmpdir(), "orbit-updater-path-"));

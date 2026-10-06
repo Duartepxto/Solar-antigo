@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { X, Mic, Square, Send } from "lucide-react";
+import { solarSpeechBridge } from "@/lib/solar-voice";
 import { t } from "@/lib/i18n";
 import { orbitShell, type ShellCapture, type ShellCaptureResult } from "@/lib/orbit-shell";
 import { speakableText } from "@/lib/orbit-point";
@@ -122,9 +123,12 @@ function Presence({ node, viewKey }: { node: ReactNode; viewKey: string }) {
  * talking island ends listening, stops a turn, or quiets it. */
 export function TalkSurface() {
   const shell = orbitShell();
+  const side = window.ogb?.platform === "win32";
+  const calling = useRef(false);
   const [target, setTarget] = useState<OrbitTarget | null>(null);
   const [phase, setPhaseState] = useState<Phase>("idle");
   const [heard, setHeard] = useState("");
+  const [answer, setAnswer] = useState("");
   const [notice, setNoticeState] = useState<Notice | null>(null);
   const [pulse, setPulse] = useState(0);
   // the menu bar's height on this display: the island's top hides behind it
@@ -156,7 +160,7 @@ export function TalkSurface() {
   const armRest = useCallback(() => {
     if (restTimer.current) clearTimeout(restTimer.current);
     restTimer.current = null;
-    if (phaseRef.current !== "idle") return;
+    if (phaseRef.current !== "idle" || (side && calling.current)) return;
     restTimer.current = setTimeout(() => {
       restTimer.current = null;
       setOpen(false);
@@ -165,7 +169,7 @@ export function TalkSurface() {
         void shell?.talkDismiss();
       }, CLOSE_MS);
     }, noticeRef.current ? NOTICE_STAYS_MS : GONE_AFTER_MS);
-  }, [shell]);
+  }, [shell, side]);
 
   const setNotice = useCallback((next: Notice | null) => {
     const had = noticeRef.current;
@@ -197,6 +201,14 @@ export function TalkSurface() {
     captureRef.current = null;
     if (capture) void shell?.screenHeld(capture.displayId, false);
   }, [shell]);
+
+  useEffect(() => () => {
+    calling.current = false;
+    turnRef.current += 1;
+    speaker.stop();
+    window.speechSynthesis?.cancel();
+    releaseScreen();
+  }, [releaseScreen]);
 
   useEffect(() => {
     const next = new ReplyFollower();
@@ -239,13 +251,17 @@ export function TalkSurface() {
         return;
       }
       const spoken = speakableText(update.text);
+      setAnswer(spoken);
       if (!spoken) {
         setPhase("idle");
         return;
       }
       setPhase("talking");
       void say(spoken, agent.voice).then(() => {
-        if (turn === turnRef.current && phaseRef.current === "talking") setPhase("idle");
+        if (turn === turnRef.current && phaseRef.current === "talking") {
+          setPhase("idle");
+          if (side && calling.current) void shell?.talkSummon();
+        }
       });
     });
     try {
@@ -259,7 +275,7 @@ export function TalkSurface() {
       setNotice({ text: message });
       setPhase("idle");
     }
-  }, [guide, releaseScreen, setNotice, setPhase]);
+  }, [guide, releaseScreen, setNotice, setPhase, shell, side]);
 
   /** The recognizer is done with this turn: ask what was heard, or say why
    * there is nothing to ask. Once per turn, whatever ends it. */
@@ -282,14 +298,25 @@ export function TalkSurface() {
     }
     releaseScreen();
     setPhase("idle");
-    if (info.code === 0) setNotice({ text: t("orbitShell.talk.nothingHeard") });
+    if (info.code === 0) {
+      setNotice({ text: t("orbitShell.talk.nothingHeard") });
+      // Silence ends a recording, not the Windows call. Restart only after
+      // successful recognition; errors and a stuck recognizer need attention.
+      if (side && calling.current && info.reason !== "finish-timeout") {
+        const turn = turnRef.current;
+        listenTimer.current = setTimeout(() => {
+          listenTimer.current = null;
+          if (calling.current && turn === turnRef.current) void shell?.talkSummon();
+        }, 500);
+      }
+    }
     else if (info.reason === "unsupported-platform") setNotice({ text: t("orbitShell.talk.cantHear") });
-    else setNotice({ text: t("orbitShell.talk.cantHear"), settings: "mic" });
-  }, [ask, clearListenTimer, releaseScreen, setNotice, setPhase]);
+    else setNotice(side ? { text: t("jarvis.call.microphoneError") } : { text: t("orbitShell.talk.cantHear"), settings: "mic" });
+  }, [ask, clearListenTimer, releaseScreen, setNotice, setPhase, side, shell]);
 
   // Voice in: the existing speech helper, toggle to talk.
   useEffect(() => {
-    const bridge = window.ogb;
+    const bridge = solarSpeechBridge();
     if (!bridge?.onSpeechTranscript) return;
     const offText = bridge.onSpeechTranscript((line) => {
       if (phaseRef.current !== "listening" && phaseRef.current !== "thinking") return;
@@ -299,14 +326,14 @@ export function TalkSurface() {
       }
     });
     const offEnd = bridge.onSpeechEnd((info) => settleListening(info));
-    return () => { offText(); offEnd(); };
+    return () => { offText(); offEnd(); void bridge.speechStop(); };
   }, [settleListening]);
 
   const finishListening = useCallback(() => {
     if (phaseRef.current !== "listening") return;
     setPhase("thinking");
     const turn = turnRef.current;
-    const bridge = window.ogb;
+    const bridge = solarSpeechBridge();
     if (bridge?.speechFinish) void bridge.speechFinish();
     else void bridge?.speechStop();
     // A recognizer that never sends its last word must not leave the
@@ -315,12 +342,13 @@ export function TalkSurface() {
     listenTimer.current = setTimeout(() => {
       listenTimer.current = null;
       if (turn !== turnRef.current || askedRef.current === turn) return;
-      void window.ogb?.speechStop();
+      void solarSpeechBridge()?.speechStop();
       settleListening({ code: 0, reason: "finish-timeout" });
-    }, FINISH_GRACE_MS);
-  }, [clearListenTimer, setPhase, settleListening]);
+    }, side ? 95_000 : FINISH_GRACE_MS);
+  }, [clearListenTimer, setPhase, settleListening, side]);
 
   const listen = useCallback(() => {
+    setAnswer("");
     heardRef.current = "";
     setHeard("");
     setPhase("listening");
@@ -330,12 +358,12 @@ export function TalkSurface() {
       listenTimer.current = null;
       if (turn === turnRef.current) finishListening();
     }, LISTEN_MAX_MS);
-    void window.ogb?.speechStart?.({ endpointMs: TALK_ENDPOINT_MS }).catch(() => {
+    void solarSpeechBridge()?.speechStart?.({ endpointMs: TALK_ENDPOINT_MS }).catch(() => {
       releaseScreen();
       setPhase("idle");
-      setNotice({ text: t("orbitShell.talk.cantHear"), settings: "mic" });
+      setNotice(side ? { text: t("jarvis.call.microphoneError") } : { text: t("orbitShell.talk.cantHear"), settings: "mic" });
     });
-  }, [clearListenTimer, finishListening, releaseScreen, setNotice, setPhase]);
+  }, [clearListenTimer, finishListening, releaseScreen, setNotice, setPhase, side]);
 
   /** The screen, taken while the island already listens. */
   const takeCapture = useCallback((capture: ShellCaptureResult) => {
@@ -353,6 +381,7 @@ export function TalkSurface() {
   }, [setNotice, shell]);
 
   const begin = useCallback((capture: ShellCaptureResult | null) => {
+    calling.current = true;
     turnRef.current += 1;
     threadRef.current = null;
     speaker.stop();
@@ -383,13 +412,15 @@ export function TalkSurface() {
   useEffect(() => shell?.onTalkToggle(() => finishListening()), [shell, finishListening]);
 
   const stop = () => {
+    calling.current = false;
+    clearListenTimer();
     turnRef.current += 1;
     const agent = targetRef.current;
     if (phaseRef.current === "thinking" && agent) {
       void interruptOrbit(agent, threadRef.current ?? agent.threadId).catch(() => {});
     }
     followerRef.current?.stop();
-    void window.ogb?.speechStop();
+    void solarSpeechBridge()?.speechStop();
     speaker.stop();
     window.speechSynthesis?.cancel();
     guide.reset();
@@ -410,8 +441,8 @@ export function TalkSurface() {
 
   // What is on screen: out of the notch while it listens, speaks or has a
   // notice; back in the notch while Orbit works on the question.
-  const said = phase === "listening" ? heard.trim() : "";
-  const out = open && (phase !== "thinking" || Boolean(notice));
+  const said = side ? (phase === "talking" ? answer : heard.trim()) : phase === "listening" ? heard.trim() : "";
+  const out = open && (side || phase !== "thinking" || Boolean(notice));
   const talkExpanded = Boolean(notice || said);
   const [talkContent, setTalkContent] = useState(0);
   const look: IslandLook = useMemo(() => {
@@ -420,7 +451,11 @@ export function TalkSurface() {
   }, [out, talkExpanded, talkContent]);
 
   const shape = notch ?? virtualNotch(topInset);
-  const size = islandSize(look, shape);
+  const size = side ? { width: talkExpanded ? 232 : 48, height: talkExpanded ? 192 : 108 } : islandSize(look, shape);
+  const hit = useCallback((point: { x: number; y: number }, next: { width: number; height: number }) => side
+    ? point.x >= window.innerWidth - next.width - 22 && point.x <= window.innerWidth - 10
+      && Math.abs(point.y - window.innerHeight / 2) <= next.height / 2 + 6
+    : overIsland(point, next, window.innerWidth), [side]);
   const radius = islandRadius(look, shape);
   // grow on a spring, shrink on an ease (Coucou's setMode)
   const levelRef = useRef(lookLevel(look));
@@ -444,7 +479,7 @@ export function TalkSurface() {
   useEffect(() => {
     const onMove = (event: MouseEvent) => {
       pointer.current = { x: event.clientX, y: event.clientY };
-      islandPointer.fromPage(overIsland(pointer.current, sizeRef.current, window.innerWidth));
+      islandPointer.fromPage(hit(pointer.current, sizeRef.current));
     };
     const onLeave = () => {
       pointer.current = null;
@@ -456,14 +491,14 @@ export function TalkSurface() {
       window.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseleave", onLeave);
     };
-  }, [islandPointer]);
+  }, [islandPointer, hit]);
   useEffect(() => shell?.onIslandHover?.((over) => islandPointer.fromMain(over)), [shell, islandPointer]);
   // talk started or ended, or the island changed size under a still pointer
   useEffect(() => {
     islandPointer.setTakes(open);
     const point = pointer.current;
-    if (point) islandPointer.retest(overIsland(point, sizeRef.current, window.innerWidth));
-  }, [islandPointer, open, size.width, size.height]);
+    if (point) islandPointer.retest(hit(point, sizeRef.current));
+  }, [islandPointer, open, size.width, size.height, hit]);
   // main hit-tests the same rect: it needs the island's size
   useEffect(() => {
     void shell?.islandLook?.({ width: size.width, height: size.height });
@@ -536,6 +571,39 @@ export function TalkSurface() {
     ["--orbit-in-delay" as string]: `${MOTION.contentIn.delayMs}ms`,
     ["--orbit-out-ms" as string]: `${MOTION.contentOut.durationMs}ms`,
   };
+
+  if (side) {
+    const actionLabel = phase === "listening" ? t("solar.voice.finishSpeaking") : phase === "thinking" || phase === "talking" ? t("call.ui.interrupt") : t("call.ui.tryMicrophoneAgain");
+    const phaseLabel = t(`solar.voice.${phase === "sleepy" ? "idle" : phase}`);
+    return (
+      <div className="flex h-full w-full select-none items-center justify-end pr-4">
+        <section aria-label={t("orbitShell.talk.label", { name })} title={phaseLabel} className="solar-talk-pill" data-phase={phase} data-expanded={talkExpanded}
+          style={{ width: size.width, height: size.height, opacity: open ? 1 : 0, visibility: open ? "visible" : "hidden" }}>
+          <header className="solar-voice-header">
+            <span className="solar-voice-brand">{t("solar.voice.brand")}</span>
+            <button type="button" className="solar-voice-close" title={t("call.ui.hangUp")} aria-label={t("call.ui.hangUp")} onClick={() => { stop(); setOpen(false); void shell?.talkDismiss(); }}><X size={16} /></button>
+          </header>
+          <svg className="solar-voice-aperture" width="28" height="28" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <path className="solar-voice-arcs" d="M17 7a18 18 0 0 0 0 34M31 7a18 18 0 0 1 0 34" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <rect className="solar-voice-bar" x="19" y="15" width="3" height="18" rx="1.5" fill="currentColor" />
+            <rect className="solar-voice-bar" x="26" y="12" width="3" height="24" rx="1.5" fill="currentColor" />
+          </svg>
+          <div className="solar-voice-state" role="status"><span />{phaseLabel}</div>
+          {talkExpanded && <div className="solar-voice-content">
+            {said && <p className="solar-voice-transcript">{said}</p>}
+            {notice && <div className="solar-voice-notice"><p>{notice.text}</p><button type="button" aria-label={t("common.close")} onClick={() => setNotice(null)}><X size={14} /></button></div>}
+          </div>}
+          <div className="solar-voice-controls">
+          <button type="button" className="solar-voice-action" title={actionLabel} aria-label={actionLabel} onClick={() => {
+            if (phase === "listening") finishListening();
+            else if (phase === "thinking" || phase === "talking") { stop(); void shell?.talkSummon(); }
+            else void shell?.talkSummon();
+          }}>{phase === "thinking" || phase === "talking" ? <Square size={12} /> : phase === "listening" ? <Send size={13} /> : <Mic size={14} />}</button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     // items-start: the island is only as tall as what it shows, never the

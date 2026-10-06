@@ -50,8 +50,8 @@ describe("on Windows", () => {
     expect(acceleratorFromKeyEvent(key("KeyK", { metaKey: true }), "darwin")).toBe("Command+K");
   });
 
-  it("has no voice for talk mode yet", () => {
-    expect(shellHasVoice("win32")).toBe(false);
+  it("supports talk on Windows and macOS", () => {
+    expect(shellHasVoice("win32")).toBe(true);
     expect(shellHasVoice("darwin")).toBe(true);
   });
 

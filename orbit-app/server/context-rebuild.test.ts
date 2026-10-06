@@ -5,6 +5,11 @@ const entries = (texts: string[]): ReplayEntry[] => texts.map((text, i) => ({ id
 const size = (result: ReturnType<typeof selectReplay>) => result.transcript.reduce((n, entry) => n + Buffer.byteLength(entry.text) + 16, 0);
 
 describe("context replay", () => {
+  it("retains more than forty small exchanges when they fit the byte budget", () => {
+    const history = entries(Array.from({ length: 100 }, (_, i) => `Decision ${i}`));
+    expect(selectReplay(history).transcript).toEqual(history);
+  });
+
   it("keeps short history unchanged and records exactly what was represented", () => {
     const history = entries(["one", "reply", "two"]);
     const result = selectReplay(history);

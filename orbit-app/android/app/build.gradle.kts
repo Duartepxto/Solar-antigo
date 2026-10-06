@@ -95,7 +95,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.orbit.companion"
+        applicationId = "com.solar.companion"
         minSdk = 26
         targetSdk = 37
         versionCode = appVersionCode

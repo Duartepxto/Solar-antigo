@@ -356,7 +356,7 @@ data class PairingInvite(val connection: Connection, val credential: String) {
 
         fun parse(url: URI): PairingInvite? {
             if (url.scheme.equals("https", true) || url.scheme.equals("http", true)) {
-                return parseServerLink(url)
+                return if (url.rawPath == "/solar") parseSolarBrowserLink(url) else parseServerLink(url)
             }
             if (!url.scheme.equals("orbit", ignoreCase = true) ||
                 !url.host.equals("pair", ignoreCase = true)
@@ -422,6 +422,25 @@ data class PairingInvite(val connection: Connection, val credential: String) {
             if (url.host.isNullOrEmpty() || url.rawUserInfo != null || url.rawPath != "/pair" ||
                 url.rawQuery != null
             ) return null
+            val values = fragmentValues(url) ?: return null
+            val code = normalizedServerCode(values["code"] ?: return null) ?: return null
+            val connection = Connection.parse("${url.scheme}://${url.rawAuthority}") ?: return null
+            if (!connection.serverTransportAllowed) return null
+            return PairingInvite(connection.establishingRoutePolicyFromInvite(), code)
+        }
+
+        /** The same fragment-only QR opens Solar in a browser or in this scanner. */
+        private fun parseSolarBrowserLink(url: URI): PairingInvite? {
+            if (url.host.isNullOrEmpty() || url.rawUserInfo != null || url.rawQuery != null || url.rawPath != "/solar") return null
+            val values = fragmentValues(url) ?: return null
+            if (values.keys != setOf("token")) return null
+            val token = credential(values) ?: return null
+            val connection = Connection.parse("${url.scheme}://${url.rawAuthority}") ?: return null
+            if (!connection.serverTransportAllowed) return null
+            return PairingInvite(connection.establishingRoutePolicyFromInvite(), token)
+        }
+
+        private fun fragmentValues(url: URI): Map<String, String>? {
             val fragment = url.rawFragment ?: return null
             val values = linkedMapOf<String, String>()
             for (item in fragment.split('&')) {
@@ -431,10 +450,7 @@ data class PairingInvite(val connection: Connection, val credential: String) {
                 val value = decodeQuery(item.substring(equals + 1)) ?: return null
                 if (values.put(name, value) != null) return null
             }
-            val code = normalizedServerCode(values["code"] ?: return null) ?: return null
-            val connection = Connection.parse("${url.scheme}://${url.rawAuthority}") ?: return null
-            if (!connection.serverTransportAllowed) return null
-            return PairingInvite(connection.establishingRoutePolicyFromInvite(), code)
+            return values
         }
 
         private fun credential(values: Map<String, String>): String? {

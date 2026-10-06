@@ -1090,7 +1090,8 @@ export const ClaudeDriver: ProviderDriver<ClaudeConfig> = {
   defaultConfig: () => decodeConfig({}),
 
   async create(input: DriverCreateInput<ClaudeConfig>): Promise<ProviderInstance> {
-    const { instanceId, config } = input;
+    const { instanceId } = input;
+    const config = { ...decodeConfig({}), ...input.config, cli: input.config.cli ?? "claude" };
     const environment = (model?: string | null) =>
       claudeEnvironment(config.managed ? undefined : model, { ...process.env, ...input.environment }, config.configDir, input.environment);
     const catalogEnv = environment();

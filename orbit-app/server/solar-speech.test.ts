@@ -1,5 +1,10 @@
 import { expect, it } from 'vitest';
-import { validateSolarWav } from './solar-speech.ts';
+import { validateSolarWav, solarSpokenText } from './solar-speech.ts';
+
+it('ignores pure sound annotations without deleting spoken commands', () => {
+  for (const value of ['[MÚSICA DE FUNDO]', '(MÚSICA DE FUNDO)', '[music] [applause]', '[silêncio]', '']) expect(solarSpokenText(value)).toBe('');
+  for (const value of ['Liga a música de fundo', 'Olá [music]', '[not a known sound label]', 'Escreve música']) expect(solarSpokenText(value)).toBe(value);
+});
 
 function wav() { const data=Buffer.alloc(48);data.write('RIFF',0);data.writeUInt32LE(40,4);data.write('WAVEfmt ',8);data.writeUInt32LE(16,16);data.writeUInt16LE(1,20);data.writeUInt16LE(1,22);data.writeUInt32LE(16000,24);data.writeUInt32LE(32000,28);data.writeUInt16LE(2,32);data.writeUInt16LE(16,34);data.write('data',36);data.writeUInt32LE(4,40);return data; }
 it('accepts bounded mono PCM and rejects malformed, stereo, binary and oversized input',()=>{

@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { deterministicSummary, draftSummary, foldPoint, summaryPrompt } from "./compaction-summary.ts";
+import { deterministicSummary, draftSummary, foldPoint, summaryBatches, summaryPrompt } from "./compaction-summary.ts";
 import type { ReplayEntry } from "./context-rebuild.ts";
 
 const history: ReplayEntry[] = [
@@ -10,6 +10,27 @@ const history: ReplayEntry[] = [
   { id: "5", role: "user", text: "Continue fixing tests" },
   { id: "6", role: "assistant", text: "Working" },
 ];
+
+it("summarizes middle passages of large histories and carries prior decisions forward", async () => {
+  const long = Array.from({ length: 35 }, (_, i) => ({ id: `${i}`, role: "user" as const, text: `${i === 17 ? 'CRITICAL_MIDDLE_CORRECTION' : 'source'} ${"Olá 🐭 ".repeat(500)}` }));
+  const prompts: string[] = [];
+  const result = await draftSummary(long, { signal: new AbortController().signal, generateText: async prompt => {
+    prompts.push(prompt);
+    return prompt.includes("CRITICAL_MIDDLE_CORRECTION") ? "CRITICAL_MIDDLE_CORRECTION" : "Earlier decisions";
+  } });
+  expect(prompts.length).toBeGreaterThan(1);
+  expect(prompts.every(prompt => Buffer.byteLength(prompt) < 60_000)).toBe(true);
+  expect(prompts.join("\n")).toContain("CRITICAL_MIDDLE_CORRECTION");
+  expect(result).toContain("CRITICAL_MIDDLE_CORRECTION");
+});
+
+it("splits a large source without losing bytes or breaking unicode", () => {
+  const text = "Olá 你好🐭\n".repeat(10_000);
+  const batches = summaryBatches([{ id: "source", role: "user", text }]);
+  const restored = batches.flat().map(entry => entry.text.replace(/^\[Source source, part \d+; historical data\]\n/, "")).join("");
+  expect(restored).toBe(text);
+  expect(restored).not.toContain("�");
+});
 
 it("keeps the last two exchanges and folds only older history", () => {
   expect(foldPoint(history)).toEqual({ folded: history.slice(0, 2), firstKeptId: "3" });
