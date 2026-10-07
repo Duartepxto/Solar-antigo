@@ -66,7 +66,7 @@ object ProfileRules {
     const val CONNECTED_APPS: String = "Connected apps"
 
     const val CONNECTED_APPS_FOOTER: String =
-        "Tool grants are assigned in Orbit on your computer. This phone shows them read-only."
+        "Tool grants are assigned in Solar on your computer. This phone shows them read-only."
 
     private const val GRANTS_ALL: String = "All tools"
 
@@ -106,7 +106,7 @@ object ProfileRules {
      */
     private const val SYSTEM_VOICE_UNCONFIGURED_FOOTER: String =
         "Your computer's built-in voices need no key, and it reports none it can use. Switch " +
-            "the voice engine in Orbit on the computer to turn speech back on."
+            "the voice engine in Solar on the computer to turn speech back on."
 
     private const val VOICE_NO_DEFAULT_FOOTER: String =
         "No workspace default voice is selected. Choose an agent-specific voice above; " +
@@ -115,7 +115,7 @@ object ProfileRules {
     private const val FISH_TTS_UNCONFIGURED: String = "Fish Audio is not configured"
 
     private const val FISH_VOICE_UNCONFIGURED_FOOTER: String =
-        "Add the shared Fish Audio API key in Orbit on the computer. The key is " +
+        "Add the shared Fish Audio API key in Solar on the computer. The key is " +
             "never returned to this phone."
 
     private const val FISH_VOICE_NO_DEFAULT_FOOTER: String =
@@ -133,7 +133,7 @@ object ProfileRules {
     private const val CHATTERBOX_TTS_UNCONFIGURED: String = "The Chatterbox server is not connected"
 
     private const val CHATTERBOX_VOICE_UNCONFIGURED_FOOTER: String =
-        "Add the address of your Chatterbox server in Orbit on the computer to turn " +
+        "Add the address of your Chatterbox server in Solar on the computer to turn " +
             "speech back on."
 
     private const val CHATTERBOX_VOICE_NO_DEFAULT_FOOTER: String =

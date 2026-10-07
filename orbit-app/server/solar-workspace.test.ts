@@ -38,6 +38,20 @@ describe('Solar local project files', () => {
     expect(() => workspace.read('linked/private.md')).toThrow('Linked');
     expect(() => workspace.save('linked/new.md','data',null)).toThrow('Linked');
   });
+  it('opens more source types, including extensionless project files', () => {
+    const { root, workspace } = fixture();
+    for (const name of ['App.vue', 'theme.scss', 'main.cpp', 'Dockerfile', 'Makefile']) writeFileSync(join(root, name), 'x');
+    expect(workspace.list().entries.map(e => e.name).sort()).toEqual(['App.vue', 'Dockerfile', 'Makefile', 'main.cpp', 'theme.scss']);
+    expect(workspace.read('Dockerfile').content).toBe('x');
+  });
+  it('serves preview assets with their type, including built pages, but never internals', () => {
+    const { root, workspace } = fixture(); mkdirSync(join(root,'dist')); mkdirSync(join(root,'node_modules'));
+    writeFileSync(join(root,'dist','index.html'), '<h1>built</h1>'); writeFileSync(join(root,'logo.png'), Buffer.from([137,80,78,71,0,1]));
+    writeFileSync(join(root,'node_modules','x.js'), 'secret'); writeFileSync(join(root,'.env'), 'SECRET=1');
+    expect(workspace.asset('dist/index.html').type).toMatch(/text\/html/);
+    expect(workspace.asset('logo.png').data.length).toBe(6);
+    for (const path of ['node_modules/x.js', '.env', '../x.html', 'tool.exe']) expect(() => workspace.asset(path)).toThrow();
+  });
   it('requires owner/admin privileges for reading and writing project files', () => {
     for (const method of ['GET','PUT','POST','DELETE']) expect(requiredScope(method, '/api/bots/agent/solar-workspace')).toBe('admin');
   });

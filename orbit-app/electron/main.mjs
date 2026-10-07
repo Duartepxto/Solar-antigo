@@ -2253,6 +2253,9 @@ function startOrbitShell() {
       showMainWindow: () => { showMainWindowForShell(); },
       openMainSettings: () => sendToMainPage("app:open-settings"),
       openThread: (target) => sendToMainPage("orbit-shell:open-thread", target),
+      // Solar: Jarvis's island (Alt+J), and the shared page it opens in the app
+      solar: solarApplication,
+      openPage: (page) => sendToMainPage("orbit-shell:open-page", page),
       isMainWindowVisible: () => Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() && !mainWindow.isMinimized()),
       getMainWindow: () => (mainWindow && !mainWindow.isDestroyed() ? mainWindow : null),
       // the notch finder is the macOS speech helper: never run elsewhere

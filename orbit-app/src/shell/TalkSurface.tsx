@@ -6,6 +6,7 @@ import { orbitShell, type ShellCapture, type ShellCaptureResult } from "@/lib/or
 import { speakableText } from "@/lib/orbit-point";
 import { speaker } from "@/lib/tts";
 import type { Mood } from "@/orbit/characters";
+import { SolarPlanet } from "@/orbit/SolarPlanet";
 import { ShellCharacter } from "./ShellCharacter";
 import { interruptOrbit, ReplyFollower, resolveOrbitTarget, sendToOrbit, type OrbitTarget } from "./orbit-client";
 import { useGuidePointer } from "./use-guide-pointer";
@@ -39,6 +40,9 @@ const LISTEN_MAX_MS = 60_000;
 // After "that's all", the recognizer's last word should come quickly.
 const FINISH_GRACE_MS = 8_000;
 const ORBIT_GREEN = "#009957";
+const SOLAR = import.meta.env.VITE_JARVIS_SOLAR === "true";
+// the island's sound bars and thinking dot: Orbit's green, Solar's gold
+const SIGNAL = SOLAR ? "bg-[#eac185]" : "bg-[#3ee09a]";
 
 interface Notice { text: string; settings?: "screen" | "mic" | "speech" }
 
@@ -81,7 +85,7 @@ function Bars({ level, active }: { level?: () => number | undefined; active: boo
     <span className="flex h-[18px] items-center gap-[3px]" aria-hidden>
       {[0, 1, 2, 3, 4].map((i) => (
         <span key={i} ref={(node) => { bars.current[i] = node; }}
-          className={level ? "block h-full w-[3px] origin-center rounded-full bg-[#3ee09a] transition-transform duration-75" : `block h-full w-[3px] origin-center rounded-full bg-[#3ee09a] ${active ? "orbit-island-bar" : "scale-y-[0.2]"}`}
+          className={level ? `block h-full w-[3px] origin-center rounded-full ${SIGNAL} transition-transform duration-75` : `block h-full w-[3px] origin-center rounded-full ${SIGNAL} ${active ? "orbit-island-bar" : "scale-y-[0.2]"}`}
           style={level ? undefined : ({ animationDelay: `${i * 110}ms` } as CSSProperties)} />
       ))}
     </span>
@@ -523,11 +527,11 @@ export function TalkSurface() {
     return () => observer.disconnect();
   }, [out, talkExpanded]);
 
-  const name = target?.name ?? "Orbit";
+  const name = target?.name ?? (SOLAR ? "Jarvis" : "Orbit");
   const color = target?.color ?? ORBIT_GREEN;
   const status = !out ? null : phase === "listening" ? <Bars active />
     : phase === "talking" ? <Bars active level={() => speaker.level()} />
-    : phase === "thinking" ? <span className="orbit-island-think size-[9px] rounded-full bg-[#3ee09a]" aria-hidden />
+    : phase === "thinking" ? <span className={`orbit-island-think size-[9px] rounded-full ${SIGNAL}`} aria-hidden />
     : null;
   const note = notice && (
     <div className="px-4 pb-3 pt-1 text-[12.5px] leading-[1.45] text-white/85" onClick={(event) => event.stopPropagation()}>
@@ -550,9 +554,11 @@ export function TalkSurface() {
 
   // The ears: Orbit's face on the left, its sound on the right, the camera
   // between. Nothing is drawn in the notch, and the face only animates while
-  // talk is on.
-  const face = out && (
-    <ShellCharacter color={color} mood={MOOD[phase]} size={Math.max(20, shape.height - 4)} mini pulse={pulse} />
+  // talk is on. Solar talks to Jarvis, the system's sun: its planet face.
+  const faceSize = Math.max(20, shape.height - 4);
+  const face = out && (SOLAR
+    ? <span className="shell-solar-face" data-busy={phase === "thinking" || undefined} style={{ width: faceSize, height: faceSize }}><SolarPlanet kind="sun" /></span>
+    : <ShellCharacter color={color} mood={MOOD[phase]} size={faceSize} mini pulse={pulse} />
   );
   const expandedBody = look.kind === "talk" ? (
     <div ref={talkBody} className="orbit-island-content">{heardLine}{note}</div>

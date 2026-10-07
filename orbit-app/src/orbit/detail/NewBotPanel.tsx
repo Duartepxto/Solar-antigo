@@ -3,7 +3,7 @@
 // the profile, and who can see the bot is chosen before it exists. A bot
 // started from a team's + joins that team.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bot as BotIcon } from "lucide-react";
 import { BOT_ROLES, type BotRole } from "@/lib/bot-roles";
 import { TEAM_TEMPLATES, type TeamTemplate } from "@/lib/team-templates";
@@ -16,7 +16,8 @@ import { useEscapeBack } from "../SettingsPanels";
 import { orbitNavigate } from "../events";
 import { TeamDialog } from "@/components/TeamDialog";
 import { SolarPlanet } from '../SolarPlanet';
-import type { SolarSkin } from '../solar-model';
+import { solarNewcomer } from '../solar-model';
+import { buildModel, loadBotOrder, loadLayout } from '../model';
 
 const APP_LABELS: Record<string, string> = {
   gmail: "Gmail", github: "GitHub", discord: "Discord", slack: "Slack", googlecalendar: "Calendar", notion: "Notion", linear: "Linear",
@@ -76,12 +77,16 @@ export function NewBotPanel({ section, teamName, onCancel }: { section: string |
     }
   };
 
-  const preview=(id:string)=>{if(import.meta.env.VITE_JARVIS_SOLAR!=='true')return;const skins=['earth','mercury','venus','mars','jupiter','saturn','uranus','neptune'];const index=Math.max(0,BOT_ROLES.findIndex(role=>role.id===id)+1);window.dispatchEvent(new CustomEvent('jarvis-solar-preview',{detail:skins[index%skins.length]}));};
+  // Whichever card is picked, the new bot takes the next free skin, so every card
+  // previews that exact skin (the same rule solarNodes applies once it exists).
+  const newcomer=useMemo(()=>solar?solarNewcomer(buildModel(state,loadLayout().hidden,loadBotOrder()),section):null,[solar,state.bots,state.groups,state.sections,state.connected,section]);
+  const preview=()=>{if(newcomer)window.dispatchEvent(new CustomEvent('jarvis-solar-preview',{detail:{kind:newcomer.kind,skin:newcomer.skin}}));};
+  useEffect(preview,[newcomer?.skin]);
   const card = (id: string, title: string, desc: string, apps: string[], blank: boolean, onClick: () => void) => (
-    <button data-solar-role={id} key={id} type="button" onMouseEnter={()=>preview(id)} onFocus={()=>preview(id)} disabled={creating} onClick={onClick} aria-busy={pending === id}
+    <button data-solar-role={id} key={id} type="button" onMouseEnter={preview} onFocus={preview} disabled={creating} onClick={onClick} aria-busy={pending === id}
       className="flex flex-col gap-1 rounded-xl border border-ink/[0.16] bg-ink/[0.02] px-[13px] py-[11px] text-left transition-[opacity,background] hover:bg-ink/[0.06] disabled:cursor-default"
       style={{ borderStyle: blank ? "dashed" : "solid", opacity: creating && pending !== id ? 0.4 : 1 }}>
-      {import.meta.env.VITE_JARVIS_SOLAR==='true'&&<span className="solar-role-mini"><SolarPlanet kind="planet" skin={(['earth','mercury','venus','mars','jupiter','saturn','uranus','neptune'][Math.max(0,BOT_ROLES.findIndex(role=>role.id===id)+1)%8]) as SolarSkin}/></span>}
+      {newcomer&&<span className="solar-role-mini" data-solar-skin={newcomer.skin}><SolarPlanet kind={newcomer.kind} skin={newcomer.skin}/></span>}
       <span className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
         {blank && <BotIcon size={15} className="shrink-0 text-ink/60" aria-hidden />}
         <span className="min-w-0 flex-1">{title}</span>

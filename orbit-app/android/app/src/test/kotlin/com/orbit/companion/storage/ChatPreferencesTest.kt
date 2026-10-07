@@ -95,15 +95,15 @@ class ChatPreferencesTest {
     @Test
     fun `appearance offers the desktop's eight named skins`() {
         assertEquals(
-            listOf("Midnight", "Atelier", "Foundry", "Lagoon", "Graphite", "Linen", "Dusk", "Daylight"),
+            listOf("Solar", "Atelier", "Foundry", "Lagoon", "Graphite", "Linen", "Dusk", "Daylight"),
             AppearanceSkin.entries.map(AppearanceSkin::label),
         )
     }
 
     @Test
     fun `CSS RGBA token keeps its desktop alpha in Compose`() {
-        assertEquals("FCFCFC99", AppearanceSkin.MIDNIGHT.colors.secondaryInk)
-        assertEquals(0x99FCFCFCL, cssHexToArgb(AppearanceSkin.MIDNIGHT.colors.secondaryInk))
+        assertEquals("A1A7B3", AppearanceSkin.MIDNIGHT.colors.secondaryInk)
+        assertEquals(0xFFA1A7B3L, cssHexToArgb(AppearanceSkin.MIDNIGHT.colors.secondaryInk))
         assertEquals(0x99FCFCFC.toInt(), Color(cssHexToArgb("FCFCFC99")).toArgb())
     }
 

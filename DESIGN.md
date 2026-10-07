@@ -315,3 +315,12 @@ Companion de navegador: superfície mínima para a câmara Android abrir o QR se
 ## Identidade Solar — 4 de outubro de 2026
 
 A aplicação Windows usa Solar no cabeçalho, título nativo, introdução, carregamento e menus da área de notificação. Ícone próprio do Sol no arranque e na bandeja. A ligação a workspaces, as mensagens nativas e os documentos de diagnóstico usam a mesma identidade. A documentação principal e os nomes das notas de funcionalidades acompanham esta revisão. Mantêm-se os protocolos e identificadores técnicos para conservar a compatibilidade dos dados e das integrações.
+
+## Identidade própria — 7 de outubro de 2026 (noite)
+
+Direção aprovada pelo utilizador: manter o aspeto escuro e sóbrio, sem barra lateral, e diferenciar-se do Orbit nos pormenores.
+
+- **Vidro líquido.** `.solar-glass`, `.solar-menu`, `.solar-liquid` e o compositor do chat usam três camadas: `::before` com a lente (`backdrop-filter: url(#lente) blur() saturate()`, mapa de deslocamento gerado por tamanho em `liquid-glass.ts`), `::after` com o rebordo de luz e um brilho que segue o rato, e o conteúdo intacto. Nunca aplicar filtros ao elemento que contém texto, nem `opacity`/`filter` no próprio elemento de vidro (cortariam o fundo da lente). Espessuras: controlos (`--glass-blur` 5px), compositor (9px), menus (22px, tinta mais opaca).
+- **Definições (raios afinados).** A composição original em raios mantém-se, compacta (raio limitado pela área livre). Ferramentas como esferas de vidro de 34px; etiquetas fora do anel, espelhadas à esquerda; selecionada a dourado com linha contínua e ponto de luz. Painéis com o desenho original; o azul do Orbit passa a dourado (`#ddbd89`).
+- **Partículas por estado** (`solar-state-particles.ts`): repouso (poeira em órbita inclinada, oculta atrás do corpo), a pensar (anel dourado), a trabalhar (satélite de vidro com o ícone da ferramenta e cauda), à espera/bloqueado (reunião no topo, halo âmbar/vermelho e distintivo "!"/"×"), a dormir (bolhas a subir, sem letras "z"), fim de turno (explosão e duas ondas) e cometas entre agentes (lua → planeta → Jarvis). O satélite e o olhar partilham `satelliteAngle`, por isso a cara segue o próprio satélite.
+- **Caras.** Olhar próprio quando o rato não está perto: segue o satélite, olha para cima ao pensar, olha em frente quando espera; repouso com olhares ocasionais. Sorriso e olhos semicerrados durante 1,8 s depois de terminar; olhos mais abertos ao receber; respiração a dormir.

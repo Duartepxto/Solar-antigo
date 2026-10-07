@@ -165,7 +165,7 @@ describe("Brazilian Portuguese approval cards", () => {
 
     expect(markup).toContain("Mochi quer executar um comando");
     expect(markup).toContain('aria-label="Detalhes da aprovação"');
-    expect(markup).toContain("Aguardando sua resposta abaixo");
+    expect(markup).toContain("A aguardar a tua resposta abaixo");
   });
 
   it("renders a denied command approval in Brazilian Portuguese", () => {
@@ -191,7 +191,7 @@ describe("Brazilian Portuguese approval cards", () => {
     expect(markup).toContain("Aprovação pendente");
     expect(markup).toContain("2 de 3");
     expect(markup).toContain("Aprovação de comando solicitada");
-    expect(markup).toContain('aria-label="Detalhes da aprovação para revisar"');
+    expect(markup).toContain('aria-label="Detalhes da aprovação a rever"');
   });
 
   it("speaks a command approval in Brazilian Portuguese", () => {
@@ -208,7 +208,7 @@ describe("Brazilian Portuguese approval cards", () => {
 
     expect(spokenApprovalPrompt(skillUpdateApproval(), "Mochi")).toBe(
       "Mochi pergunta: Atualizar a habilidade \"lancar-despesa\"? "
-        + "Confira a habilidade na tela. Devo atualizá-la?",
+        + "Revê a habilidade no ecrã. Devo atualizá-la?",
     );
   });
 

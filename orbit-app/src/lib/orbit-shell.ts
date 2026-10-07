@@ -2,7 +2,8 @@
 // (electron/preload.cjs, `orbitShell`) and the hotkey recorder's pure
 // helpers, shared by Settings and the shell surfaces.
 
-export type HotkeyId = "quick" | "talk";
+/** "island": Solar's Alt+J island, registered only in the Solar build. */
+export type HotkeyId = "quick" | "talk" | "island";
 
 export interface HotkeyStatus {
   accelerator: string;
@@ -38,6 +39,17 @@ export interface ShellCapture {
 
 export type ShellCaptureResult = ShellCapture | { ok: false; reason: "paused" | "denied" | "failed" };
 
+/** A page an agent shared (src/orbit/artifacts.ts's ArtifactOffer, as wire). */
+export interface ShellPage {
+  key: string;
+  botId: string;
+  threadId: string;
+  messageId: string;
+  href: string;
+  file: string;
+  kind: string;
+}
+
 export interface OverlayMessage {
   border?: boolean;
   point?: { x: number; y: number; label: string; from: { x: number; y: number } | null };
@@ -50,6 +62,15 @@ export interface OrbitShellBridge {
   setScreenPaused(paused: boolean): Promise<OrbitShellState>;
   onState(cb: (state: OrbitShellState) => void): () => void;
   onOpenThread(cb: (target: { botId: string; threadId: string }) => void): () => void;
+  /** Main page (Solar): a page an agent shared, opened from the island. */
+  onOpenPage?(cb: (page: ShellPage) => void): () => void;
+  /** Island page (Solar): the pill opened into its panel (true) or closed. */
+  islandOpen?(open: boolean): Promise<void>;
+  islandHide?(): Promise<void>;
+  /** Island page (Solar): bring the app forward on a shared page. */
+  openPage?(page: ShellPage): Promise<void>;
+  /** Island page (Solar): Alt+J brought the island up. */
+  onIslandShown?(cb: () => void): () => void;
   capture(): Promise<ShellCaptureResult>;
   quickResize(height: number): Promise<void>;
   quickHide(): Promise<void>;

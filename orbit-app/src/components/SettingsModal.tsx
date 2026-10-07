@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Archive, Coins, FlaskConical, KeyRound, Monitor, Palette, ScrollText, Search, TabletSmartphone, Terminal, User, Users, X, Building2 } from "lucide-react";
 import { api, useStore, type AppSettingsSection, type ConfigStatus } from "@/state/store";
 import { browserAvailable, browserUnavailableReason, builtInBrowserEnabled, routinesInConversationEnabled, showToolCallsEnabled, skillAuthoringEnabled } from "@/lib/feature-flags";
-import { localeChoices, type LocaleKey } from "@/locales";
+import { localeChoiceCode, localeChoices, type LocaleKey } from "@/locales";
 import { t } from "@/lib/i18n";
 import { restartGuidedTour } from "@/components/onboarding/GuidedTour";
 import { ApiKeyRow, OpenAiCompatUrl, VpsConnection } from "./ApiKeys";
@@ -279,7 +279,9 @@ function LanguageRow() {
   // Saved on this device only: anyone can switch, including a chat-only
   // teammate, and nobody changes another person's screen. The server's
   // language is the default until this device picks one.
-  const current = effectiveLanguage(useLanguageChoice(), state.config?.language);
+  // An alias ("pt", "pt-PT") is shown as the choice whose pack it uses, not as
+  // an unmatched value the browser would draw as "System language".
+  const current = localeChoiceCode(effectiveLanguage(useLanguageChoice(), state.config?.language));
 
   return (
     <SettingRow

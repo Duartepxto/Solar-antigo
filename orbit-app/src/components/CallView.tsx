@@ -170,7 +170,7 @@ export function CallTargetButton({
         className={cn(
           // Orbit's call bar: a green Call pill, a red Hang up while on a call
           "relative flex h-[26px] items-center gap-1.5 rounded-[13px] px-3 text-[12px] font-medium text-white transition-colors",
-          active ? "bg-[#e5484d] hover:brightness-110" : unavailable ? "bg-ink/[0.08] text-ink/60 hover:bg-ink/[0.12]" : "bg-[#1f9d5c] hover:brightness-110",
+          active ? "bg-[#e5484d] hover:brightness-110" : unavailable ? "bg-ink/[0.08] text-ink/60 hover:bg-ink/[0.12]" : SOLAR_CALL ? "bg-[#ddbd89]/[0.14] text-[#f4dcb5] ring-1 ring-inset ring-[#ddbd89]/50 hover:bg-[#ddbd89]/[0.24]" : "bg-[#1f9d5c] hover:brightness-110",
         )}
       >
         {active ? <PhoneOff size={13} /> : <Phone size={13} />}
@@ -180,8 +180,8 @@ export function CallTargetButton({
         )}
       </button>
       {active && (
-        <span className="pointer-events-none absolute left-full top-1/2 ml-2.5 flex -translate-y-1/2 items-center gap-1.5 whitespace-nowrap text-[12.5px] text-[#38d591]">
-          <span className="size-[7px] rounded-full bg-[#38d591] shadow-[0_0_8px_#38d591]" /> {t("orbit.call.onCallFor", { time: `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}` })}
+        <span className={cn("pointer-events-none absolute left-full top-1/2 ml-2.5 flex -translate-y-1/2 items-center gap-1.5 whitespace-nowrap text-[12.5px]", SOLAR_CALL ? "text-[#eac185]" : "text-[#38d591]")}>
+          <span className={cn("size-[7px] rounded-full", SOLAR_CALL ? "bg-[#eac185] shadow-[0_0_8px_#eac185]" : "bg-[#38d591] shadow-[0_0_8px_#38d591]")} /> {t("orbit.call.onCallFor", { time: `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}` })}
         </span>
       )}
 

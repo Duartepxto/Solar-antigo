@@ -1385,6 +1385,15 @@ export class Store {
     return this.thread(threadId).activeLeafId;
   }
 
+  /** Only the explicit, reviewed planet importer may replace a snapshot.
+   * It merges all local branches first and owns rollback; normal imports stay additive. */
+  replacePortableTranscript(botId: string, threadId: string, messages: Message[], activeLeafId: string | null): void {
+    const bot = this.bot(botId), task = this.taskByThread(botId, threadId);
+    if (!bot || !task || bot.busy || task.busy) throw new Error('Agent conversation is unavailable or running');
+    mdb.replacePortableThread(threadId, messages, activeLeafId);
+    this.threads.delete(threadId);
+  }
+
   /** The visible conversation: root → activeLeafId. */
   activePath(threadId: string): Message[] {
     const t = this.thread(threadId);
@@ -1590,13 +1599,18 @@ export class Store {
       /** false = no greeting/onboarding seed. Imported bots must not open
        * with a first-person greeting the user never asked for. */
       seedMessages?: boolean;
+      /** Internal portable-agent import only; never taken from a bot settings request. */
+      restoredId?: string;
     } = {},
   ): BotRecord {
+    if (opts.restoredId && (!/^[a-f0-9-]{36}$/i.test(opts.restoredId) || this.bot(opts.restoredId))) {
+      throw new Error("Invalid or occupied restored agent identity");
+    }
     this.rememberSections([profile.section]);
     const name = profile.name?.trim() || pickBotName(this.bots.map((b) => b.name));
     const section = sectionKey(profile.section);
     const bot: BotRecord = {
-      id: newId(),
+      id: opts.restoredId ?? newId(),
       threadId: newId(),
       name,
       title: profile.title ?? "",
@@ -2529,7 +2543,13 @@ export class Store {
     recipientId: string,
     options: { label?: string; working: (threadId: string) => boolean },
   ): { task: TaskRecord; created: boolean } | null {
-    if (!this.bot(recipientId)) return null;
+    const recipient = this.bot(recipientId);
+    if (!recipient) return null;
+    // Peer requests use the recipient's current conversation model, rather
+    // than a stale bot default. Keep the pair's history and permissions.
+    const currentSelection = structuredClone(
+      this.projectBotForTask(recipientId, recipient.threadId)?.modelSelection ?? recipient.modelSelection,
+    );
     const title = `@${sender.name}`;
     const opener = (kind: "pair" | "work", at = Date.now()): TaskOpenedBy => ({ botId: sender.id, name: sender.name, kind, at });
     // Identity-stable: the sender's own rows, plus ones a deleted
@@ -2575,6 +2595,7 @@ export class Store {
       if (inherited && inherited.botId !== sender.id) {
         this.setTaskOpenedBy(recipientId, pair.threadId, { ...inherited, botId: sender.id, name: sender.name });
       }
+      this.patchTask(recipientId, pair.threadId, { modelSelection: currentSelection });
       return { task: pair, created: false };
     }
     // The brief is never a title. An 80-character slice of an assignment
@@ -2582,6 +2603,7 @@ export class Store {
     // one brief that opened it.
     const task = this.createTask(recipientId, pair ? `${title} · ${options.label || "parallel work"}` : title,
       false, undefined, opener(pair ? "work" : "pair"));
+    if (task) this.patchTask(recipientId, task.threadId, { modelSelection: currentSelection });
     return task ? { task, created: true } : null;
   }
 

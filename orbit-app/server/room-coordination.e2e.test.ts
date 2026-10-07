@@ -36,6 +36,38 @@ async function withRooms(test: (f: any) => Promise<void>) {
 }
 
 /** Grant a Chief supervision of team A and seat it beside both fixture peers. */
+it("streams request and result particle events for direct coordination without polling", () => withRooms(async f => {
+  const abort = new AbortController();
+  const frames: any[] = [];
+  const stream = fetch(`${f.session.info.url}/api/events`, { signal: abort.signal }).then(async response => {
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let end: number;
+      while ((end = buffer.indexOf("\n\n")) >= 0) {
+        const chunk = buffer.slice(0, end); buffer = buffer.slice(end + 2);
+        for (const line of chunk.split("\n")) if (line.startsWith("data: ")) frames.push(JSON.parse(line.slice(6)));
+      }
+    }
+  }).catch(() => {});
+  try {
+    await expect.poll(() => frames.some(frame => frame.kind === "hello"), { timeout: 10000 }).toBe(true);
+    f.plan[f.sender.id].steps = [{ arguments: { bot_ids: [f.target.id], request_key: "particle-test", message: "Quanto é 2 + 2?" } }];
+    f.savePlan();
+    await f.cli("send", "--bot", f.sender.id, "--text", "Ask Engineer the test question");
+    expect((await f.cli("wait", "--bot", f.sender.id, "--timeout", "30")).status).toBe("settled");
+    await expect.poll(() => frames.filter(frame => frame.kind === "agent.transfer").length, { timeout: 10000 }).toBe(2);
+    expect(frames.filter(frame => frame.kind === "agent.transfer")).toMatchObject([
+      { from: f.sender.id, to: f.target.id, result: false },
+      { from: f.target.id, to: f.sender.id, result: true },
+    ]);
+  } finally { abort.abort(); await stream; }
+}), 45000);
+
 async function addSupervisingChief(f: any, section = "") {
   const chief = (await f.cli("new-bot", "--name", "Supervisor")).bot;
   await f.api(`/api/bots/${chief.id}`, { section, chiefOfStaff: true, managedSections: ["A"], acknowledgePeerScope: true }, "PATCH");

@@ -82,10 +82,14 @@ afterAll(async () => {
 });
 
 describe("preparing a harness response for a device", () => {
-  it("gives only transactional phone credential saves the longer deadline", () => {
+  it("keeps bounded credential and local speech deadlines separate from normal requests", () => {
     expect(proxyHeadersTimeoutMs("/api/bots/b1/secret-cards/m1/provide")).toBe(105_000);
     expect(proxyHeadersTimeoutMs("/api/bots/b1/messages")).toBe(30_000);
     expect(proxyHeadersTimeoutMs("/api/bots/b1/secret-cards/m1/provide", 17)).toBe(17);
+    expect(proxyHeadersTimeoutMs("/api/solar-voice/transcribe")).toBe(95_000);
+    expect(proxyHeadersTimeoutMs("/api/solar-voice/transcribe?language=pt")).toBe(95_000);
+    expect(proxyHeadersTimeoutMs("/api/solar-voice/transcribe/other")).toBe(30_000);
+    expect(proxyHeadersTimeoutMs("/api/solar-voice/status")).toBe(30_000);
   });
 
   it("drops an endpoint whose runtime URL is not a string", async () => {

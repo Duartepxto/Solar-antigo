@@ -19,7 +19,7 @@ export function beginDictation(Recognition:RecognitionConstructor,base:string,la
   recognition.onresult=event=>{
     if(closed)return;
     const transcript=Array.from(event.results,result=>result[0]?.transcript??'').join(' ').trim();
-    callbacks.text([base.trimEnd(),transcript].filter(Boolean).join(' '));
+    if (transcript) callbacks.text([base.trimEnd(),transcript].filter(Boolean).join(' '));
   };
   recognition.onstart=()=>{if(!closed)callbacks.listening(true);};
   recognition.onerror=event=>{if(!closed){callbacks.error(event.error);callbacks.listening(false);}};
@@ -27,6 +27,6 @@ export function beginDictation(Recognition:RecognitionConstructor,base:string,la
   try{recognition.start();}catch{callbacks.error('audio-capture');callbacks.listening(false);}
   return {
     stop(){try{recognition.stop();}catch{callbacks.listening(false);}},
-    dispose(){closed=true;recognition.onresult=recognition.onerror=recognition.onend=recognition.onstart=null;recognition.abort();},
+    dispose(){closed=true;recognition.onresult=recognition.onerror=recognition.onend=recognition.onstart=null;try{recognition.abort();}catch{/* Already stopped. */}},
   };
 }

@@ -8,6 +8,16 @@ class Speech implements Recognition {
   start=vi.fn();stop=vi.fn();abort=vi.fn();
 }
 describe('Dictation draft and lifecycle',()=>{
+  it('preserves the exact draft on empty results and ignores queued results after cancellation',()=>{
+    class AlreadyStoppedSpeech extends Speech { abort=vi.fn(()=>{throw Error('already stopped');}); }
+    const text=vi.fn(),session=beginDictation(AlreadyStoppedSpeech,'draft  ','pt-PT',{text,error:vi.fn(),listening:vi.fn()});
+    const queued=Speech.current.onresult!;
+    queued({results:[[{transcript:'   '}]]});
+    expect(text).not.toHaveBeenCalled();
+    expect(()=>session.dispose()).not.toThrow();
+    queued({results:[[{transcript:'late words'}]]});
+    expect(text).not.toHaveBeenCalled();
+  });
   it('replaces interim words, preserves typed text and combines final segments',()=>{
     const text=vi.fn(),session=beginDictation(Speech,'Olá','pt-PT',{text,error:vi.fn(),listening:vi.fn()}),speech=Speech.current;
     speech.onresult?.({results:[[{transcript:'mundo'}]]});

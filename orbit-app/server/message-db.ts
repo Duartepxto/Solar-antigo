@@ -468,6 +468,16 @@ export function importThread(threadId: string, messages: Message[], activeLeafId
   });
 }
 
+/** Reviewed agent continuity and its rollback only. SQLite owns the whole
+ * snapshot replacement so a failed insert cannot erase the old transcript. */
+export function replacePortableThread(threadId: string, messages: Message[], activeLeafId: string | null): void {
+  transaction(database => {
+    database.prepare('DELETE FROM messages WHERE thread_id = ?').run(threadId);
+    for (const message of messages) insertMessage(threadId, message);
+    setActiveLeaf(threadId, activeLeafId);
+  });
+}
+
 /** Persist a new message and the branch head as one crash-safe mutation. */
 export function appendMessage(threadId: string, message: Message): void {
   transaction(() => {

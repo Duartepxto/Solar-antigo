@@ -15,6 +15,10 @@ import type { OrbitBot } from "./model";
 import { useDismissOnOutside } from "@/components/ChatHeader";
 
 const SURFACE = "bg-[color-mix(in_srgb,var(--color-panel)_94%,transparent)] backdrop-blur-[10px]";
+const SOLAR = import.meta.env.VITE_JARVIS_SOLAR === "true";
+// Orbit's blue; Solar's gold (its dark ink keeps the check readable on it)
+const ACCENT_FILL = SOLAR ? "bg-[#ddbd89]" : "bg-[#1084fe]";
+const ACCENT_ON = SOLAR ? "text-[#191b20]" : "text-white";
 
 /** The way back one level: to the team map, or to wherever this view sits
  * inside (the calendar sits inside You). */
@@ -142,7 +146,7 @@ export function WaitingPill({ entries, channels = [], open, onToggle, onOpen, on
                   <>
                     <button type="button" title={pending.length > 1 ? t("orbit.allowAll", { count: pending.length }) : t("orbit.allowOnce")} aria-label={t("orbit.allowOnce")}
                       onClick={() => decide(bot, pending.map((p) => p.requestId), "allow")}
-                      className="flex size-7 items-center justify-center rounded-full bg-[#1084fe]"><Check size={13} className="text-white" /></button>
+                      className={cn("flex size-7 items-center justify-center rounded-full", ACCENT_FILL)}><Check size={13} className={ACCENT_ON} /></button>
                     <button type="button" title={t("orbit.deny")} aria-label={t("orbit.deny")}
                       onClick={() => decide(bot, pending.map((p) => p.requestId), "deny")}
                       className="flex size-7 items-center justify-center rounded-full border border-[#333]"><X size={11} className="text-ink/80" /></button>
@@ -190,7 +194,7 @@ export function OrbitCorner({ agent, onOpen }: { agent: OrbitBot; onOpen: () => 
       className="group absolute bottom-[22px] left-4 z-10 flex items-center gap-2.5 rounded-2xl py-1.5 pl-1.5 pr-3.5 text-left transition-colors hover:bg-ink/[0.05] animate-rise">
       <span className="relative">
         <OrbitFace id={agent.id} color={agent.color} size={40} />
-        {agent.unread && <span className="absolute right-0.5 top-0.5 size-2 rounded-full bg-[#1084fe]" />}
+        {agent.unread && <span className={cn("absolute right-0.5 top-0.5 size-2 rounded-full", ACCENT_FILL)} />}
       </span>
       <span className="flex flex-col leading-tight">
         <span className="text-[13px] font-semibold" style={{ color: agent.color }}>{agent.name}</span>

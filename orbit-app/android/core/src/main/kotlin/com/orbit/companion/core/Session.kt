@@ -1107,6 +1107,15 @@ class Session(
 
     // MARK: - Actions
 
+    /** Cancelled or switched connections must never return old speech to a new PC. */
+    suspend fun transcribeSolarVoice(audio: String, language: String): String {
+        val activeClient = client ?: throw APIError.Transport("This computer is offline.")
+        val text = activeClient.transcribeSolarVoice(audio, language)
+        currentCoroutineContext().ensureActive()
+        if (client !== activeClient) throw CancellationException("The active computer changed.")
+        return text
+    }
+
     suspend fun send(text: String, to: Chat) {
         perform {
             val receipt = when (to) {
@@ -1212,7 +1221,7 @@ class Session(
                     activeClient.imageCapableInstanceIds()
                 } catch (error: APIError.Status) {
                     if (error.code != 404) throw error
-                    _actionError.value = "Update Orbit on this computer before sending images."
+                    _actionError.value = "Update Solar on this computer before sending images."
                     return false
                 }
                 if (!imageSupported(to, capable)) {
@@ -1418,7 +1427,7 @@ class Session(
         val endpoints = saved.automaticEndpoints
         if (endpoints.isEmpty()) {
             throw APIError.Transport(
-                "Couldn't reach ${saved.name}. Keep Orbit open and Phone access on, then try again.",
+                "Couldn't reach ${saved.name}. Keep Solar open and Phone access on, then try again.",
             )
         }
         var lastError: Throwable? = null
@@ -1434,7 +1443,7 @@ class Session(
             }
         }
         throw lastError ?: APIError.Transport(
-            "Couldn't reach ${saved.name}. Keep Orbit open and Phone access on, then try again.",
+            "Couldn't reach ${saved.name}. Keep Solar open and Phone access on, then try again.",
         )
     }
 

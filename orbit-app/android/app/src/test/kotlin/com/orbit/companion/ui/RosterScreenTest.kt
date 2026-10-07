@@ -668,7 +668,8 @@ class RosterScreenTest {
     @Composable
     private fun Screens(navigator: CompanionNavigator) {
         when (navigator.current) {
-            Destination.Roster -> RosterScreen(navigator)
+            // Search/list density remains available; the Solar map has its own UI fixture.
+            Destination.Roster -> RosterScreen(navigator, solarMap = false)
             Destination.Settings -> SettingsScreen(onBack = navigator::pop)
             else -> Text("Conversation")
         }

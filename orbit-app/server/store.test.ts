@@ -1623,6 +1623,30 @@ describe("Store change stream", () => {
     expect(reloaded.resolvePairConversation(sender, recipient.id, idle)!.task.threadId).toBe(first.task.threadId);
   });
 
+  it("peer conversations follow the recipient's current model on new, reused and parallel threads", () => {
+    const store = new Store(selection);
+    const recipient = store.createBot({ name: "Momo" });
+    const sender = store.createBot({ name: "Jarvis" });
+    const selected = recipient.threadId;
+    const codex = { instanceId: "codex", model: "gpt-6-luna" };
+    store.patchTask(recipient.id, selected, { modelSelection: codex });
+    const idle = { working: () => false };
+    const pair = store.resolvePairConversation(sender, recipient.id, idle)!.task;
+    expect(pair.modelSelection).toEqual(codex);
+    expect(recipient.modelSelection).toEqual(selection());
+    const changed = { ...codex, model: "gpt-6-sol", effort: "high" as const };
+    store.patchTask(recipient.id, selected, { modelSelection: changed });
+    const reused = store.resolvePairConversation(sender, recipient.id, idle)!.task;
+    expect(reused.threadId).toBe(pair.threadId);
+    expect(reused.modelSelection).toEqual(changed);
+    expect(reused.approvalMode).toBe(pair.approvalMode);
+    const parallel = store.resolvePairConversation(sender, recipient.id, { working: () => true })!.task;
+    expect(parallel.threadId).not.toBe(pair.threadId);
+    expect(parallel.modelSelection).toEqual(changed);
+    expect(recipient.threadId).toBe(selected);
+    expect(new Store(selection).taskByThread(recipient.id, pair.threadId)?.modelSelection).toEqual(changed);
+  });
+
   it("resolvePairConversation adopts the sender's most recent old thread instead of adding one more row", () => {
     const store = new Store(selection);
     const recipient = store.createBot({ name: "Scout" });

@@ -5,8 +5,7 @@ import * as THREE from './vendor/three.module.js';
 import { POINTER_INDENT, POINTER_FALLOFF, pointerDent } from './solar-interaction.js';
 import { SURFACE_PRESETS, surfaceColor } from './solar-presets.js';
 import { solarTransferRoute } from './solar-transfer.js';
-import { toolIcon } from './tool-icons';
-import {SolarOrbitParticles} from './SolarOrbitParticles';
+import { SolarStateParticles, satelliteAngle } from './solar-state-particles';
 
 const personalities = Object.fromEntries(Object.entries({...SURFACE_PRESETS, moon:SURFACE_PRESETS['moon-silver']}).map(([skin,p])=>[skin,{
   ...p, eyes:[skin.startsWith('moon')?.085:.08,skin.startsWith('moon')?.125:.12], slope:0,depth:.035,
@@ -161,6 +160,18 @@ void main() {
   #include <colorspace_fragment>
 }`;
 const noise = n => { const v = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return v - Math.floor(v); };
+/** Where a face looks when the pointer is not leading it. */
+function faceLook(object,time,moving){
+  if(!moving)return {x:0,y:0};
+  const state=object.state;
+  if(state==='working'){const a=satelliteAngle(object.id,time);return {x:Math.cos(a)*.06,y:-Math.sin(a)*.025};}
+  if(state==='thinking')return {x:Math.sin(time*.6+object.phase)*.04,y:.035};
+  if(state==='waiting'||state==='blocked')return {x:0,y:.012};
+  if(state==='sleeping'||state==='offline')return {x:0,y:0};
+  // idle: an unhurried glance every few seconds
+  const k=Math.floor((time+object.phase)/3.4);
+  return {x:(noise(k*1.37+object.phase)-.5)*.07,y:(noise(k*2.11+object.phase*1.3)-.5)*.045};
+}
 const palettes=Object.fromEntries(Object.entries(personalities).map(([skin,profile])=>[skin,profile.palette]));
 
 export async function createSolarWorld(canvas) {
@@ -188,9 +199,9 @@ export async function createSolarWorld(canvas) {
         samples.set(name,ctx.getImageData(0,0,256,128).data); resolve();
       },undefined,reject);
     })));
-  } catch(error) { renderer.dispose(); throw error; }
+  } catch(error) { renderer.dispose(); renderer.forceContextLoss(); throw error; }
   const track = resource => { resources.add(resource); return resource; };
-  const orbitParticles=new SolarOrbitParticles(),particleCanvas=document.createElement('canvas');
+  const orbitParticles=new SolarStateParticles(),particleCanvas=document.createElement('canvas');
   particleCanvas.className='solar-orbit-particle-canvas';particleCanvas.setAttribute('aria-hidden','true');canvas.parentElement.appendChild(particleCanvas);
   const particleContext=particleCanvas.getContext('2d');
   const coreGeometry=track(new THREE.SphereGeometry(1,96,64));
@@ -206,39 +217,6 @@ export async function createSolarWorld(canvas) {
   ctx.fillStyle=gradient; ctx.fillRect(0,0,256,256);
   const glowTexture=track(new THREE.CanvasTexture(glowCanvas));
   const normal=new THREE.Vector3(), up=new THREE.Vector3(0,0,1), dummy=new THREE.Object3D();
-  const iconTextures=Object.fromEntries(['code','research','document','notion','task','thinking','help','error'].map(name=>{
-    const image=document.createElement('canvas');image.width=image.height=128;
-    const c=image.getContext('2d');c.strokeStyle=c.fillStyle='#ffffff';c.lineWidth=9;c.lineCap='round';c.lineJoin='round';
-    c.beginPath();
-    if(name==='code'){c.moveTo(43,37);c.lineTo(20,64);c.lineTo(43,91);c.moveTo(85,37);c.lineTo(108,64);c.lineTo(85,91);}
-    else if(name==='research'){c.arc(54,54,28,0,Math.PI*2);c.moveTo(76,76);c.lineTo(108,108);}
-    else if(name==='notion'){c.rect(25,22,78,84);c.moveTo(44,88);c.lineTo(44,40);c.lineTo(84,88);c.lineTo(84,40);}
-    else if(name==='document'){c.rect(33,22,62,84);c.moveTo(47,47);c.lineTo(81,47);c.moveTo(47,67);c.lineTo(81,67);c.moveTo(47,87);c.lineTo(69,87);}
-    else if(name==='thinking'){for(const x of [30,64,98]){c.moveTo(x+6,64);c.arc(x,64,6,0,Math.PI*2);}}
-    else if(name==='help'){c.moveTo(42,42);c.bezierCurveTo(42,13,94,16,86,48);c.bezierCurveTo(82,64,64,63,64,80);c.moveTo(64,102);c.lineTo(64,103);}
-    else if(name==='error'){c.moveTo(64,27);c.lineTo(64,77);c.moveTo(64,101);c.lineTo(64,102);}
-    else{c.moveTo(64,23);c.lineTo(105,64);c.lineTo(64,105);c.lineTo(23,64);c.closePath();}
-    c.stroke();return [name,track(new THREE.CanvasTexture(image))];
-  }));
-  
-  const originalToolTextures=new Map();
-  function originalToolTexture(name){
-    const image=toolIcon(name,'#fcfcfc');if(!image)return iconTextures.task;
-    if(originalToolTextures.has(image.src))return originalToolTextures.get(image.src);
-    const texture=track(new THREE.Texture(image));texture.colorSpace=THREE.SRGBColorSpace;
-    if(image.complete&&image.naturalWidth)texture.needsUpdate=true;else image.addEventListener('load',()=>{if(!disposed)texture.needsUpdate=true;},{once:true});
-    originalToolTextures.set(image.src,texture);return texture;
-  }
-  // Populate every original tool kind before React's layout update can render.
-  for(const tool of ['exec','read_file','write_file','search','web_fetch','browser','plan','delegate','computer','phone','memory','mcp__notion','unknown_tool'])originalToolTexture(tool);
-  function satellite(skin,color){
-    const root=new THREE.Group();
-    const image=document.createElement('canvas');image.width=image.height=128;const c=image.getContext('2d');c.fillStyle='#121215';c.strokeStyle=color??personalities[skin].light;c.lineWidth=4;c.beginPath();c.roundRect(6,6,116,116,26);c.stroke();
-    const outline=new THREE.Sprite(track(new THREE.SpriteMaterial({map:track(new THREE.CanvasTexture(image)),color:'#ffffff',transparent:true,depthTest:false,depthWrite:false})));outline.scale.set(.6,.6,1);root.add(outline);
-    const icon=new THREE.Sprite(track(new THREE.SpriteMaterial({map:originalToolTexture('exec'),color:'#ffffff',transparent:true,depthTest:false,depthWrite:false})));icon.scale.set(.35,.35,1);icon.position.set(0,0,.1);root.add(icon);root.traverse(child=>{child.renderOrder=25;});root.visible=false;
-    const lineGeometry=track(new THREE.BufferGeometry());lineGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
-    const tether=new THREE.Line(lineGeometry,track(new THREE.LineDashedMaterial({color:color??personalities[skin].light,dashSize:.055,gapSize:.11,transparent:true,opacity:.7,depthTest:false,depthWrite:false})));tether.renderOrder=24;tether.frustumCulled=false;return {root,icon,tether};
-  }
   function startTransfer(message){
     const from=objects.get(message.from),to=objects.get(message.to);
     if(!from||!to||from===to||!Number.isFinite(message.at))return;
@@ -362,7 +340,6 @@ export async function createSolarWorld(canvas) {
       const rim=new THREE.Mesh(eyeGeometry,faceEdge);rim.renderOrder=11;face.add(rim);eye.userData.rim=rim;
       face.add(eye); return eye;
     });
-    const pulseRing=new THREE.Mesh(track(new THREE.RingGeometry(1,1.014,96)),track(new THREE.MeshBasicMaterial({color:profile.light,transparent:true,opacity:0,depthTest:false,depthWrite:false,side:THREE.DoubleSide})));pulseRing.position.z=1.3;pulseRing.renderOrder=15;root.add(pulseRing);
     const mouthGeometry=track(new THREE.BufferGeometry());
     mouthGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(26*2*3),3));
     const mouthIndices=[];for(let i=0;i<25;i++){const j=i*2;mouthIndices.push(j,j+2,j+1,j+1,j+2,j+3);}mouthGeometry.setIndex(mouthIndices);
@@ -374,10 +351,10 @@ export async function createSolarWorld(canvas) {
     rotation.rotation.y=skin==='earth'?-.55:.36;
     scene.add(root);
     const phase=noise([...body.id].reduce((sum,c)=>sum+c.charCodeAt(0),0))*6.8;
-    const object={id:body.id,parentId:body.parentId,root,rotation,surface,core,cloud,halo,debris,rings,face,eyes,mouth,pulseRing,profile,skin,kind:body.kind,active:body.active,state:body.state??'ready',activity:body.activity??'task',signal:null,background:false,stageLight:1,phase,trail:new THREE.Vector2(),related:0,satellite:satellite(skin,body.color),
+    const object={id:body.id,parentId:body.parentId,root,rotation,surface,core,cloud,halo,debris,rings,face,eyes,mouth,profile,skin,kind:body.kind,active:body.active,state:body.state??'ready',activity:body.activity??'task',signal:null,background:false,stageLight:1,phase,trail:new THREE.Vector2(),related:0,lastState:body.state??'ready',doneAt:-10,
       screenX:body.x,screenY:body.y,radius:body.diameter/2,interaction:0,cursor:new THREE.Vector2(2,2),gaze:new THREE.Vector2(),
       ownedResources:[...resources].filter(resource=>!before.has(resource))};
-    root.add(object.satellite.root,object.satellite.tether);objects.set(body.id,object); return object;
+    objects.set(body.id,object); return object;
   }
   function remove(id,object) {
     object.root.traverse(child=>{ if(child.isInstancedMesh)child.dispose(); });
@@ -400,28 +377,32 @@ export async function createSolarWorld(canvas) {
       object.related+=(related-object.related)*blend;
       object.interaction+=(proximity-object.interaction)*blend;
       object.cursor.x+=(targetX-object.cursor.x)*blend; object.cursor.y+=(targetY-object.cursor.y)*blend;
-      const thinking=object.state==='thinking',working=object.state==='working',sleeping=object.state==='sleeping';
+      const thinking=object.state==='thinking',working=object.state==='working',sleeping=object.state==='sleeping',waiting=object.state==='waiting'||object.state==='blocked';
+      if(object.lastState!==object.state){ if((object.lastState==='working'||object.lastState==='thinking')&&(object.state==='ready'||object.state==='sleeping'))object.doneAt=time; object.lastState=object.state; }
+      // a short contented squint and smile right after a turn ends
+      const happy=moving&&time-object.doneAt<1.8?Math.sin(Math.max(0,time-object.doneAt)/1.8*Math.PI):0;
       object.stageLight+=((object.background?.18:1)-object.stageLight)*blend;
       if(object.signal&&moving)object.signalElapsed=Math.min(10,(object.signalElapsed??0)+delta);
       const signalAge=object.signal?object.signalElapsed??10:10;
       const arrival=moving&&object.signal?.kind==='receiving'?Math.max(0,1-signalAge/.7):0;
-      const attention=object.state==='waiting'||object.state==='blocked';
-      const ripple=moving&&object.signal?.kind==='receiving'&&signalAge<.8?signalAge/.8:attention?(moving?(time*.9)%1:.35):-1;
-      object.pulseRing.visible=false;
-      if(ripple>=0){object.pulseRing.scale.setScalar(attention?1.15+ripple*.8:1.1+ripple*1.4);object.pulseRing.material.opacity=(1-ripple)*(attention?.55:.8);object.pulseRing.material.color.set(attention?(object.state==='blocked'?'#ff5667':'#ff9800'):object.profile.light);}
       // Follow direction across the whole map, independently of the local particle dent.
       // Move the carved apertures with the lenses, so the gaze stays part of the shell.
       const tracking=!!pointer&&moving&&settings.interactive;
       const gazeDistance=Math.sqrt(targetX*targetX+targetY*targetY+4);
-      object.gaze.x+=((tracking?targetX/gazeDistance*.065:thinking&&moving?Math.sin(time*.8+object.phase)*.017:0)-object.gaze.x)*blend;
-      object.gaze.y+=((tracking?targetY/gazeDistance*.05:thinking?.026:0)-object.gaze.y)*blend;
+      // Busy faces watch their own work (the satellite, or upwards while thinking)
+      // unless the pointer is right beside them; idle faces glance around.
+      const look=faceLook(object,time,moving);
+      const follow=tracking&&!((working||thinking||waiting)&&object.interaction<.3);
+      object.gaze.x+=((follow?targetX/gazeDistance*.065:look.x)-object.gaze.x)*blend;
+      object.gaze.y+=((follow?targetY/gazeDistance*.05:look.y)-object.gaze.y)*blend;
       const period=5.3+object.phase*.3, phase=(time+object.phase)%period;
       const blink=moving&&phase>period-.22?1-Math.pow(Math.sin((phase-period+.22)/.22*Math.PI),2):1;
       const pulse=moving&&signalAge<1?Math.sin(Math.max(0,signalAge)*Math.PI)*.18:0;
-      object.root.scale.set(object.radius*(1-pulse*.12+arrival*.025),object.radius*(1+pulse*.12+arrival*.025),object.radius);
+      const breath=sleeping&&moving?1+Math.sin(time*1.3+object.phase)*.014:1;
+      object.root.scale.set(object.radius*(1-pulse*.12+arrival*.025)*breath,object.radius*(1+pulse*.12+arrival*.025)*breath,object.radius);
       const pose=solarFacePose(object.state,time+object.phase,moving);
       for(const material of [object.surface.material,object.core.material]) {
-        const u=material.uniforms; u.stageLight.value=object.stageLight; u.mouthSmile.value+=(object.profile.smile*pose.smile-u.mouthSmile.value)*blend; u.time.value=time; u.eyeOpen.value+=(solarFaceEyeOpen(object.state,blink)-u.eyeOpen.value)*(moving?blend:1); u.cursor.value.copy(object.cursor); u.interaction.value=object.interaction; u.gaze.value.copy(object.gaze); u.motionTrail.value.copy(object.trail); u.luminous.value=(object.profile.luminous+.018)*settings.glow; u.speaking.value+=(pose.speech-u.speaking.value)*blend;
+        const u=material.uniforms; u.stageLight.value=object.stageLight; u.mouthSmile.value+=(object.profile.smile*(pose.smile+happy*1.4)-u.mouthSmile.value)*blend; u.time.value=time; u.eyeOpen.value+=(solarFaceEyeOpen(object.state,blink)*(1-happy*.5)*(1+arrival*.22)-u.eyeOpen.value)*(moving?blend:1); u.cursor.value.copy(object.cursor); u.interaction.value=object.interaction; u.gaze.value.copy(object.gaze); u.motionTrail.value.copy(object.trail); u.luminous.value=(object.profile.luminous+.018)*settings.glow; u.speaking.value+=(pose.speech-u.speaking.value)*blend;
         for(const [key,target] of [['focus',pose.focus],['request',pose.request],['concern',pose.concern]]) {
           u[key].value+=(target-u[key].value)*blend;
         }
@@ -467,18 +448,10 @@ export async function createSolarWorld(canvas) {
         if(object.debris){object.debris.rotation.z+=delta*(object.skin==='sun'?.27:.34)*(1+object.interaction*.75);object.debris.rotation.y=Math.sin(time*.4+object.phase)*.12;}
         if(object.rings)object.rings.rotation.z+=delta*.24;
       }
-      const accessory=object.satellite,active=working;
-      accessory.root.visible=active&&!object.background;
-      accessory.tether.visible=accessory.root.visible;
-      if(active){const a=time*(working?.65:.3)+object.phase;accessory.root.position.set(Math.cos(a)*1.65,Math.sin(a)*1.65,1.4);accessory.root.scale.setScalar(40/(object.radius*.6));
-        const key=object.state==='waiting'?'help':object.state==='blocked'?'error':thinking?'thinking':object.activity;
-        accessory.icon.material.map=['help','error'].includes(key)?iconTextures[key]:originalToolTexture(object.tool??({thinking:'memory',code:'exec',research:'web_search',document:'read_file',notion:'mcp__notion',task:'todo_plan'}[key]??'tool'));
-        const positions=accessory.tether.geometry.attributes.position;positions.setXYZ(0,Math.cos(a)*1.1,Math.sin(a)*1.1,1.3);positions.setXYZ(1,Math.cos(a)*1.65,Math.sin(a)*1.65,1.3);positions.needsUpdate=true;accessory.tether.computeLineDistances();
-      }
     }
     renderer.render(scene,camera);
     if(particleContext){const ratio=renderer.getPixelRatio();particleContext.setTransform(ratio,0,0,ratio,0,0);particleContext.clearRect(0,0,width,height);
-      orbitParticles.draw(particleContext,[...objects.values()].map(o=>({id:o.id,x:o.root.position.x+width/2,y:height/2-o.root.position.y,radius:o.radius,color:o.profile.palette[3],colors:o.profile.palette,state:o.state,alpha:o.stageLight,signal:o.signal,signalAge:o.signalElapsed??10})),width,height,time,delta,moving,settings.debris,id=>{const target=objects.get(id);if(target){target.signal={kind:'receiving',at:Date.now()};target.signalElapsed=0;}});
+      orbitParticles.draw(particleContext,[...objects.values()].map(o=>({id:o.id,x:o.root.position.x+width/2,y:height/2-o.root.position.y,radius:o.radius,color:o.profile.palette[3],colors:o.profile.palette,state:o.state,alpha:o.stageLight,signal:o.signal,signalAge:o.signalElapsed??10,tool:o.tool})),width,height,time,delta,moving,settings.debris,id=>{const target=objects.get(id);if(target){target.signal={kind:'receiving',at:Date.now()};target.signalElapsed=0;}});
     }
     frameListener?.(canvas,particleCanvas);
   }

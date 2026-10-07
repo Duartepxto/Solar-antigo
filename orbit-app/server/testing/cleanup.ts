@@ -5,8 +5,9 @@
 // as a red suite whose assertions all passed — the most expensive kind of
 // failure to read. These two helpers exist so the fix lives in one place
 // instead of being re-derived (or forgotten) per suite.
-import type { ChildProcess } from "node:child_process";
+import { execFile, type ChildProcess } from "node:child_process";
 import { rmSync } from "node:fs";
+import { join } from "node:path";
 
 /** How `waitForExit` should end the child, and how long to allow. */
 export interface WaitForExitOptions {
@@ -48,22 +49,45 @@ export function waitForExit(
     if (!child || child.exitCode !== null || child.signalCode !== null) return resolve();
 
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let settled = false;
     const done = () => {
+      if (settled) return;
+      settled = true;
       if (timer) clearTimeout(timer);
+      child.removeListener?.("close", done);
       resolve();
     };
     child.on("close", done);
 
+    const terminate = (requested: NodeJS.Signals) => {
+      // The native process handle is the provenance check. Synthetic children
+      // can carry invented pids, but do not own a matching kernel handle.
+      const handle = (child as ChildProcess & { _handle?: { pid?: number; constructor?: { name?: string } } })._handle;
+      if (process.platform === "win32" && child.spawnfile && handle?.constructor?.name === "Process"
+        && handle.pid === child.pid && child.pid !== process.pid
+        && child.pid && child.exitCode === null && child.signalCode === null) {
+        // Windows kill(SIGTERM) terminates only the parent and leaves its
+        // fake engines alive. End the exact tree owned by this fixture.
+        execFile(join(process.env.SystemRoot || "C:\\Windows", "System32", "taskkill.exe"),
+          ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, timeout: 5_000 }, () => {});
+      } else {
+        try { child.kill(requested); } catch { /* already exited */ }
+      }
+    };
+
     if (signal) {
       try {
-        child.kill(signal);
+        terminate(signal);
       } catch {
         /* already gone — `close` still arrives, or already has */
       }
     }
+    if (settled) return;
 
     timer = setTimeout(() => {
-      child.kill("SIGKILL");
+      if (settled) return;
+      terminate("SIGKILL");
+      if (settled) return;
       timer = setTimeout(done, 2_000);
       timer.unref?.();
     }, graceMs);

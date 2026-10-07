@@ -16,7 +16,13 @@ export async function seedSolarPreview(fixture, control) {
   const bots = Array.isArray(list) ? list : list.bots;
   const starter = bots.find(bot => bot.name === 'Fixture Starter');
   if (!starter) throw new Error('A fixture não tem o agente inicial esperado.');
-  await request(`/api/bots/${starter.id}`, 'PATCH', { name: 'Jarvis', title: 'Coordenação', color: 'orange' });
+  // The starter was seeded under a random name from server/names.ts, and its
+  // first message keeps it ("Hi, I'm Ivy…") through any rename. Jarvis is
+  // created fresh so the Sun greets as itself; the starter is then removed.
+  const jarvis = await control(['new-bot', '--url', url, '--name', 'Jarvis', '--title', 'Coordenação']);
+  if (!jarvis.success || !jarvis.bot?.id) throw new Error('Não foi possível criar o Jarvis na fixture.');
+  await request(`/api/bots/${jarvis.bot.id}`, 'PATCH', { color: 'orange' });
+  await request(`/api/bots/${starter.id}`, 'DELETE');
   const definitions = [
     ['Hermes', '01 · Operações', 'Coordenação diária', 'gray', true],
     ['Lua Prata', '01 · Operações', 'Organização', 'gray', false],

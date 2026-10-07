@@ -31,12 +31,10 @@ internal fun BotAvatar(
     } else {
         modifier.semantics { this.contentDescription = contentDescription }
     }
-    MausAvatar(
-        color = bot.color,
-        bodyId = bot.mascotBody,
+    SolarCelestial(
+        skin = solarSkin(bot),
         size = size,
         state = state,
-        animated = animated,
         modifier = named,
     )
 }

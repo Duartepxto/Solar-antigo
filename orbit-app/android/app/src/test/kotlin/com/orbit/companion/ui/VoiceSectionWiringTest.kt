@@ -65,10 +65,10 @@ class VoiceSectionWiringTest {
     private val systemNotice = "Your computer's built-in voices are unavailable"
     private val systemFooter =
         "Your computer's built-in voices need no key, and it reports none it can use. " +
-            "Switch the voice engine in Orbit on the computer to turn speech back on."
+            "Switch the voice engine in Solar on the computer to turn speech back on."
     private val chatterboxNotice = "The Chatterbox server is not connected"
     private val chatterboxFooter =
-        "Add the address of your Chatterbox server in Orbit on the computer to turn " +
+        "Add the address of your Chatterbox server in Solar on the computer to turn " +
             "speech back on."
 
     /**

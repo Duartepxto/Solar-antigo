@@ -84,7 +84,8 @@ const PHONE_SECRET_PROVIDE_PATH = /^\/api\/bots\/[\w-]+\/secret-cards\/[\w-]+\/p
 
 export function proxyHeadersTimeoutMs(url: string, override?: number): number {
   return override
-    ?? (PHONE_SECRET_PROVIDE_PATH.test(url) ? PHONE_SECRET_HEADERS_TIMEOUT_MS : HEADERS_TIMEOUT_MS);
+    ?? (PHONE_SECRET_PROVIDE_PATH.test(url) ? PHONE_SECRET_HEADERS_TIMEOUT_MS
+      : /^\/api\/solar-voice\/transcribe(?:\?|$)/.test(url) ? 95_000 : HEADERS_TIMEOUT_MS);
 }
 
 /** A JSON response has to be buffered whole before it can be scrubbed, so the

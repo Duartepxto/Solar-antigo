@@ -403,6 +403,8 @@ data class Bot(
     /** Desktop sidebar section. Missing or blank means the built-in Bots area. */
     val section: String? = null,
     val chiefOfStaff: Boolean? = null,
+    /** Built-in Solar assistant; hidden from ordinary lists, present as the sun. */
+    val system: String? = null,
     /** ask, auto, full, or custom; null when paired to an older harness. */
     val approvalMode: String? = null,
     val autoApprove: Boolean? = null,

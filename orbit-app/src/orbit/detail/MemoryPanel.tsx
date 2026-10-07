@@ -17,6 +17,7 @@ import { useStore, type Bot } from "@/state/store";
 import { useDesktopCapabilities } from "@/components/DesktopCapabilities";
 import { Actions, BackToChat, DetailBody, DetailHeader, Gauge, List, Loading, MONO_LABEL, SMALL_BUTTON, SMALL_PRIMARY, Tabs, Warning } from "./primitives";
 import { PANEL_ICON } from "./BotPanels";
+import { AgentTransferControls } from './AgentTransferControls';
 
 type Tab = "file" | "topics" | "logs" | "changes";
 
@@ -143,6 +144,7 @@ export function MemoryPanel({ bot, onBack }: { bot: Bot; onBack: () => void }) {
     <DetailBody>
       <BackToChat onClick={onBack} />
       <DetailHeader icon={PANEL_ICON.memory} color={MAUS_COLORS[bot.color]} kicker={t("orbit.sys.memory")} title={t("orbit.p.memory.title")} desc={t("orbit.p.memory.desc")} />
+      <AgentTransferControls bot={bot} onImported={() => { void reload().catch(e => setError(errorText(e))); }} />
       {error && <Warning>{error}</Warning>}
       {notice && <span role="status" className="text-[12.5px] text-ink/70">{notice}</span>}
       {!overview ? <Loading /> : (

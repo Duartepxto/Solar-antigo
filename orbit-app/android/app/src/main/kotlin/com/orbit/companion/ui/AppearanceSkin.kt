@@ -10,7 +10,7 @@ enum class AppearanceSkin(
     val isDark: Boolean,
     val colors: SkinColors,
 ) {
-    MIDNIGHT("midnight", "Midnight", true, SkinColors("070707", "111111", "262626", "FCFCFC", "FCFCFC99", "1084FE", "FFFFFF", "38D591", "FF5667", "333333")),
+    MIDNIGHT("midnight", "Solar", true, SkinColors("0E1013", "15191F", "20262D", "EEF0F3", "A1A7B3", "DDBD89", "191B20", "63B58A", "FF8A96", "3B424D")),
     ATELIER("atelier", "Atelier", false, SkinColors("F5F1EB", "FBF8F2", "FFFFFF", "1A1A18", "6B6559", "A05F25", "FFFFFF", "3F6B47", "A33A32", "C8BDA8")),
     FOUNDRY("foundry", "Foundry", true, SkinColors("100E0B", "171410", "1E1A14", "F4EFE4", "B0A696", "D99A3E", "1C150C", "57B078", "E0685E", "3D3529")),
     LAGOON("lagoon", "Lagoon", false, SkinColors("DFECEB", "ECF4F3", "FFFFFF", "14201F", "4D5C5B", "11736D", "FFFFFF", "2F6B4F", "A8382F", "AEBFBD")),

@@ -17,6 +17,7 @@
     "dist-native/**",
     "dist-server/**",
     "electron/vendor/**",
+    "src/orbit/vendor/**",
     "release/**",
     "third_party/**",
     "electron/resources/**"

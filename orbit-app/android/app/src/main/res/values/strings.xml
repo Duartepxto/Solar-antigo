@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Solar</string>
+    <string name="solar_start_call">Start call</string>
+    <string name="solar_end_call">End call</string>
+    <string name="solar_send_voice">Send voice turn</string>
+    <string name="solar_listening">Listening · pause or tap Send voice turn (up to 29 seconds)</string>
+    <string name="solar_transcribing">Transcribing on your computer…</string>
+    <string name="solar_waiting">Waiting for %1$s…</string>
+    <string name="solar_speaking">Speaking · listening resumes after the reply</string>
+    <string name="solar_your_system">Your Solar</string>
+    <string name="solar_first_agent">Create your first agent with +</string>
+    <string name="solar_channels">Channels</string>
+    <string name="solar_new_channel">New channel</string>
+    <string name="solar_open_agent">Open %1$s</string>
+    <string name="solar_manage_threads">Manage threads</string>
+    <string name="solar_new_thread">New thread</string>
+    <string name="solar_needs_attention">Needs attention</string>
+    <string name="solar_working">Working</string>
+    <string name="solar_new_reply">New reply</string>
+    <string name="solar_ready">Ready</string>
     <string name="notification_channel_blocking">Approvals and questions</string>
     <string name="notification_channel_blocking_desc">Time-sensitive prompts that need an answer</string>
     <string name="notification_channel_done">Bot messages</string>

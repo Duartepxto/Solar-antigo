@@ -22,6 +22,7 @@ import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 import { voiceKeyDraftValue, type VoiceKeyDraft } from "@/lib/voice-key-draft";
 import { Switch } from "./SettingsPrimitives";
+import { SolarDictationSettings } from './SolarDictationSettings';
 
 const SAMPLE = "Morning. Overnight the tests went green, and I left two notes for you in the thread.";
 
@@ -198,13 +199,14 @@ export function VoiceSettings({
       .finally(() => setSavingServer(false));
   };
 
-  if (!tts) return null;
+  if (!tts) return solarVoices ? <SolarDictationSettings /> : null;
 
   const selectedVoice = usesLocalSystem ? deviceVoice : (bot.voice ?? "");
   const ready = usesLocalSystem || (hostConfigured && Boolean(selectedVoice || tts.voice));
 
   return (
-    <div className={bare ? "mt-4" : "rounded-xl bg-ink/[0.03] p-4"}>
+    <div className={cn(bare ? "mt-4" : "rounded-xl bg-ink/[0.03] p-4", solarVoices && "solar-settings")}>
+      {solarVoices && <SolarDictationSettings />}
       <div className="text-[15px] font-medium text-ink">{t("voice.ui.voice")}</div>
       <div className="mt-0.5 text-[13px] text-ink/55">
         {localMacClient

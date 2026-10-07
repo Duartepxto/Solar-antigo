@@ -553,6 +553,7 @@ import { json, onJsonBody, parsedBodyOf, readBody } from "./harness/http.ts";
 import { ROUTES, dispatchRoutes } from "./routes/table.ts";
 import { createHostedSlackRoutes } from "./routes/hosted-slack.ts";
 import { createBotMemoryRoutes } from "./routes/bot-memory.ts";
+import { createAgentArchiveRoutes } from "./routes/agent-archive.ts";
 
 const PORT = Number(process.env.ORBIT_PORT || process.env.OGB_PORT || 8799);
 // Remote MCP servers signed in with OAuth. The browser returns to this
@@ -2204,6 +2205,15 @@ function unattendedDispatchState(botId: string): "ready" | "busy" | "missing" {
     groupTurn: Boolean(bot) && Boolean(activeGroupTurnForBot(botId)),
   });
   return decision.action !== "refuse" ? "ready" : decision.code === "missing" ? "missing" : "busy";
+}
+
+/** Per-process secret for live page previews: a restart invalidates old preview links. */
+const SOLAR_PREVIEW_SECRET = randomBytes(32);
+function solarPreviewToken(botId: string, threadId: string): string {
+  return createHash("sha256").update(SOLAR_PREVIEW_SECRET).update(`\0${botId}\0${threadId}`).digest("hex").slice(0, 32);
+}
+function solarPreviewBase(botId: string, threadId: string): string {
+  return `/api/solar-preview/${solarPreviewToken(botId, threadId)}/${botId}/${threadId}/`;
 }
 
 function requestedTaskBot(botId: string, rawThreadId: unknown): BotRecord {
@@ -3943,6 +3953,9 @@ const roomHandoffs = new RoomHandoffs(join(DATA_DIR, "room-handoffs.json"), {
     const bot = store.bot(child.botId);
     if (store.messagesFor(parent.threadId).some(m => m.roomRequest?.id === child.id && m.roomRequest.phase === "result")) return;
     const problem = roomHandoffProblem(child, parent);
+    if (child.status === "completed" && !problem) {
+      broadcast({ kind: "agent.transfer", id: `${child.id}:result`, from: child.botId, to: parent.botId, at: Date.now(), result: true });
+    }
     store.appendMessage(parent.threadId, {
       role: "bot", kind: "activity",
       roomRequest: { id: child.id, phase: "result" },
@@ -3983,6 +3996,9 @@ const roomHandoffs = new RoomHandoffs(join(DATA_DIR, "room-handoffs.json"), {
     const bot = store.bot(node.botId)!;
     const parent = node.parentId ? roomHandoffs.nodes.get(node.parentId) : undefined;
     const sender = parent ? store.bot(parent.botId) : undefined;
+    if (!resumed && sender) {
+      broadcast({ kind: "agent.transfer", id: `${node.id}:request`, from: sender.id, to: bot.id, at: Date.now(), result: false });
+    }
     const result: GroupTurnOrchestration["result"] = {};
     const brief = coordinationTurnText(node, resumed);
     const liveRoster = resumed ? undefined : coordinationLiveRosterBlock(bot);
@@ -13610,6 +13626,16 @@ ROUTES.push(createBotMemoryRoutes({
   },
 }));
 
+ROUTES.push(createAgentArchiveRoutes({
+  store,
+  busy: id => Boolean(store.bot(id)?.busy || store.tasks(id).some(task =>
+    threadBusy(id, task.threadId) || queuedThreadPosition(id, task.threadId) !== null || roomHandoffs.activeDirect(task.threadId))),
+  selection: async contextId => {
+    const context = contextId ? store.bot(contextId) : null;
+    return context ? store.projectBotForTask(context.id, context.threadId)!.modelSelection : await defaultSelection();
+  },
+}));
+
 const toolResults = new ToolResults();
 const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
   let url: URL;
@@ -13787,6 +13813,35 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         },
         serverName: environmentDescriptor({ environmentId: ENVIRONMENT_ID, desktopManaged: DESKTOP_MANAGED }).label,
       });
+    }
+    // Live page preview. The page runs sandboxed (opaque origin, enforced by the
+    // CSP even if opened directly), so its module scripts and fetches arrive
+    // with Origin: null and no session. A per-process secret in the path is the
+    // capability instead: only the owner's editor, which received it from the
+    // admin-only listing, can name these URLs. Read-only, project files only.
+    {
+      const preview = path.match(/^\/api\/solar-preview\/([a-f0-9]{32})\/([\w-]+)\/([\w-]+)\/(.+)$/);
+      if (preview && (method === "GET" || method === "HEAD")) {
+        const expected = Buffer.from(solarPreviewToken(preview[2], preview[3])), given = Buffer.from(preview[1]);
+        if (given.length !== expected.length || !timingSafeEqual(given, expected)) return json(res, 404, { error: "not found" });
+        try {
+          const bot = requestedTaskBot(preview[2], preview[3]);
+          const task = store.taskByThread(bot.id, bot.threadId);
+          const place = task?.surface ?? bot.computer;
+          if (place === "cloud" || place === "vm") return json(res, 409, { error: "This workspace currently supports local project files only" });
+          const file = preview[4].split("/").map(decodeURIComponent).join("/");
+          const asset = new SolarWorkspace(task?.cwd ?? bot.cwd ?? join(realpathSync(DATA_DIR), "task-workspaces", bot.id, bot.threadId)).asset(file);
+          res.writeHead(200, {
+            "Content-Type": asset.type, "Content-Length": asset.data.length, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+            "Content-Security-Policy": "sandbox allow-scripts allow-forms allow-modals allow-popups; default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self'",
+            "Access-Control-Allow-Origin": "*", "Referrer-Policy": "no-referrer",
+          });
+          return res.end(method === "HEAD" ? undefined : asset.data);
+        } catch (error) {
+          const status = typeof (error as { status?: unknown })?.status === "number" ? (error as { status: number }).status : 400;
+          return json(res, status, { error: error instanceof Error ? error.message : "Invalid workspace path" });
+        }
+      }
     }
     const gate = resolveRequestAuth(req, {
       sessions,
@@ -19312,7 +19367,14 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     if (path === "/api/solar-voice/status" && method === "GET") return json(res, 200, { ready: solarSpeechReady(), local: true });
     if (path === "/api/solar-voice/transcribe" && method === "POST") {
       const body = await readBody(req, 1_500_000);
-      return json(res, 200, await transcribeSolarVoice(body?.audio, body?.language));
+      const cancelled = new AbortController();
+      const onClose = () => { if (!res.writableFinished) cancelled.abort(); };
+      res.once("close", onClose);
+      try {
+        return json(res, 200, await transcribeSolarVoice(body?.audio, body?.language, cancelled.signal));
+      } finally {
+        res.off("close", onClose);
+      }
     }
     m = path.match(/^\/api\/bots\/([\w-]+)\/solar-workspace$/);
     if (m && (method === "GET" || method === "PUT")) {
@@ -19323,7 +19385,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (place === "cloud" || place === "vm") return json(res, 409, { error: "This workspace currently supports local project files only" });
       const workspace = new SolarWorkspace(task?.cwd ?? bot.cwd ?? join(realpathSync(DATA_DIR), "task-workspaces", bot.id, bot.threadId));
       const file = url.searchParams.get("file");
-      if (method === "GET") return json(res, 200, file !== null ? workspace.read(file) : workspace.list(url.searchParams.get("directory") ?? ""));
+      if (method === "GET") return json(res, 200, file !== null ? workspace.read(file) : { ...workspace.list(url.searchParams.get("directory") ?? ""), preview: solarPreviewBase(bot.id, bot.threadId) });
       requirePinnedClientThread(bot.id, bot.threadId);
       const body = await readBody(req);
       if (!body || typeof body !== "object" || Array.isArray(body)) return json(res, 400, { error: "Invalid file update" });

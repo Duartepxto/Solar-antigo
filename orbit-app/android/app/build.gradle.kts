@@ -69,7 +69,7 @@ private val releaseKeystore: java.io.File? = when {
 // The one line to edit at a release. `versionCode` is derived from it below, so
 // there is no second number to bump and no way to build a new version under a
 // code the Play Store has already accepted.
-private val appVersionName = "1.0.0"
+private val appVersionName = "1.0.1"
 
 // Play orders uploads by `versionCode` alone and refuses one it has already
 // seen, so the code has to rise whenever the name does — and rise in the
@@ -103,6 +103,11 @@ android {
     }
 
     signingConfigs {
+        System.getenv("SOLAR_ANDROID_PREVIEW_KEYSTORE")?.takeIf(String::isNotBlank)?.let { key ->
+            val previewKey = file(key)
+            require(previewKey.isFile) { "Solar preview signing key is missing." }
+            getByName("debug").storeFile = previewKey
+        }
         // Created only when the material above resolved. Absent otherwise, which
         // is what leaves `release` unsigned.
         if (releaseKeystore != null) {
@@ -129,7 +134,7 @@ android {
         create("preview") {
             initWith(getByName("debug"))
             applicationIdSuffix = ".preview"
-            versionNameSuffix = "-threads-preview"
+            versionNameSuffix = "-solar-preview"
             matchingFallbacks += "debug"
             // Reuse Gradle's local debug key; this package installs alongside
             // the separately signed release and keeps its own pairing/data.
@@ -194,7 +199,13 @@ android {
             // Composition tests render real frames, and the conversation screen
             // in particular drives enough of them that the Gradle default heap
             // runs out before the swipe being tested can land.
-            all { test -> test.maxHeapSize = "2g" }
+            all { test ->
+                test.maxHeapSize = "2g"
+                // Same Maven Central artifacts; repo1 resets connections on
+                // some Windows networks while the canonical host stays usable.
+                test.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+                test.systemProperty("solar.evidence.dir", rootProject.file("../.orbit-scratch/verify-evidence/solar-mobile").absolutePath)
+            }
         }
     }
 }

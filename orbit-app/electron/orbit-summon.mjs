@@ -44,9 +44,29 @@ export function voiceSupported(platform) {
   return VOICE_PLATFORMS.has(platform);
 }
 
-/** The hotkeys a platform registers: no talk without a voice engine. */
-export function hotkeyIdsFor(platform) {
-  return voiceSupported(platform) ? [...HOTKEY_IDS] : HOTKEY_IDS.filter((id) => id !== "talk");
+/** The hotkeys a platform registers: no talk without a voice engine, and
+ * Jarvis's island (Alt+J) only in the Solar build. */
+export function hotkeyIdsFor(platform, { solar = false } = {}) {
+  return HOTKEY_IDS.filter((id) => (id !== "talk" || voiceSupported(platform)) && (id !== "island" || solar));
+}
+
+// Solar's island: a pill in the top-right corner of the work area that grows
+// into Jarvis's panel when opened (src/shell/IslandSurface.tsx).
+export const ISLAND_MARGIN = 12;
+export const ISLAND_PILL_SIZE = Object.freeze({ width: 300, height: 46 });
+export const ISLAND_OPEN_SIZE = Object.freeze({ width: 380, height: 520 });
+
+/** The island's window, anchored to the top-right corner of `workArea`,
+ * `margin` in from both edges (and never wider or taller than it). */
+export function islandCornerBounds(workArea, size = ISLAND_PILL_SIZE, margin = ISLAND_MARGIN) {
+  const width = Math.max(1, Math.min(size.width, workArea.width - 2 * margin));
+  const height = Math.max(1, Math.min(size.height, workArea.height - 2 * margin));
+  return {
+    x: Math.round(workArea.x + workArea.width - width - margin),
+    y: Math.round(workArea.y + margin),
+    width,
+    height,
+  };
 }
 
 /** The display a point is on: the one containing it, else the nearest
@@ -325,7 +345,7 @@ const SHELL_CHANNELS = [
   "orbit-shell:capture", "orbit-shell:quick-resize", "orbit-shell:quick-hide", "orbit-shell:open-thread",
   "orbit-shell:open-settings", "orbit-shell:talk-state", "orbit-shell:talk-interactive", "orbit-shell:talk-dismiss",
   "orbit-shell:talk-summon", "orbit-shell:screen-held", "orbit-shell:point", "orbit-shell:overlay-idle",
-  "orbit-shell:island-look",
+  "orbit-shell:island-look", "orbit-shell:island-open", "orbit-shell:island-hide", "orbit-shell:open-page",
 ];
 
 /**
@@ -337,6 +357,9 @@ export function createOrbitSummon(deps) {
   const {
     electron, userData, preloadPath, iconPath, rendererOrigin, rendererArguments,
     showMainWindow, openMainSettings, openThread, isMainWindowVisible, getMainWindow = () => null, quit, localOnly, log = () => {},
+    // Solar: Jarvis's island (Alt+J) and the page it opens in the app
+    solar = process.env.SOLAR_APP === "1",
+    openPage = (page) => openThread({ botId: page.botId, threadId: page.threadId }),
     // each display's notch (speech.mjs asks AppKit); none where unknown
     notches = async () => new Map(),
     platform = process.platform,
@@ -349,7 +372,7 @@ export function createOrbitSummon(deps) {
   } = deps;
   const isMac = platform === "darwin";
   const voice = voiceSupported(platform);
-  const hotkeyIds = hotkeyIdsFor(platform);
+  const hotkeyIds = hotkeyIdsFor(platform, { solar });
   const { app, BrowserWindow, Tray, Menu, nativeImage, globalShortcut, screen, desktopCapturer, systemPreferences, ipcMain } = electron;
   const file = prefsFile(userData);
   const captureDir = path.join(userData, "orbit-captures");
@@ -359,6 +382,10 @@ export function createOrbitSummon(deps) {
   const loads = new Map(); // shell window -> { failed, reload() }
   let quick = null;
   let talk = null;
+  let island = null;
+  let islandShownAt = 0;
+  let islandDisplay = null;
+  let islandAppWasActive = false;
   let menuBar = null;
   let quickShownAt = 0;
   let quickHeight = QUICK_MIN_HEIGHT;
@@ -385,7 +412,7 @@ export function createOrbitSummon(deps) {
 
   const hotkeys = createHotkeys({
     globalShortcut,
-    handlers: { quick: () => toggleQuick(), talk: () => void summonTalk() },
+    handlers: { quick: () => toggleQuick(), talk: () => void summonTalk(), island: () => toggleIsland() },
     log,
     ids: hotkeyIds,
   });
@@ -544,6 +571,53 @@ export function createOrbitSummon(deps) {
   function toggleQuick() {
     if (quick && !quick.isDestroyed() && quick.isVisible() && quick.isFocused()) hideQuick();
     else showQuick();
+  }
+
+  // ── Jarvis's island (Solar) ──────────────────────────────────────────
+  // The quick bar's window mechanics in the top-right corner: shown and
+  // focused on Alt+J, gone again on Alt+J, Esc or a click elsewhere. The page
+  // opens the pill into its panel and says so (island-open); the window
+  // follows, still anchored to the corner.
+  function createIsland() {
+    island = panel({ surface: "island", ...ISLAND_PILL_SIZE, roundedCorners: false, hasShadow: false });
+    island.on("blur", () => {
+      if (Date.now() - islandShownAt < BLUR_GRACE_MS) return;
+      hideIsland();
+    });
+  }
+
+  function placeIsland(open) {
+    if (!island || island.isDestroyed()) return;
+    // the display it was summoned on, as it is now (its work area can change)
+    const display = (islandDisplay && displayById(islandDisplay.id)) ?? displayUnderCursor();
+    island.setBounds(islandCornerBounds(display.workArea, open ? ISLAND_OPEN_SIZE : ISLAND_PILL_SIZE));
+  }
+
+  function showIsland() {
+    if (!hotkeyIds.includes("island")) return;
+    if (!island || island.isDestroyed()) createIsland();
+    islandDisplay = displayUnderCursor();
+    islandAppWasActive = BrowserWindow.getFocusedWindow() !== null;
+    placeIsland(false);
+    floatEverywhere(island, "floating");
+    islandShownAt = Date.now();
+    island.show();
+    island.focus();
+    send(island, "orbit-shell:island-shown", {});
+  }
+
+  function hideIsland() {
+    if (!island || island.isDestroyed() || !island.isVisible()) return;
+    island.hide();
+    // as the quick bar: hand focus back on macOS only when nothing of the
+    // app is on screen; Windows gives it to the window underneath
+    const otherShown = [quick, talk].some((win) => win && !win.isDestroyed() && win.isVisible());
+    if (isMac && !islandAppWasActive && !isMainWindowVisible() && !otherShown) app.hide?.();
+  }
+
+  function toggleIsland() {
+    if (island && !island.isDestroyed() && island.isVisible() && island.isFocused()) hideIsland();
+    else showIsland();
   }
 
   // ── talk character ───────────────────────────────────────────────────
@@ -842,9 +916,8 @@ export function createOrbitSummon(deps) {
       if (!hotkeyIds.includes(id)) throw new Error("orbit-shell:unsupported");
       const accelerator = normalizeAccelerator(value);
       if (accelerator === null) throw new Error("orbit-shell:needs-modifier");
-      const other = HOTKEY_IDS.find((candidate) => candidate !== id);
       // a hotkey this platform never registers can't collide
-      if (accelerator && hotkeyIds.includes(other) && prefs.hotkeys[other] === accelerator) throw new Error("orbit-shell:duplicate");
+      if (accelerator && hotkeyIds.some((other) => other !== id && prefs.hotkeys[other] === accelerator)) throw new Error("orbit-shell:duplicate");
       savePrefs({ ...prefs, hotkeys: { ...prefs.hotkeys, [id]: accelerator } });
       hotkeys.apply(prefs.hotkeys);
       emitState();
@@ -869,11 +942,28 @@ export function createOrbitSummon(deps) {
       if (bounds.height !== quickHeight) quick.setBounds({ ...bounds, height: quickHeight });
     });
     handle("orbit-shell:quick-hide", () => hideQuick());
-    handle("orbit-shell:open-thread", (_event, target) => {
-      hideQuick();
+    handle("orbit-shell:open-thread", (event, target) => {
+      if (fromShell(event) === island) hideIsland();
+      else hideQuick();
       if (target && typeof target.botId === "string" && typeof target.threadId === "string") {
         openThread({ botId: target.botId, threadId: target.threadId });
       } else showMainWindow();
+    });
+    handle("orbit-shell:island-open", (event, open) => {
+      if (fromShell(event) !== island) return;
+      placeIsland(Boolean(open));
+    });
+    handle("orbit-shell:island-hide", (event) => {
+      if (fromShell(event) !== island) return;
+      hideIsland();
+    });
+    // A page an agent shared, from the island: the app comes forward on it.
+    handle("orbit-shell:open-page", (event, page) => {
+      if (fromShell(event) !== island || !page || typeof page !== "object") return;
+      const fields = ["key", "botId", "threadId", "messageId", "href", "file", "kind"];
+      if (!fields.every((field) => typeof page[field] === "string" && page[field].length <= 4096)) return;
+      hideIsland();
+      openPage(Object.fromEntries(fields.map((field) => [field, page[field]])));
     });
     handle("orbit-shell:open-settings", () => {
       hideQuick();
@@ -947,6 +1037,8 @@ export function createOrbitSummon(deps) {
     clearCaptureDir(captureDir);
     registerIpc();
     createQuick();
+    // like the quick bar, ready before the first Alt+J
+    if (hotkeyIds.includes("island")) createIsland();
     hotkeys.apply(prefs.hotkeys);
     try {
       menuBar = createMenuBar({
@@ -977,6 +1069,8 @@ export function createOrbitSummon(deps) {
     /** Our floating windows are not "the app window" for activation logic. */
     owns: (win) => shellWindows.has(win),
     showQuick,
+    showIsland,
+    toggleIsland,
     summonTalk,
     serverReady,
     state: publicState,

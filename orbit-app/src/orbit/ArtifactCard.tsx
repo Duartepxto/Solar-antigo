@@ -13,7 +13,8 @@ import { artifactUrl, offersIn, requestPresent, type Artifact, type ArtifactKind
 import type { Bot, Message } from "@/state/store";
 
 const KIND_ICON = { html: FileCode2, pdf: FileText, image: ImageIcon, screen: Monitor } satisfies Record<ArtifactKind, unknown>;
-const KIND_LABEL: Record<ArtifactKind, string> = { html: "HTML", pdf: "PDF", image: "IMAGE", screen: "LIVE SCREEN" };
+// the kind's badge ("IMAGE", "LIVE SCREEN"…), translated with the rest of the line
+const kindLabel = (kind: ArtifactKind) => t(`orbit.offer.kind.${kind}`);
 
 /** The pill beside a bot with a file to show. */
 export function OfferPill({ offer, name, color, pillRef, onFly, onView, onLater, solar = false }: {
@@ -96,7 +97,7 @@ export function ArtifactCard({ art, name, color, shown, visible, onDrag, onTalk,
             {showing[0]}<b className="font-semibold" style={{ color }}>{name}</b>{showing[1]}
           </span>
           <span className="text-[16px] font-semibold text-ink">{art.file}</span>
-          <span className="rounded-[9px] border border-ink/[0.14] px-[7px] py-px font-mono text-[11px] text-ink/50">{KIND_LABEL[art.kind]}</span>
+          <span className="rounded-[9px] border border-ink/[0.14] px-[7px] py-px font-mono text-[11px] text-ink/50">{kindLabel(art.kind)}</span>
         </div>
         {!shown && (
           <button type="button" onClick={onTalk}
@@ -266,7 +267,7 @@ export function CanvasFileRows({ bot, message, color }: { bot: Pick<Bot, "id" | 
             <Icon size={18} style={{ color }} aria-hidden />
             <span className="flex flex-col gap-px">
               <span className="text-[13.5px] font-medium text-ink">{offer.file}</span>
-              <span className="text-[11.5px] text-ink/50">{t("orbit.offer.openOnCanvas", { kind: KIND_LABEL[offer.kind] })}</span>
+              <span className="text-[11.5px] text-ink/50">{t("orbit.offer.openOnCanvas", { kind: kindLabel(offer.kind) })}</span>
             </span>
           </button>
         );

@@ -92,7 +92,7 @@ class SettingsReconnectWiringTest {
             troubleshootingText(Session.Status.Live),
         )
         assertEquals(
-            "Orbit is trying the saved connection automatically.",
+            "Solar is trying the saved connection automatically.",
             troubleshootingText(Session.Status.Connecting),
         )
         assertEquals(

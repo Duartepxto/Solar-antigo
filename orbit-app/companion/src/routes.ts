@@ -73,6 +73,9 @@ export function isCloudDesktopAccess(method: string, path: string): boolean {
  * fails to match and is denied rather than forwarded — the failure mode of
  * a strict pattern is a closed door, which is the one to have. */
 const ALLOWED: ReadonlyArray<{ method: string; path: RegExp }> = [
+  // Paired-device audio stays on the host's bounded local Whisper service.
+  { method: "GET", path: /^\/api\/solar-voice\/status$/ },
+  { method: "POST", path: /^\/api\/solar-voice\/transcribe$/ },
   // configured-or-not booleans. The write side is refused below: reading
   // which providers are set up is not reading their keys.
   { method: "GET", path: /^\/api\/config$/ },

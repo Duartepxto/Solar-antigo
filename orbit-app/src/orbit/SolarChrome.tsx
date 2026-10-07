@@ -7,6 +7,8 @@ import { solarNodes } from './solar-model';
 import { SolarPlanet } from './SolarPlanet';
 import {useSolarDictation} from './useSolarDictation';
 import {solarState} from './solar-state';
+import { requestPresent, type ArtifactOffer } from './artifacts';
+import { orbitNavigate } from './events';
 
 export function SolarHeader({ onSearch, onAdd, onTeam, onChannel, canMake, mac }: {
   onSearch: () => void; onAdd: () => void; onTeam: () => void; onChannel: () => void; canMake: boolean; mac: boolean;
@@ -19,6 +21,9 @@ export function SolarHeader({ onSearch, onAdd, onTeam, onChannel, canMake, mac }
     document.addEventListener('pointerdown', outside); return () => document.removeEventListener('pointerdown', outside);
   }, []);
   useEffect(() => { if (open) menu.current?.querySelector<HTMLButtonElement>('button')?.focus(); },[open]);
+  // Jarvis's island lives outside the app now (Alt+J, src/shell/IslandSurface.tsx): a page
+  // opened there brings the app forward on it.
+  useEffect(() => window.ogb?.orbitShell?.onOpenPage?.(page => { orbitNavigate({ to: 'bot', id: page.botId }); setTimeout(() => requestPresent(page as ArtifactOffer), 300); }), []);
   const noDrag = { WebkitAppRegion: 'no-drag' } as CSSProperties;
   const options = [ {label:t('jarvis.solar.add'),detail:t('jarvis.solar.agentDetail'),action:onAdd,Icon:Sparkles}, {label:t('jarvis.solar.addTeam'),detail:t('jarvis.solar.teamDetail'),action:onTeam,Icon:Users}, {label:t('jarvis.solar.addChannel'),detail:t('jarvis.solar.conversationDetail'),action:onChannel,Icon:MessageCircle} ];
   return <header ref={header} className={`solar-header${mac ? ' solar-header--mac' : ''}`} style={{ WebkitAppRegion: window.ogb ? 'drag' : undefined } as CSSProperties}>

@@ -50,7 +50,7 @@ data class PairingOutcome(
 /** No automatically permitted route identified itself and completed the logical pairing. */
 class PairingRouteError(val attemptedRoutes: List<String>) : IOException(
     "Couldn't reach this computer through any available route " +
-        "(${attemptedRoutes.joinToString()}). Keep Phone access turned on in Orbit, then try again.",
+        "(${attemptedRoutes.joinToString()}). Keep Phone access turned on in Solar, then try again.",
 )
 
 /** Keep the same code and request id after an uncertain redemption or rate-limit refusal. */
@@ -138,6 +138,23 @@ class CompanionClient(
         .readTimeout(ACTION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .writeTimeout(ACTION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
+
+    @Serializable
+    private data class SolarTranscript(val text: String)
+
+    /** Never retry audio automatically: it belongs to one explicit call turn. */
+    suspend fun transcribeSolarVoice(audio: String, language: String): String {
+        require(audio.length <= 1_400_000) { "Voice recording is too long." }
+        val voiceClient = actionClient.newBuilder()
+            .retryOnConnectionFailure(false)
+            .callTimeout(95, TimeUnit.SECONDS)
+            .readTimeout(95, TimeUnit.SECONDS)
+            .build()
+        return send<SolarTranscript>(makeRequest("POST", "/api/solar-voice/transcribe", body = buildJsonObject {
+            put("audio", audio)
+            put("language", language)
+        }), voiceClient).text
+    }
 
     /**
      * Share uploads can be tens of MB. A wall-clock [callTimeout] would abort a

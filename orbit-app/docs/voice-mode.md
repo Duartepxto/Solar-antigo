@@ -112,3 +112,34 @@ delegate real work to specialists over `ask_bot` — no new machinery required.
   microphone session or a stale `currentCall` behind.
 - Synthesis requests are abortable from the renderer and individual utterances
   are capped server-side to bound accidental hosted-voice spend.
+
+
+## Solar on Windows: dictation languages
+
+Jarvis (or any planet) → Settings → Voice contains **Dictation languages**.
+The device saves multiple selections for all agents, independently of the UI
+or Windows language. Portuguese and English are initially selected. One
+selection pins Whisper to that language; multiple selections pass `auto`.
+Automatic detection can recognise mixed phrases and is not restricted to the
+selected set. Accuracy of code-switching still depends on the local model
+and recording. The browser fallback uses the first selected locale.
+
+Verification uses the disposable chat fixture and fake recognizer/audio,
+without accessing the owner’s microphone or workspace. The settings UI test
+checks selection, preventing an empty choice and persistence across reload;
+bridge tests verify Portuguese, English and automatic request modes plus
+unchanged mixed-language transcript text. Real mixed-speech accuracy remains
+for the owner’s microphone test.
+
+### Robustness checks (Solar 0.1.97)
+
+Synthetic audio tests cover cancellation during getUserMedia and AudioContext
+resume, simultaneous starts, permission denial versus a missing microphone,
+transcription failure, silence and late results after cancellation. The real
+chat fixture also drives a synthetic native bridge to check generic errors,
+untouched drafts after silence/failure, late events after Escape, and the
+1.8-second dictation endpoint. Calls retain their own endpoint timing.
+Preferences remain available for the session if storage writes fail while
+reads still return an older value. Browser cancellation tolerates an already
+stopped recognizer and discards queued results. These checks do not prove
+recognition accuracy, acoustics or microphone hardware.

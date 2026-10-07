@@ -32,18 +32,18 @@ describe("Settings → General", () => {
   it("renders in the language the picker selected, and re-renders in the next one", async () => {
     setLocale("pt-br");
     const pt = await renderSettings();
-    expect(pt).toContain("Configurações");
-    expect(pt).toContain("Mecanismos");
-    expect(pt).toContain("Idioma do app");
+    expect(pt).toContain("Definições");
+    expect(pt).toContain("Motores");
+    expect(pt).toContain("Idioma da aplicação");
     expect(pt).toContain("Duração máxima do turno");
 
     // same module instance, no reload: a frozen label would still say
-    // "Mecanismos" here
+    // "Motores" here
     setLocale("ja");
     const ja = await renderSettings();
     expect(ja).toContain("設定");
     expect(ja).toContain("エンジン");
-    expect(ja).not.toContain("Mecanismos");
+    expect(ja).not.toContain("Motores");
   });
 
   it("stays English when no language is picked", async () => {

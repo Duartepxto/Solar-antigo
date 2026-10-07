@@ -155,7 +155,16 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
     onNewBot: (_section: string | null) => {},
   });
   useLayoutEffect(() => {
-    if (!canvasRef.current || !stageRef.current) return;
+    if (!stageRef.current) return;
+    const ro = new ResizeObserver(() => {
+      const r = stageRef.current?.getBoundingClientRect();
+      if (r) setSize({ w: r.width, h: r.height });
+    });
+    ro.observe(stageRef.current);
+    // Solar draws its own map: the Orbit canvas scene (its rAF loop and
+    // window listeners) is never built, and every use goes through
+    // sceneRef.current?. or a JARVIS_SOLAR guard.
+    if (JARVIS_SOLAR || !canvasRef.current) return () => ro.disconnect();
     const scene = new OrbitScene(canvasRef.current, stageRef.current, {
       onBot: (id) => cbRef.current.onBot(id),
       onYou: () => cbRef.current.onYou(),
@@ -169,12 +178,7 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
       onNewBot: (section) => cbRef.current.onNewBot(section),
     }, sceneLabels());
     sceneRef.current = scene;
-    scene.setWorldLayer(JARVIS_SOLAR ? null : worldRef.current);
-    const ro = new ResizeObserver(() => {
-      const r = stageRef.current?.getBoundingClientRect();
-      if (r) setSize({ w: r.width, h: r.height });
-    });
-    ro.observe(stageRef.current);
+    scene.setWorldLayer(worldRef.current);
     return () => { ro.disconnect(); scene.destroy(); sceneRef.current = null; };
   }, []);
 
@@ -183,9 +187,12 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
 
   // Delegations in flight come from the same endpoint the Team map uses.
   // A new running pair streams a handoff; a finished one streams the result.
+  // Solar gets its transfers in real time from the SSE `agent.transfer`
+  // frame (store.tsx: a request on send, a result only on a completed reply),
+  // so the poll, which only feeds the Orbit canvas, does not run there.
   const runningRef = useRef<Set<string> | null>(null);
   useEffect(() => {
-    if (!state.connected) return;
+    if (!state.connected || JARVIS_SOLAR) return;
     let alive = true;
     const poll = async () => {
       let snap: TeamMapSnapshot = EMPTY_TEAM_MAP_SNAPSHOT;
@@ -196,13 +203,11 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
       if (was) {
         for (const key of now) if (!was.has(key)) {
           const [from, to] = key.split(">");
-          if(JARVIS_SOLAR)window.dispatchEvent(new CustomEvent('jarvis-solar-transfer',{detail:{from,to,at:Date.now()}}));
-          else sceneRef.current?.emit(from, to, model.bots.find((b) => b.id === from)?.color ?? "#fcfcfc");
+          sceneRef.current?.emit(from, to, model.bots.find((b) => b.id === from)?.color ?? "#fcfcfc");
         }
         for (const key of was) if (!now.has(key)) {
           const [from, to] = key.split(">");
-          if(JARVIS_SOLAR)window.dispatchEvent(new CustomEvent('jarvis-solar-transfer',{detail:{from:to,to:from,at:Date.now(),result:true}}));
-          else sceneRef.current?.emit(to, from, "#38d591", 16);
+          sceneRef.current?.emit(to, from, "#38d591", 16);
         }
       }
       runningRef.current = now;
@@ -707,7 +712,7 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
   return (
     <SolarIdentityProvider model={model}>
     <div className="orbit-root relative flex h-full min-w-0 flex-1 overflow-hidden text-ink" data-jarvis-solar={JARVIS_SOLAR || undefined} data-solar-theme={JARVIS_SOLAR?solarPreferences.background:undefined} data-solar-focus={JARVIS_SOLAR && inFocus || undefined}
-      style={{ background: "var(--color-app)" }}>
+      style={{ background: "var(--color-app)", ...(JARVIS_SOLAR ? { "--solar-chat-w": `${chatW}px` } : {}) } as React.CSSProperties}>
       {/* The app fills its window: Electron draws the real window controls
           (the title bar leaves room for them on macOS), a browser tab is
           its own window. The design's framed window is a mockup of that. */}
@@ -762,9 +767,11 @@ export function OrbitShell({ onSearch, paletteOpen = false }: { onSearch: () => 
         {developmentOpen && focusedBot && <SolarDevelopmentWorkspace key={`${focusedBot.id}:${focusedBot.threadId}`} bot={focusedBot} onClose={() => setDevelopmentOpen(false)} />}
 
         {/* Files the bots put on the canvas, in world units (the scene moves
-            the layer with the camera) */}
+            the layer with the camera). Solar never shows a card on the map,
+            so it mounts only the one on stage: an unseen card would still
+            fetch its file and run its page's scripts. */}
         <div ref={worldRef} className={JARVIS_SOLAR ? "pointer-events-none absolute inset-0 z-[12]" : "pointer-events-none absolute left-0 top-0 size-0 origin-top-left"} hidden={JARVIS_SOLAR && !inFocus}>
-          {cards.map((a) => {
+          {(JARVIS_SOLAR ? cards.filter((a) => a.id === showing?.id) : cards).map((a) => {
             const b = state.bots.find((x) => x.id === a.botId);
             return (
               <ArtifactCard key={a.id} art={a} name={b?.name ?? ""} color={b ? MAUS_COLORS[b.color] : "#fcfcfc"}
@@ -1026,6 +1033,9 @@ export function OrganizationMark() {
 /** First load (design: loading): the guide and what is being brought up.
  * Only the harness connection is real before the first snapshot; the rest
  * waits on it. */
+// Solar paints progress in its own gold accent; Orbit keeps its blue.
+const STARTING_ACCENT = JARVIS_SOLAR ? "bg-[var(--color-accent)]" : "bg-[#1084fe]";
+
 function StartingCard() {
   const steps: Array<[string, "running" | "waiting"]> = [
     [t("orbit.start.harness", { host: window.location.host }), "running"],
@@ -1041,14 +1051,14 @@ function StartingCard() {
         <div className="flex w-[310px] flex-col gap-[9px]">
           {steps.map(([label, s]) => (
             <div key={label} className="flex items-center gap-2.5 text-[13px] text-ink/80">
-              <span className={cn("size-2 rounded-full", s === "running" ? "bg-[#1084fe]" : "bg-ink/20")} />
+              <span className={cn("size-2 rounded-full", s === "running" ? STARTING_ACCENT : "bg-ink/20")} />
               <span className="flex-1 text-left">{label}</span>
               <span className="text-[11.5px] text-ink/50">{s === "running" ? t("orbit.start.checking") : ""}</span>
             </div>
           ))}
         </div>
         <div className="h-[3px] w-[310px] overflow-hidden rounded-sm bg-ink/[0.08]">
-          <div className="h-full w-1/3 animate-pulse bg-[#1084fe]" />
+          <div className={cn("h-full w-1/3 animate-pulse", STARTING_ACCENT)} />
         </div>
       </div>
     </div>

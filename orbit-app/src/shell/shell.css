@@ -7,6 +7,23 @@ body.orbit-shell {
 
 /* Solar's compact voice glass: transparent fill and a fine reflective edge. */
 @font-face { font-family: "Solar Voice"; src: url("/solar/fonts/Manrope-Variable.ttf") format("truetype"); font-weight: 200 800; font-display: swap; }
+
+/* Solar's quick bar: Solar's tokens and type (solar.css is not loaded in the
+   shell windows), and the sun in place of Orbit's particle face. */
+.solar-quick {
+  --color-composer: #20262d;
+  --color-ink: #f2f3f5;
+  --color-app: #050607;
+  --color-accent: #ddbd89;
+  font-family: "Solar Voice", "Segoe UI", sans-serif;
+}
+.solar-quick input { caret-color: #eac185; }
+/* the mini planet's own rules (solar.css), for the shell's sun face */
+.shell-solar-face { position: relative; display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; }
+.shell-solar-face .solar-mini-render { display: block; width: 100%; height: 100%; object-fit: contain; }
+.shell-solar-face .solar-mini-planet { display: block; width: 100%; height: 100%; border-radius: 50%; background-image: var(--surface); background-size: 210% 100%; background-position: 42% center; box-shadow: 0 0 8px #e79f3d44; }
+.shell-solar-face[data-busy] { animation: solar-voice-breathe 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .shell-solar-face[data-busy] { animation: none; } }
 .solar-talk-pill {
   --voice-paper: #f2f3f5;
   --voice-muted: #b4bac4;

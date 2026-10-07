@@ -25,6 +25,15 @@ O Solar transforma uma equipa de IA num sistema solar interativo. Vê quem faz p
 | **Configuração da equipa** | Escolher motores e modelos, definir papéis e instruções, gerir memória, skills, ferramentas e aprovações. |
 | **Outros dispositivos** | Emparelhar um telefone para conversar pelo browser; os recursos remotos dependem da sua configuração e de uma ligação acessível. |
 
+### Solar no Android — primeira adaptação
+
+A preview Android usa agora o mapa de planetas, o tema grafite/dourado e a
+Manrope do Solar. Inclui uma chamada por turnos com transcrição no PC e resposta
+falada no telefone. A validação física e a atualização com a chave original
+continuam pendentes; detalhes no [relatório da continuação](docs/inventario-solar/CONTINUACAO-07-10-2026.md).
+
+<img src="docs/verification-evidence/solar-android-home.png" alt="Mapa Android Solar numa fixture nativa" width="300">
+
 As respostas reais exigem um motor de IA configurado. Contas externas, ferramentas, microfone e recursos remotos precisam das respetivas ligações e permissões. O [estado das funcionalidades](chatgpt-3.0/SOLAR-FUNCIONALIDADES.md) documenta as dependências e o que foi verificado.
 
 ## Da conversa ao resultado
@@ -41,7 +50,9 @@ O espaço Desenvolvimento reúne os ficheiros e o editor sem perder o contexto d
 
 ![Ecrã de carregamento com nome e ícone Solar](docs/verification-evidence/solar-startup.png)
 
-As capturas mostram a aplicação Windows e o seu ecrã de arranque, atualizados em 4 de outubro de 2026. A quantidade de planetas e agentes depende da equipa criada.
+O mapa mostra o Windows 0.1.88, com ligações de partículas. O ecrã de arranque foi
+registado em 4 de outubro; a imagem Android vem de uma fixture nativa isolada.
+A quantidade de planetas e agentes depende da equipa criada.
 
 ## Começar
 
@@ -91,7 +102,7 @@ Verificação do frontend e dos principais módulos do mapa:
 ```powershell
 cd orbit-app
 pnpm exec tsc -b
-pnpm exec vitest run --configLoader native src/orbit/SolarOrbitParticles.test.ts src/orbit/solar-transfer.test.ts src/orbit/solar-state.test.ts src/orbit/solar-camera.test.ts src/orbit/solar-model.test.ts src/orbit/solar-interaction.test.ts src/orbit/solar-presets.test.ts
+pnpm exec vitest run --configLoader native src/orbit/solar-state-particles.test.ts src/orbit/solar-transfer.test.ts src/orbit/solar-state.test.ts src/orbit/solar-camera.test.ts src/orbit/solar-model.test.ts src/orbit/solar-interaction.test.ts src/orbit/solar-presets.test.ts
 pnpm exec vite build --configLoader native
 ```
 

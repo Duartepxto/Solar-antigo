@@ -36,20 +36,23 @@ test("accelerators are normalized to one spelling and need a real modifier", () 
 test("preferences fall back field by field and never share one hotkey", () => {
   assert.deepEqual(parsePrefs(null), { hotkeys: { ...DEFAULT_HOTKEYS }, screenPaused: false });
   assert.deepEqual(parsePrefs({ hotkeys: { quick: "nonsense", talk: "" }, screenPaused: true }), {
-    hotkeys: { quick: DEFAULT_HOTKEYS.quick, talk: "" },
+    hotkeys: { quick: DEFAULT_HOTKEYS.quick, talk: "", island: DEFAULT_HOTKEYS.island },
     screenPaused: true,
   });
   // the retired "Show Orbit in the notch" switch on disk is read past, not kept
   assert.deepEqual(parsePrefs({ screenPaused: true, notchIsland: false }), { hotkeys: { ...DEFAULT_HOTKEYS }, screenPaused: true });
   assert.equal(parsePrefs({ hotkeys: { quick: "Control+K", talk: "ctrl+k" } }).hotkeys.talk, "");
+  // the island never takes a combination the bar or talk already holds
+  assert.deepEqual(parsePrefs({ hotkeys: { quick: "Alt+O", talk: "Alt+J" } }).hotkeys, { quick: "Alt+O", talk: "Alt+J", island: "" });
+  assert.equal(parsePrefs({ hotkeys: { island: "Control+Alt+I" } }).hotkeys.island, "Control+Alt+I");
 });
 
-test("the hotkeys are two keys, and the old defaults move to them", () => {
-  assert.deepEqual(DEFAULT_HOTKEYS, { quick: "Alt+O", talk: "Alt+T" });
+test("the hotkeys are two keys (and Solar's island), and the old defaults move to them", () => {
+  assert.deepEqual(DEFAULT_HOTKEYS, { quick: "Alt+O", talk: "Alt+T", island: "Alt+J" });
   assert.deepEqual(parsePrefs({ hotkeys: { quick: "Control+Alt+Space", talk: "Control+Alt+Shift+Space" } }).hotkeys, DEFAULT_HOTKEYS);
   assert.deepEqual(parsePrefs({ hotkeys: { quick: "Alt+Space", talk: "Alt+T" } }).hotkeys, DEFAULT_HOTKEYS);
   // one the person chose stays theirs
-  assert.deepEqual(parsePrefs({ hotkeys: { quick: "Command+Shift+K", talk: "Control+Alt+Shift+Space" } }).hotkeys, { quick: "Shift+Command+K", talk: "Alt+T" });
+  assert.deepEqual(parsePrefs({ hotkeys: { quick: "Command+Shift+K", talk: "Control+Alt+Shift+Space" } }).hotkeys, { quick: "Shift+Command+K", talk: "Alt+T", island: "Alt+J" });
 });
 
 test("preferences round-trip through userData atomically", () => {
@@ -57,7 +60,7 @@ test("preferences round-trip through userData atomically", () => {
   const file = path.join(dir, "orbit-shell.json");
   assert.deepEqual(readPrefs(file), parsePrefs(null), "missing file reads as defaults");
   writePrefs(file, { hotkeys: { quick: "Control+Alt+K", talk: "Control+Alt+Shift+K" }, screenPaused: true, notchIsland: false });
-  assert.deepEqual(readPrefs(file), { hotkeys: { quick: "Control+Alt+K", talk: "Control+Alt+Shift+K" }, screenPaused: true });
+  assert.deepEqual(readPrefs(file), { hotkeys: { quick: "Control+Alt+K", talk: "Control+Alt+Shift+K", island: "Alt+J" }, screenPaused: true });
   assert.equal(JSON.parse(fs.readFileSync(file, "utf8")).notchIsland, undefined, "an old key isn't written back");
   assert.deepEqual(fs.readdirSync(dir), ["orbit-shell.json"], "no temp file left behind");
   fs.writeFileSync(file, "{ not json");

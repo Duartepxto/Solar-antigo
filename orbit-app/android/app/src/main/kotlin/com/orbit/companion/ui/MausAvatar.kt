@@ -62,6 +62,15 @@ internal fun MausAvatar(
     animated: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
+    SolarCelestial(skin = "moon", size = size, state = state, modifier = modifier)
+}
+
+/** Historical renderer retained for catalog data and compatibility tests only. */
+@Composable
+private fun LegacyMausAvatar(
+    color: String, bodyId: String? = MausSilhouette.defaultBody, size: Dp = 52.dp,
+    state: MausState = MausState.IDLE, animated: Boolean = true, modifier: Modifier = Modifier,
+) {
     val engine = remember { MausFaceEngine() }
     val geometry = remember { MausFaceGeometry() }
     val clock = remember { MausFrameClock() }

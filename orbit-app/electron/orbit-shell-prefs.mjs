@@ -7,18 +7,22 @@ import path from "node:path";
 
 // Two keys each: Option-O (O for Orbit) for the bar, Option-T to talk.
 // Not Option-Space: ChatGPT's and Codex's desktop apps already hold it.
+// Alt+J opens Jarvis's island in the top-right corner (Solar builds only:
+// orbit-summon.mjs registers it there and nowhere else).
 export const DEFAULT_HOTKEYS = Object.freeze({
   quick: "Alt+O",
   talk: "Alt+T",
+  island: "Alt+J",
 });
 // Earlier defaults. Someone who never changed them gets the current ones;
 // a hotkey they chose stays theirs.
 const RETIRED_DEFAULTS = Object.freeze({
   quick: ["Control+Alt+Space", "Alt+Space"],
   talk: ["Control+Alt+Shift+Space"],
+  island: [],
 });
 
-export const HOTKEY_IDS = Object.freeze(["quick", "talk"]);
+export const HOTKEY_IDS = Object.freeze(["quick", "talk", "island"]);
 
 const MODIFIERS = new Map([
   ["control", "Control"], ["ctrl", "Control"],
@@ -86,7 +90,12 @@ export function parsePrefs(raw) {
     }
   }
   if (typeof raw.screenPaused === "boolean") prefs.screenPaused = raw.screenPaused;
-  if (prefs.hotkeys.quick && prefs.hotkeys.quick === prefs.hotkeys.talk) prefs.hotkeys.talk = "";
+  // One combination, one action: a later hotkey that repeats an earlier one
+  // goes (quick wins over talk, both over the island).
+  HOTKEY_IDS.forEach((id, index) => {
+    const accelerator = prefs.hotkeys[id];
+    if (accelerator && HOTKEY_IDS.slice(0, index).some((earlier) => prefs.hotkeys[earlier] === accelerator)) prefs.hotkeys[id] = "";
+  });
   return prefs;
 }
 

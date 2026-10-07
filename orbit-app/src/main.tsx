@@ -31,6 +31,11 @@ async function chooseRoot(): Promise<React.ReactNode> {
 }
 
 void Promise.all([bootstrapBrand(), chooseRoot()]).then(([branding, root]) => {
-  if (import.meta.env.VITE_JARVIS_SOLAR === 'true') applyBrand({ ...branding, brand: { ...branding.brand, name: 'Solar' } });
+  if (import.meta.env.VITE_JARVIS_SOLAR === 'true') {
+    applyBrand({ ...branding, brand: { ...branding.brand, name: 'Solar' } });
+    // Solar styles dialogs and portals too, not only what sits inside .orbit-root.
+    document.documentElement.setAttribute('data-solar', '');
+    void import('./orbit/liquid-glass').then(({ installLiquidGlass }) => installLiquidGlass());
+  }
   createRoot(document.getElementById("root")!).render(<StrictMode>{root}</StrictMode>);
 });

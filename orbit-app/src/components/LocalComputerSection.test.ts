@@ -360,7 +360,7 @@ describe("cloud computer inventory UI", () => {
   it("keeps cloud badge meaning and delete requests stable when the language changes", () => {
     const englishPlan = cloudComputerActionPlan("delete", ownedCloudComputer);
     for (const [locale, running, sleeping] of [
-      ["pt-br", "Em execução", "Dormindo"],
+      ["pt-br", "Em execução", "A dormir"],
       ["ja", "実行中", "スリープ中"],
     ]) {
       setLocale(locale);
@@ -523,6 +523,6 @@ describe("VPS computer inventory UI", () => {
     expect(running).toContain("Remover");
     expect(running).not.toContain(">Remove</button>");
     expect(renderCard({ instances: [{ ...ownedVps, state: "paused" }] }))
-      .toContain('bg-ink/[0.05] text-ink/55">Pausado</span>');
+      .toContain('bg-ink/[0.05] text-ink/55">Em pausa</span>');
   });
 });

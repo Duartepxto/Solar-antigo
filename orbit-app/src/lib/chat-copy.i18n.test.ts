@@ -20,9 +20,9 @@ afterEach(() => {
 describe("live activity label", () => {
   it("translates the fallback table, which is built once at import time", () => {
     setLocale("pt-br");
-    expect(liveActivityLabel()).toBe("Pensando");
-    expect(liveActivityLabel(activity("Bash: pnpm test"))).toBe("Executando um comando");
-    expect(liveActivityLabel(activity("mcp__computer__click"))).toBe("Usando o computador");
+    expect(liveActivityLabel()).toBe("A pensar");
+    expect(liveActivityLabel(activity("Bash: pnpm test"))).toBe("A executar um comando");
+    expect(liveActivityLabel(activity("mcp__computer__click"))).toBe("A usar o computador");
 
     setLocale("ja");
     expect(liveActivityLabel(activity("web_search"))).toBe("ウェブを検索中");
@@ -65,8 +65,8 @@ describe("usage chip", () => {
     // reports no cost.
     expect(usageChip(usage)).toBe("$0.02");
     expect(usageChip({ ...usage, costUsd: null })).toContain("entrada");
-    expect(costCaption("subscription")).toBe("equivalente — está na sua assinatura, não é cobrado");
-    expect(costCaption(undefined)).toBe("conforme informado pelo mecanismo");
+    expect(costCaption("subscription")).toBe("equivalente — está na tua subscrição, não é cobrado");
+    expect(costCaption(undefined)).toBe("conforme indicado pelo motor");
   });
 });
 
@@ -74,7 +74,7 @@ describe("reply quote", () => {
   it("names the author and the stripped attachments in the reader's language", () => {
     setLocale("pt-br");
     const fromUser = { id: "m", at: 1, role: "user", kind: "text" } as Message;
-    expect(replyAuthor(fromUser)).toBe("Você");
+    expect(replyAuthor(fromUser)).toBe("Tu");
     expect(replyAuthor({ ...fromUser, role: "bot" } as Message)).toBe("Assistente");
     expect(replySnippet('<attached-image path="/tmp/a.png" />')).toBe("[imagem]");
   });

@@ -58,9 +58,9 @@ object OnboardingCopy {
 
     const val UNPAIRED_HOME_TITLE = "Connect when you're ready"
     const val UNPAIRED_HOME_BODY =
-        "Pair this phone with Orbit to see your chats and respond to your bots."
+        "Pair this phone with Solar to see your chats and respond to your bots."
     const val UNPAIRED_HOME_HINT =
-        "On your computer, open Orbit → Settings → Phone."
+        "On your computer, open Solar → Settings → Phone."
     const val UNPAIRED_HOME_CONNECT = "Connect computer"
 
     const val NOTIFICATIONS_TITLE = "Stay in the loop"
@@ -144,7 +144,7 @@ fun UnpairedHomeScreen(onConnect: () -> Unit, onOpenSettings: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Orbit",
+                text = "Solar",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f).padding(start = 10.dp),

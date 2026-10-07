@@ -112,7 +112,7 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RosterScreen(navigator: CompanionNavigator) {
+fun RosterScreen(navigator: CompanionNavigator, solarMap: Boolean = true) {
     val environment = LocalCompanion.current
     val session = environment.session
     val scope = rememberCoroutineScope()
@@ -319,7 +319,7 @@ fun RosterScreen(navigator: CompanionNavigator) {
                 // drawn over group rows, it would sit on top of them.
                 val nothingToList =
                     if (query.isEmpty()) !RosterLayout.listsAnyChat(summaries) else rows.isEmpty()
-                if (nothingToList && hits.isEmpty()) {
+                if (nothingToList && hits.isEmpty() && (!solarMap || query.isNotEmpty())) {
                     EmptyState(
                         title = if (query.isEmpty()) "No bots yet" else "Nothing matches",
                         description = if (query.isEmpty()) {
@@ -330,7 +330,15 @@ fun RosterScreen(navigator: CompanionNavigator) {
                     )
                 }
 
-                LazyColumn(
+                if (solarMap && query.isEmpty()) {
+                    SolarHomeMap(state = state, bottomInset = barHeight + LIST_END_MARGIN,
+                        onOpen = { navigator.open(environment.chatPreferences.restoringThread(it, connection?.id)) },
+                        onManage = { managingThreads = it },
+                        onCreateThread = createThread, onCreateGroup = {
+                            haptics.play(TactileAction.START_NEW_GROUP)
+                            showingNewGroup = true
+                        })
+                } else LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .testTag("roster-list"),
@@ -647,7 +655,7 @@ private fun RosterHeader(name: String?, status: Session.Status, onSettings: () -
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text("Threads", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Text("Solar", fontSize = 21.sp, fontWeight = FontWeight.SemiBold)
             Text(
                 text = RosterLayout.headerSubtitle(name, status),
                 fontSize = 13.sp,

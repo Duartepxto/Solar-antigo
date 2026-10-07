@@ -53,6 +53,23 @@ if (orbitShellPage) {
   });
 }
 
+// A page opened from Solar's island reaches the main window the same way.
+const PAGE_FIELDS = ["key", "botId", "threadId", "messageId", "href", "file", "kind"];
+let pendingOpenPage = null; // { target, at }
+const openPageListeners = new Set();
+if (orbitShellPage) {
+  ipcRenderer.on("orbit-shell:open-page", (_event, page) => {
+    if (!page || !PAGE_FIELDS.every((field) => typeof page[field] === "string")) return;
+    const clean = Object.fromEntries(PAGE_FIELDS.map((field) => [field, page[field]]));
+    if (!openPageListeners.size) {
+      pendingOpenPage = { target: clean, at: Date.now() };
+      return;
+    }
+    pendingOpenPage = null;
+    for (const listener of openPageListeners) listener(clean);
+  });
+}
+
 // Whether this shell window is on screen (main says so on show and hide);
 // the newest value is kept for a page that subscribes after it arrived.
 let shellVisible = null;
@@ -410,6 +427,23 @@ const bridge = {
       if (shellVisible !== null) cb(shellVisible);
       return () => visibilityListeners.delete(cb);
     },
+    /** Main page (Solar): a page opened from the island. */
+    onOpenPage: (cb) => {
+      openPageListeners.add(cb);
+      queueMicrotask(() => {
+        const pending = takePending(pendingOpenPage);
+        if (!pendingOpenPage || !openPageListeners.size) return;
+        pendingOpenPage = null;
+        if (!pending) return;
+        for (const listener of openPageListeners) listener(pending.target);
+      });
+      return () => openPageListeners.delete(cb);
+    },
+    /** Island page (Solar): the pill opened into its panel, or closed. */
+    islandOpen: (open) => ipcRenderer.invoke("orbit-shell:island-open", Boolean(open)),
+    islandHide: () => ipcRenderer.invoke("orbit-shell:island-hide"),
+    openPage: (page) => ipcRenderer.invoke("orbit-shell:open-page", page),
+    onIslandShown: (cb) => listen("orbit-shell:island-shown", cb),
     capture: () => ipcRenderer.invoke("orbit-shell:capture"),
     quickResize: (height) => ipcRenderer.invoke("orbit-shell:quick-resize", height),
     quickHide: () => ipcRenderer.invoke("orbit-shell:quick-hide"),

@@ -16,7 +16,7 @@ import { buildTeamMapSections } from "@/lib/team-map";
 import { BotFace } from "@/orbit/OrbitFace";
 import { SolarPlanet } from "@/orbit/SolarPlanet";
 import { solarNodes } from "@/orbit/solar-model";
-import { buildModel } from "@/orbit/model";
+import { buildModel, loadBotOrder, loadLayout } from "@/orbit/model";
 import { orbitNavigate } from "@/orbit/events";
 import { YOU_HUB } from "@/orbit/detail/HubPanels";
 import { PANEL_ICON, PANEL_KICKER, type BotPanelKey } from "@/orbit/detail/BotPanels";
@@ -57,7 +57,8 @@ export function CommandPalette({ onOpenChange, openRequest = 0 }: {
   const selectedRef = useRef<HTMLButtonElement>(null);
   const remoteClient = window.ogb?.remoteClient?.active === true;
   const appSections = useAppSettingsSections();
-  const solar = useMemo(() => JARVIS_SOLAR ? new Map(solarNodes(buildModel(state)).map(node => [node.id, node])) : new Map(), [state]);
+  // same model inputs as the map, so every planet and moon keeps its own identity here
+  const solar = useMemo(() => JARVIS_SOLAR ? new Map(solarNodes(buildModel(state, loadLayout().hidden, loadBotOrder())).map(node => [node.id, node])) : new Map(), [state]);
 
   // The chord fires from anywhere — a modifier chord never collides with typing.
   useEffect(() => {
@@ -267,7 +268,7 @@ export function CommandPalette({ onOpenChange, openRequest = 0 }: {
                         {hit.snippet.slice(0, hit.matchStart)}<mark className="rounded-sm bg-ink/[0.08] px-0.5 text-ink">{hit.snippet.slice(hit.matchStart, hit.matchStart + hit.matchLength)}</mark>{hit.snippet.slice(hit.matchStart + hit.matchLength)}
                       </span>
                     </> : <>
-                      {item.botId ? JARVIS_SOLAR ? <span className="size-[26px] shrink-0"><SolarPlanet kind={solar.get(item.botId)?.kind ?? 'moon'} skin={solar.get(item.botId)?.skin} /></span> : <BotFace id={item.botId} size={26} /> : Icon ? <span className="flex size-[26px] shrink-0 items-center justify-center"><Icon size={15} className="text-ink/60" /></span> : null}
+                      {item.botId ? JARVIS_SOLAR ? <span className="size-[26px] shrink-0"><SolarPlanet kind={solar.get(item.botId)?.kind ?? 'moon'} skin={solar.get(item.botId)?.kind === 'moon' ? solar.get(item.botId)?.moonSkin : solar.get(item.botId)?.skin} /></span> : <BotFace id={item.botId} size={26} /> : Icon ? <span className="flex size-[26px] shrink-0 items-center justify-center"><Icon size={15} className="text-ink/60" /></span> : null}
                       <span className="min-w-0 flex-1 truncate text-[14px] text-ink">{item.label}</span>
                       {item.meta && <span className="shrink-0 truncate text-[12.5px] text-ink/55">{item.meta}</span>}
                     </>}

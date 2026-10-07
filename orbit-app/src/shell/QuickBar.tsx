@@ -3,11 +3,18 @@ import { ArrowUp, Mic, Square } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { orbitShell, shellHasVoice, type ShellCapture } from "@/lib/orbit-shell";
 import { stripPointTags } from "@/lib/orbit-point";
+import { SolarPlanet } from "@/orbit/SolarPlanet";
 import { ShellCharacter } from "./ShellCharacter";
 import { interruptOrbit, ReplyFollower, resolveOrbitTarget, sendToOrbit, type OrbitTarget, type ReplyUpdate } from "./orbit-client";
 import { useGuidePointer } from "./use-guide-pointer";
 
 type Phase = "idle" | "sending" | "streaming" | "done";
+
+const SOLAR = import.meta.env.VITE_JARVIS_SOLAR === "true";
+// The shell page is shared with Orbit builds (orbit-shell.html keeps a neutral
+// title); Solar names its floating windows here. main.tsx imports this module
+// for every surface (quick, talk, overlay).
+if (SOLAR && typeof document !== "undefined") document.title = "Solar";
 
 /** The quick bar: the map's composer, floating over whatever app is in
  * front, with the reply streaming under it. */
@@ -138,13 +145,16 @@ export function QuickBar() {
 
   const running = phase === "sending" || phase === "streaming";
   const shown = stripPointTags(reply);
-  const name = target?.name ?? (import.meta.env.VITE_JARVIS_SOLAR === "true" ? "Jarvis" : "Orbit");
-  const color = target?.color ?? "#009957";
+  const name = target?.name ?? (SOLAR ? "Jarvis" : "Orbit");
+  // Solar: the assistant is the system's sun, named in Solar's gold.
+  const color = SOLAR ? "#eac185" : target?.color ?? "#009957";
 
   const bar = (
     <div className="flex h-[52px] shrink-0 items-center gap-2 rounded-[26px] bg-composer px-1.5 shadow-[0_12px_40px_rgba(0,0,0,.45)]">
       <div className="flex h-[40px] items-center gap-1.5 whitespace-nowrap rounded-[20px] bg-black/25 pl-1 pr-3 text-[13px] font-medium">
-        <ShellCharacter color={color} mood={running ? "thinking" : "idle"} size={32} mini pulse={pulse} />
+        {SOLAR
+          ? <span className="shell-solar-face" data-busy={running || undefined} style={{ width: 32, height: 32 }}><SolarPlanet kind="sun" /></span>
+          : <ShellCharacter color={color} mood={running ? "thinking" : "idle"} size={32} mini pulse={pulse} />}
         <span style={{ color }}>{name}</span>
       </div>
       <input
@@ -185,7 +195,7 @@ export function QuickBar() {
 
   // Anchored at the bottom of the screen: the reply grows upward above the bar.
   return (
-    <div ref={rootRef} className="flex flex-col justify-end gap-2 px-1 pb-1 text-ink">
+    <div ref={rootRef} className={`flex flex-col justify-end gap-2 px-1 pb-1 text-ink${SOLAR ? " solar-quick" : ""}`}>
       {(phase !== "idle" || shown || error || (targetError && !target)) && (
         <div className="flex min-h-0 flex-col rounded-[18px] bg-composer shadow-[0_12px_40px_rgba(0,0,0,.45)]">
           {targetError && !target && <div className="px-4 pt-3 text-[12.5px] text-ink/60">{t("orbitShell.quick.noAgent")}</div>}

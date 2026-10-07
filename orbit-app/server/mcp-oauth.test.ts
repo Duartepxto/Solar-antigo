@@ -139,7 +139,11 @@ describe("MCP OAuth sign-in", () => {
     expect(back.origin + back.pathname).toBe(REDIRECT);
     await expect(oauth.complete(back.searchParams.get("state")!, back.searchParams.get("code")!)).resolves.toBe("fixture");
     expect(oauth.signedIn("fixture")).toBe(true);
-    expect(statSync(join(dir, "mcp-oauth.json")).mode & 0o777).toBe(0o600);
+    // NTFS uses inherited ACLs; Node's Windows mode bits cannot express 0600.
+    // Keep the complete sign-in, persistence and refresh scenario on Windows.
+    if (process.platform !== "win32") {
+      expect(statSync(join(dir, "mcp-oauth.json")).mode & 0o777).toBe(0o600);
+    }
     await expect(oauth.accessToken("fixture")).resolves.toBe("at-1");
 
     // the stored bearer opens the real endpoint

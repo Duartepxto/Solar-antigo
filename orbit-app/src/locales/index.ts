@@ -41,6 +41,22 @@ export const locales: Record<string, LocalePack> = {
 
 /** Pickable languages for the settings dropdown. Alias keys ("pt") are
  * routing, not choices, so they are not listed here. */
+/** The picker code for a saved or server language: an alias ("pt", "zh-hk",
+ * "pt-PT") lands on the choice whose pack it shows, so the picker and the
+ * You hub name it instead of falling back to "System language". "" stays "". */
+export function localeChoiceCode(code: string): string {
+  if (!code) return "";
+  let candidate = code.toLowerCase();
+  while (candidate) {
+    const pack = locales[candidate];
+    if (pack) return localeChoices.find((choice) => locales[choice.code] === pack)?.code ?? candidate;
+    const separator = candidate.lastIndexOf("-");
+    if (separator < 0) break;
+    candidate = candidate.slice(0, separator);
+  }
+  return code;
+}
+
 export const localeChoices: ReadonlyArray<{ code: string; label: string }> = [
   { code: "en", label: "English" },
   { code: "de", label: "Deutsch" },
@@ -48,7 +64,9 @@ export const localeChoices: ReadonlyArray<{ code: string; label: string }> = [
   { code: "fr", label: "Français" },
   { code: "hi", label: "हिन्दी" },
   { code: "ja", label: "日本語" },
-  { code: "pt-br", label: "Português (Brasil)" },
+  // Solar's Portuguese pack is written in European Portuguese; the catalog
+  // key stays "pt-br" so files, aliases and saved choices keep working.
+  { code: "pt-br", label: import.meta.env.VITE_JARVIS_SOLAR === "true" ? "Português (Portugal)" : "Português (Brasil)" },
   { code: "zh", label: "简体中文" },
   { code: "zh-tw", label: "繁體中文（台灣）" },
   { code: "uk", label: "Українська" },

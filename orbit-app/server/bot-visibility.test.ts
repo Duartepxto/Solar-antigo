@@ -212,6 +212,10 @@ describe("live frames for a member", () => {
     const ctx = context(bob);
     const message = { kind: "message", threadId: "t-pub-2", message: { id: "x" } };
     expect(frameForMember(message, ctx, seen())).toBe(message);
+    const transfer = { kind: "agent.transfer", from: "pub", to: "corp" };
+    expect(frameForMember(transfer, ctx, seen())).toBe(transfer);
+    expect(frameForMember({ ...transfer, to: "hr" }, ctx, seen())).toBeUndefined();
+    expect(frameForMember({ ...transfer, from: "hr" }, ctx, seen())).toBeUndefined();
     const hook = { kind: "webhook.attempt", attempt: { webhookId: "hook-pub" } };
     expect(frameForMember(hook, ctx, seen())).toBe(hook);
     expect(frameForMember({ kind: "sections", sections: ["Ops", "People"] }, ctx, seen())).toEqual({ kind: "sections", sections: ["Ops"] });

@@ -1,0 +1,49 @@
+/* Solar settings: the embedded settings sections keep Orbit's layout; only
+   their highlights move from Orbit's blue/ink to Solar's gold. Every rule is
+   scoped under [data-solar], so Orbit renders exactly as before. Unlayered,
+   so these win over Tailwind's layered utilities without !important. */
+
+/* Native checkboxes, radios and sliders (the dictation languages, the
+   budget and cleanup controls) otherwise draw in the browser's blue. */
+:root[data-solar] :is(.orbit-settings, .solar-settings) {
+  accent-color: var(--color-accent);
+  caret-color: var(--color-accent);
+}
+
+/* The settings switch (SettingsPrimitives.Switch): gold track, dark knob,
+   as the quick-settings toggles in the Solar header. */
+:root[data-solar] button[role="switch"][aria-checked="true"] {
+  background-color: var(--color-accent);
+}
+:root[data-solar] button[role="switch"][aria-checked="true"] > span {
+  background-color: var(--color-accent-ink);
+}
+
+/* Segmented choices (voice output, engine and effort pickers). */
+:root[data-solar] :is(.orbit-settings, .solar-settings) [role="radiogroup"] > [role="radio"][aria-checked="true"] {
+  background-color: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 38%, transparent);
+}
+
+/* Focused fields paint their border gold instead of Orbit's ink. */
+:root[data-solar] :is(.orbit-settings, .solar-settings) :is(input, textarea, select):focus-visible:not([aria-invalid="true"]) {
+  border-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+
+/* Primary actions: Orbit's ink pill becomes Solar's gold pill. */
+:root[data-solar] :is(.orbit-settings, .solar-settings) button.bg-ink.text-app {
+  background-color: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+/* Links read as links. */
+:root[data-solar] :is(.orbit-settings, .solar-settings) a[href]:not([class*="bg-"]) {
+  color: var(--color-accent-text);
+}
+
+/* Dropdown lists keep the dark glass, not the OS's light menu. */
+:root[data-solar] :is(.orbit-settings, .solar-settings) select option {
+  background-color: var(--color-menu);
+  color: var(--color-ink);
+}

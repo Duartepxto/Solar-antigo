@@ -9,7 +9,9 @@ import { Blocks, CalendarClock, CalendarDays, Cpu, Crown, FileText, Gauge as Gau
 import { api, deleteTeam, useStore, type AppSettingsSection, type Bot } from "@/state/store";
 import { t, tCount } from "@/lib/i18n";
 import { brand } from "@/lib/brand";
-import { localeChoices } from "@/locales";
+import { localeChoiceCode, localeChoices } from "@/locales";
+import { effectiveLanguage, languageChoice, useLanguageChoice } from "@/lib/language-preference";
+import "../solar-settings.css";
 import { TeamDialog } from "@/components/TeamDialog";
 import { ShareTeamDialog } from "@/components/ShareTeamDialog";
 import { NewChannelDialog } from "@/components/NewChannelDialog";
@@ -205,7 +207,7 @@ export function youHubValue(key: YouHubKey, state: ReturnType<typeof useStore>["
     case "appearance": return [SKINS.find((s) => s.id === readSkin())?.name ?? "Midnight", t("orbit.hub.v.skins", { count: SKINS.length })];
     case "people": return [state.config?.profile?.name || t("orbit.hub.v.justYou"), t("orbit.hub.v.owner")];
     case "workspaces": return [t("orbit.hub.v.workspace"), t("orbit.hub.v.backups")];
-    case "system": return [t("orbit.hub.v.system"), languageLabel(state.config?.language)];
+    case "system": return [t("orbit.hub.v.system"), languageLabel(effectiveLanguage(languageChoice(), state.config?.language))];
   }
 }
 
@@ -215,6 +217,8 @@ export function YouHubPanel({ panel, openLibrary, focusBot }: { panel: YouHubKey
   const head = (title: string, desc: string) => <DetailHeader icon={meta.icon} kicker={t(meta.label as never)} title={title} desc={desc} />;
   const [skin, setSkin] = useState<SkinId>(readSkin);
   const [calFilter, setCalFilter] = useState<"all" | "problems" | "active">("all");
+  // the language this device shows (its own pick, else the server default)
+  const language = effectiveLanguage(useLanguageChoice(), state.config?.language);
   const hubSections = new Set(YOU_HUB.map((h) => h.section).filter(Boolean));
   const otherSections = useAppSettingsSections().filter((entry) => !hubSections.has(entry.id));
   const body = (() => {
@@ -257,7 +261,7 @@ export function YouHubPanel({ panel, openLibrary, focusBot }: { panel: YouHubKey
         const warn = state.config?.budgets?.warnAtPercent;
         return <>
           {head(t("orbit.hub.p.usage"), t("orbit.hub.p.usageDesc"))}
-          {budget ? <Gauge pct={(spent / budget) * 100} color={MAUS_COLORS.blue} label={t("orbit.hub.p.budget", { spent: formatUsd(spent), budget: formatUsd(budget), warn: warn ?? 80 })} /> : null}
+          {budget ? <Gauge pct={(spent / budget) * 100} color={import.meta.env.VITE_JARVIS_SOLAR === "true" ? "var(--color-accent)" : MAUS_COLORS.blue} label={t("orbit.hub.p.budget", { spent: formatUsd(spent), budget: formatUsd(budget), warn: warn ?? 80 })} /> : null}
           <List title={t("orbit.hub.p.byBot")} empty={t("orbit.p.usage.none")} items={rows.map(({ b, u }) => ({
             key: b.id, name: b.name, dot: MAUS_COLORS[b.color], onClick: () => focusBot(b.id),
             meta: `${hasFiniteCost(u.costUsd) ? formatUsd(u.costUsd ?? 0) : "—"} · ${formatTokens(u.input + u.output)} ${t("orbit.hub.p.tokens")}`,
@@ -320,7 +324,7 @@ export function YouHubPanel({ panel, openLibrary, focusBot }: { panel: YouHubKey
           {head(t("orbit.hub.p.system"), t("orbit.hub.p.systemDesc"))}
           <Rows rows={[
             { k: t("orbit.hub.p.threadsAtOnce"), v: t("orbit.hub.p.perBot", { count: state.config?.threads?.maxConcurrentPerBot ?? 1 }) },
-            { k: t("orbit.hub.p.language"), v: languageLabel(state.config?.language) },
+            { k: t("orbit.hub.p.language"), v: languageLabel(language) },
             { k: t("orbit.hub.p.shortcuts"), v: "⌘K · ⌘N · Esc" },
           ]} />
           <Actions actions={[
@@ -544,5 +548,6 @@ export function useTeamInstructionsText(section: string | null) {
 /** "Deutsch", not "de": the picker's own label for the saved code. */
 function languageLabel(code: string | undefined): string {
   if (!code) return t("orbit.hub.v.systemLanguage");
-  return localeChoices.find((c) => c.code === code)?.label ?? code;
+  const choice = localeChoiceCode(code);
+  return localeChoices.find((c) => c.code === choice)?.label ?? code;
 }

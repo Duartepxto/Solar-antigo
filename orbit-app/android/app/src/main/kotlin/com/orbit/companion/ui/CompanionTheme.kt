@@ -8,6 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontVariation
+import com.orbit.companion.R
 
 /**
  * The app's colours. Deliberately small: the roster and chat draw almost
@@ -34,6 +39,9 @@ private fun AppearanceSkin.colorScheme() = colors.let { palette ->
             secondary = palette.accent.color(), onSecondary = palette.accentInk.color(),
             background = palette.app.color(), onBackground = palette.ink.color(),
             surface = palette.card.color(), onSurface = palette.ink.color(),
+            surfaceContainer = palette.panel.color(), surfaceContainerHigh = palette.card.color(),
+            surfaceContainerLow = palette.app.color(), surfaceContainerLowest = palette.app.color(),
+            surfaceContainerHighest = palette.card.color(), surfaceDim = palette.app.color(), surfaceBright = palette.card.color(),
             surfaceVariant = palette.panel.color(), onSurfaceVariant = palette.secondaryInk.color(),
             outline = palette.outline.color(), error = palette.error.color(), onError = Color.White,
             tertiary = palette.success.color(), onTertiary = Color.White,
@@ -105,8 +113,15 @@ private fun AppearanceSkin.colorScheme() = colors.let { palette ->
  * `notifications.NotificationText`, which anchors each notification paragraph
  * that would otherwise take the shade's base direction.
  */
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+private val SolarTypeface = FontFamily(
+    Font(R.font.manrope, weight = FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.manrope, weight = FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.manrope, weight = FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.manrope, weight = FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
+)
 private fun TextStyle.readingFromContent(): TextStyle =
-    copy(textDirection = TextDirection.ContentOrLtr)
+    copy(textDirection = TextDirection.ContentOrLtr, fontFamily = SolarTypeface)
 
 private val ContentDirectedTypography: Typography = Typography().run {
     copy(

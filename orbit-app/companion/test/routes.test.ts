@@ -15,6 +15,15 @@ const ask = (method: string, path: string, authenticated = true) =>
 const allowed = (method: string, path: string) => ask(method, path) === null;
 
 describe("credentials", () => {
+  it("exposes only bounded Solar speech routes to paired devices", () => {
+    expect(ask("POST", "/api/solar-voice/transcribe")).toBeNull();
+    expect(ask("GET", "/api/solar-voice/status")).toBeNull();
+    expect(ask("POST", "/api/solar-voice/transcribe", false)?.status).toBe(401);
+    expect(ask("GET", "/api/solar-voice/status", false)?.status).toBe(401);
+    expect(ask("GET", "/api/solar-voice/transcribe")).not.toBeNull();
+    expect(ask("POST", "/api/solar-voice/transcribe/other")).not.toBeNull();
+    expect(ask("POST", "/api/solar-voice/transcribe%2f..%2fconfig")).not.toBeNull();
+  });
   it("lets an unpaired device pair, and do nothing else", () => {
     expect(ask("POST", "/api/pair", false)).toBeNull();
     expect(ask("GET", "/api/bots", false)).toEqual({

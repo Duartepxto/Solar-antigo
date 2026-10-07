@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import { MAUS_COLOR_NAMES, MAUS_COLORS, type MausColor } from "@/lib/mascot";
+import { SolarIdentity } from "@/orbit/SolarIdentity";
+import { SolarPlanet } from "@/orbit/SolarPlanet";
 import { useStore, type Bot } from "@/state/store";
 import { saveWelcomeBot } from '@/lib/welcome-bot';
 import { inputClass, PrimaryButton, staggerIndex, type BeatProps } from "./shared";
 
 const SOUL_LINE_LIMIT = 200;
+const SOLAR = import.meta.env.VITE_JARVIS_SOLAR === "true";
 
 export function MeetYourBotBeat({
   bot,
@@ -77,6 +80,16 @@ export function MeetYourBotBeat({
         </div>
       </div>
 
+      {SOLAR ? (
+        // Solar draws agents as planets, not coloured mascots: show the body
+        // this agent has (or a planet, for one not created yet).
+        <div className="animate-rise mt-3 flex items-center gap-3" style={staggerIndex(2)}>
+          <span className="flex size-[44px] shrink-0 items-center justify-center">
+            {bot ? <SolarIdentity id={bot.id} size={44} /> : <SolarPlanet kind="planet" skin="earth" />}
+          </span>
+          <span className="text-[12px] leading-normal text-ink/60">{t("jarvis.welcome.bot.planet")}</span>
+        </div>
+      ) : (
       <div className="animate-rise mt-3" style={staggerIndex(2)}>
         <div className="text-[12px] leading-normal text-ink/60">{t("onboarding.bot.color")}</div>
         <div role="radiogroup" aria-label={t("onboarding.bot.color")} className="mt-1.5 flex flex-wrap gap-2">
@@ -100,6 +113,7 @@ export function MeetYourBotBeat({
           ))}
         </div>
       </div>
+      )}
 
       <div className="animate-rise mt-3" style={staggerIndex(3)}>
         <label className="block text-[12px] leading-normal text-ink/60" htmlFor="welcome-bot-soul">

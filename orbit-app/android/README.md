@@ -13,15 +13,28 @@ OpenMausBot/Orbit client already included in Solar; it does not add a third clie
 The `com.orbit.companion` Kotlin namespace and `orbit` pairing protocol remain
 compatible with the PC. The app label, Android package and launcher icon identify Solar.
 
-On this Windows workspace, `scripts/build-solar-android.ps1` uses the JDK/SDK
-under `.orbit-scratch/android-tools`, runs both test suites and builds the signed
+The home uses Solar's sun and planet map, graphite/gold palette and local
+Manrope. Agents keep the same identity in conversations and selectors, with
+particle connections. Search, thread management and approvals use the existing
+protocol. Choosing a phone thread does not change the PC's active thread.
+
+The chat includes a foreground call: phone capture, local Whisper on the PC,
+phone speech, then listening again. Recordings are capped at 29 seconds; silence
+is ignored. Leaving, backgrounding or losing the connection ends the call.
+The computer needs the updated Solar with Whisper installed.
+
+On Windows, `scripts/build-solar-android.ps1` uses the existing Android Studio
+JDK/SDK or the private tools under `.orbit-scratch/android-tools`, runs both suites and builds the signed
 preview APK at `release-solar/android/Solar-Android-preview.apk`. It sets build
 environment variables only for its process. `scripts/install-solar-android.ps1`
 installs and opens it on one authorized USB device without erasing app data.
+An update needs the previous APK's signing key. This PC's debug key differs
+from the first preview. Preserve the original `debug.keystore` outside Git and
+build with `-SigningKeyPath <path>`; never uninstall to bypass a mismatch.
 
 ## Build and test
 
-Requires **JDK 17** and an Android SDK. Gradle arrives through the wrapper, so
+Requires **JDK 17 or newer** and an Android SDK. Gradle arrives through the wrapper, so
 there is nothing to install for it.
 
 ```sh

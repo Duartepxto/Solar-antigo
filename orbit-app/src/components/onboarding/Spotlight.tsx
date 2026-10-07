@@ -22,6 +22,8 @@ const PAD = 8;
 const RADIUS = 14;
 const CARD_W = 300;
 const GAP = 12;
+// the card's primary action: Orbit's green, Solar's gold
+const PRIMARY = import.meta.env.VITE_JARVIS_SOLAR === "true" ? "bg-[#ddbd89] text-[#191b20]" : "bg-[#3ee09a] text-[#06140d]";
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -262,7 +264,7 @@ export function Spotlight({
                   type="button"
                   autoFocus
                   onClick={primary.onClick}
-                  className="h-7 rounded-full bg-[#3ee09a] px-3.5 text-[12.5px] font-semibold text-[#06140d] transition-transform duration-150 active:scale-[0.98]"
+                  className={cn("h-7 rounded-full px-3.5 text-[12.5px] font-semibold transition-transform duration-150 active:scale-[0.98]", PRIMARY)}
                 >
                   {primary.label}
                 </button>

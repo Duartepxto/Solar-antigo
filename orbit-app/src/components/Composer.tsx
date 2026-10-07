@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import { ArrowUp, BookOpen, Clock, Mic, Paperclip, Square, Target, Users, X } from "lucide-react";
+import { ArrowUp, BookOpen, Clock, Mic, Paperclip, Plus, Square, Target, Users, X } from "lucide-react";
 import { useStore, visibleMessages, currentTaskBot, type Bot, type Group, type Message } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { activeLocale, t } from "@/lib/i18n";
@@ -22,6 +22,7 @@ import {
   type FailedComposerSend,
 } from "@/lib/drafts";
 import { BotFace } from "@/orbit/OrbitFace";
+import { useSolarDictation } from '@/orbit/useSolarDictation';
 import { MentionTextarea } from "./MentionTextarea";
 import { ComposerAttachments, pathForFile } from "./ComposerAttachments";
 import {
@@ -205,6 +206,12 @@ export function Composer({
   );
   const [recording, setRecording] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
+  const solarComposer = import.meta.env.VITE_JARVIS_SOLAR === 'true';
+  const solarVoice = useSolarDictation(text, editText, draftId);
+  const isRecording = solarComposer ? solarVoice.listening : recording;
+  const visibleSpeechError = solarComposer && solarVoice.error
+    ? t(`jarvis.solar.voice.${solarVoice.error === 'unsupported' ? 'unavailable' : ['not-allowed', 'service-not-allowed'].includes(solarVoice.error) ? 'permission' : solarVoice.error === 'no-speech' ? 'noSpeech' : solarVoice.error === 'busy-elsewhere' ? 'busy' : solarVoice.error === 'no-microphone' ? 'noMicrophone' : 'error'}`)
+    : speechError;
   const [caret, setCaret] = useState(0);
   const [highlight, setHighlight] = useState(0);
   const [dismissedAt, setDismissedAt] = useState<number | null>(null); // Esc'd this @
@@ -552,6 +559,7 @@ export function Composer({
     }
   };
   const send = () => {
+    if (solarComposer && solarVoice.listening) return;
     if (locked || attachmentPending) return;
     if (
       attachments.some((attachment) => attachment.kind === "image") &&
@@ -719,6 +727,7 @@ export function Composer({
   }, [recording, editText]);
 
   const toggleMic = () => {
+    if (solarComposer) { solarVoice.toggle(); return; }
     if (!capabilities.dictation.available || !window.ogb) {
       setSpeechError(t("composer.dictation.unavailable"));
       return;
@@ -731,9 +740,9 @@ export function Composer({
     <div className="pointer-events-none relative pb-0.5">
       {/* No fill or hairline on this wrapper — those were the black frame
           in the pill's top corners. The dock overlays the transcript. */}
-      {speechError && (
+      {visibleSpeechError && (
         <div className="pointer-events-auto mb-2 w-full rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning">
-          {speechError}
+          {visibleSpeechError}
         </div>
       )}
       <div className="pointer-events-auto relative w-full">
@@ -918,9 +927,11 @@ export function Composer({
                 onClick={() => fileInput.current?.click()}
                 aria-label={t("composer.attach")}
                 title={t("composer.attach")}
-                className="flex size-8 shrink-0 items-center justify-center rounded-full text-ink/55 hover:bg-control hover:text-ink"
+                className={solarComposer
+                  ? "solar-attach flex size-8 shrink-0 items-center justify-center rounded-full bg-ink/[0.07] text-ink/75 hover:bg-ink/[0.12] hover:text-ink"
+                  : "flex size-8 shrink-0 items-center justify-center rounded-full text-ink/55 hover:bg-control hover:text-ink"}
               >
-                <Paperclip size={17} />
+                {solarComposer ? <Plus size={17} /> : <Paperclip size={17} />}
               </button>
               {group && !group.dm && (
                 <button
@@ -1039,13 +1050,16 @@ export function Composer({
               }
               send();
             }
-            if (e.key === "Escape" && recording) setRecording(false);
+            if (e.key === "Escape" && isRecording) {
+              if (solarComposer) solarVoice.cancel(); else setRecording(false);
+            }
           }}
           // an upload in flight must not disable the box: a disabled element
           // drops keyboard focus and never gets it back, so the writer had to
           // click the input again after every pasted image (#1014). send()
           // already refuses while an attachment is pending.
           disabled={Boolean(approval) || locked}
+          readOnly={solarComposer && isRecording}
           aria-busy={bot?.awaitingThreadSnapshot || undefined}
           placeholder={
             setupLocked
@@ -1054,7 +1068,7 @@ export function Composer({
               ? t("composer.placeholder.approval")
               : attachmentPending
               ? t("composer.placeholder.attaching")
-              : recording
+              : isRecording
               ? t("composer.placeholder.listening")
               : busy && canSteer
                 ? pendingCount > 0
@@ -1089,17 +1103,18 @@ export function Composer({
             <Square size={14} className="fill-current" />
           </button>
         )}
-        {!locked && !busy && !hasContent && capabilities.dictation.available && (
+        {!locked && ((!busy && (solarComposer || !hasContent)) || isRecording) && (solarComposer || capabilities.dictation.available) && (
           <button
             onClick={toggleMic}
-            aria-label={recording ? t("composer.dictation.stop") : t("composer.dictation.start")}
+            aria-label={isRecording ? t("composer.dictation.stop") : t("composer.dictation.start")}
+            aria-pressed={isRecording}
             className={cn(
               "flex size-8 shrink-0 items-center justify-center rounded-full",
-              recording
+              isRecording
                 ? "animate-pulse bg-[#ff5667]/20 text-[#ff8a96]"
                 : "text-ink/55 hover:bg-ink/[0.06] hover:text-ink",
             )}
-            title={recording ? t("composer.dictation.stopHint") : t("composer.dictation.hint")}
+            title={isRecording ? t("composer.dictation.stopHint") : t("composer.dictation.hint")}
           >
             <Mic size={18} />
           </button>
@@ -1107,7 +1122,7 @@ export function Composer({
         {hasContent && !locked && (
           <button
             onClick={send}
-            disabled={attachmentPending}
+            disabled={attachmentPending || isRecording}
             aria-label={
               busy && canSteer
                   ? t("composer.send.steer")

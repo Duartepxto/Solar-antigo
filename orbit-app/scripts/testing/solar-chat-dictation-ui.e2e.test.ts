@@ -1,0 +1,89 @@
+import { execFile } from 'node:child_process';
+import { mkdtempSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+import { expect, it } from 'vitest';
+import { launchVerificationServer, runControlOrbit } from '../control-orbit.ts';
+import { closeBrowserSession } from '../../server/browser-engine.ts';
+import { ensureUiBrowser, sessionEnv } from './control-orbit-ui.ts';
+import { mountPreview, REPO_ROOT } from './preview-fixture.ts';
+import { removeTempDir } from '../../server/testing/cleanup.ts';
+
+it.skipIf(process.env.ORBIT_UI_E2E !== '1')('dictates into the real chat composer with native dictation unavailable and keeps the stop button visible', async () => {
+  const session = await launchVerificationServer();
+  const { binary, chrome } = await ensureUiBrowser();
+  const home = mkdtempSync(join(tmpdir(), 'solar-dictation-')); mkdirSync(join(home, 'tmp'));
+  const env = { ...sessionEnv({ home, session: `dict-${process.pid}`, chrome }), AGENT_BROWSER_SOCKET_DIR: home };
+  const execute = promisify(execFile);
+  const browser = async (...args: string[]) => {
+    const { stdout } = await execute(binary, [...args, '--json'], { env, timeout: 60000, windowsHide: true, maxBuffer: 4194304 }).catch((cause: any) => { throw new Error(`${cause.message}\n${cause.stdout}\n${cause.stderr}`); });
+    const value = JSON.parse(stdout); expect(value.success, stdout).toBe(true); return value.data;
+  };
+  let preview: Awaited<ReturnType<typeof mountPreview>> | undefined;
+  try {
+    await runControlOrbit(['new-bot', '--name', 'Jarvis dictation fixture'], { env: { ORBIT_URL: session.info.url } });
+    preview = await mountPreview(session, { entry: '/scripts/testing/solar-chat-dictation-preview.tsx', route: '/__solar-dictation.html', title: 'Solar dictation fixture', logLevel: 'error', extraRoutes: [{ path: '/api/solar-voice/status', handler: (_req, res) => { res.setHeader('content-type', 'application/json'); res.end('{"ready":false}'); } }] });
+    await browser('set', 'viewport', '900', '650'); await browser('open', preview.previewUrl);
+    await browser('eval', '(() => { document.querySelector("details").open=true; return true; })()');
+    await browser('find', 'role', 'checkbox', 'click', '--name', 'English');
+    expect((await browser('eval', 'JSON.parse(localStorage.getItem("solar.dictation.languages.v1"))')).result).toEqual(['pt-PT']);
+    expect((await browser('eval', 'document.querySelector("input[type=checkbox]").disabled')).result).toBe(true);
+    await browser('open', preview.previewUrl);
+    await browser('wait', '--fn', '!!document.querySelector("details")');
+    await browser('eval', '(() => { document.querySelector("details").open=true; return true; })()');
+    expect((await browser('eval', 'document.querySelectorAll("input[type=checkbox]")[1].checked')).result).toBe(false);
+    await browser('find', 'role', 'checkbox', 'click', '--name', 'English');
+    const settingsEvidence = join(REPO_ROOT, '.orbit-scratch', 'verify-evidence', 'solar-chat-dictation'); mkdirSync(settingsEvidence, { recursive: true });
+    await browser('screenshot', join(settingsEvidence, 'settings-desktop.png'));
+    await browser('set', 'viewport', '390', '844'); await browser('wait', '300');
+    await browser('screenshot', join(settingsEvidence, 'settings-mobile.png'));
+    await browser('set', 'viewport', '900', '650');
+    await browser('eval', '(() => { document.querySelector("details").open=false; return true; })()');
+    await browser('wait', '--fn', "!!document.querySelector('button[aria-label=\"Start dictation\"]')");
+    await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
+    await browser('wait', '--fn', "!!document.querySelector('button[aria-pressed=true]')");
+    expect((await browser('eval', 'window.testRecognition.lang')).result).toBe('pt-PT');
+    await browser('eval', "(() => { window.testRecognition.onresult({results:[[{transcript:'Hello Solar from dictation'}]]}); return true; })()");
+    await browser('wait', '--fn', "document.querySelector('textarea').value === 'Hello Solar from dictation'");
+    expect((await browser('eval', "document.querySelector('button[aria-pressed=true]') !== null && document.querySelector('textarea').readOnly")).result).toBe(true);
+    await browser('eval', '(() => { window.testRecognition.stop(); return true; })()');
+    await browser('wait', '--fn', "!document.querySelector('textarea').readOnly");
+    expect((await browser('eval', "document.querySelector('textarea').value")).result).toBe('Hello Solar from dictation');
+    await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
+    await browser('find', 'role', 'textbox', 'click', '--name', 'Message Jarvis dictation fixture');
+    await browser('press', 'Escape');
+    await browser('wait', '--fn', "!document.querySelector('button[aria-pressed=true]')");
+    expect((await browser('eval', "document.querySelector('[data-chat-scroll]').getBoundingClientRect().bottom <= document.querySelector('[data-orbit-dock]').getBoundingClientRect().top + 1")).result).toBe(true);
+    const evidence = join(REPO_ROOT, '.orbit-scratch', 'verify-evidence', 'solar-chat-dictation'); mkdirSync(evidence, { recursive: true });
+    await browser('screenshot', join(evidence, 'composer.png'));
+    await browser('set', 'viewport', '390', '844'); await browser('wait', '500');
+    expect((await browser('eval', "document.querySelector('[data-chat-scroll]').getBoundingClientRect().bottom <= document.querySelector('[data-orbit-dock]').getBoundingClientRect().top + 1")).result).toBe(true);
+    await browser('screenshot', join(evidence, 'mobile.png'));
+    // Native events are synthetic: exercise the real hook without hardware.
+    await browser('open', `${preview.previewUrl}?native=1`);
+    await browser('wait', '--fn', "!!document.querySelector('button[aria-label=\"Start dictation\"]')");
+    await browser('find', 'role', 'textbox', 'fill', '--name', 'Message Jarvis dictation fixture', 'Keep my draft');
+    await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
+    expect((await browser('eval', 'window.testSolarVoice.options.endpointMs')).result).toBe(1800);
+    await browser('eval', '(() => { window.testSolarVoice.transcript({error:"recognition server unavailable"}); window.testSolarVoice.end({code:1}); return true; })()');
+    await browser('wait', '--fn', 'document.body.textContent.includes("Speech recognition could not start")');
+    expect((await browser('eval', 'document.querySelector("textarea").value')).result).toBe('Keep my draft');
+    await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
+    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"",partial:false}); window.testSolarVoice.end({code:0}); return true; })()');
+    await browser('wait', '--fn', 'document.body.textContent.includes("No speech was detected")');
+    expect((await browser('eval', 'document.querySelector("textarea").value')).result).toBe('Keep my draft');
+    await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
+    await browser('find', 'role', 'textbox', 'click', '--name', 'Message Jarvis dictation fixture');
+    await browser('press', 'Escape');
+    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"late words",partial:false}); window.testSolarVoice.end({code:1}); return true; })()');
+    expect((await browser('eval', 'document.querySelector("textarea").value')).result).toBe('Keep my draft');
+    expect((await browser('eval', 'document.body.textContent.includes("Speech recognition could not start")')).result).toBe(false);
+  } catch (error) {
+    console.error('Dictation fixture state:', JSON.stringify(await browser('snapshot').catch(() => null)));
+    console.error('Dictation fixture errors:', JSON.stringify(await browser('errors').catch(() => null)));
+    throw error;
+  } finally {
+    await closeBrowserSession(binary, env); if (preview) await preview.close(); await session.close(); await removeTempDir(home);
+  }
+}, 120000);

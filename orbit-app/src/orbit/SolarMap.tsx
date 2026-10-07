@@ -1,10 +1,12 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { Focus, Minus, Plus, RotateCcw, Settings2 } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import type { OrbitModel, Point } from './model';
 import { loadSolarLayout, saveSolarLayout, solarNodes, solarPositions, type SolarLayout } from './solar-model';
 import { SolarPlanet } from './SolarPlanet';
 import { SolarWorld } from './SolarWorld';
+import { SolarConnectionParticles } from './SolarConnectionParticles';
+import type { SolarParticleLink } from './solar-connection-particles';
 import { useSolarPreferences } from './solar-preferences';
 import { solarState, solarActivity, type SolarSignal } from './solar-state';
 import { zoomSolarCamera, solarBodyDiameter, transitionSolarCamera } from './solar-camera';
@@ -18,7 +20,6 @@ const bodyDiameter = solarBodyDiameter;
 
 export function SolarMap({ model, onBot, onSettings, onAdd, active = true, focusId, focusWidth }: { model: OrbitModel; onBot: (id: string) => void; onSettings: () => void; onAdd: () => void; active?: boolean; focusId?:string; focusWidth?:number }) {
   const root = useRef<HTMLDivElement>(null);
-  const linePrefix=useId();
   const [size, setSize] = useState({ w: 1000, h: 700 });
   const [labelMetrics, setLabelMetrics] = useState<Record<string, { w: number; h: number; dx: number; dy: number }>>({});
   const [fontReady, setFontReady] = useState(false);
@@ -194,7 +195,12 @@ export function SolarMap({ model, onBot, onSettings, onAdd, active = true, focus
   const planets = nodes.filter(node => node.kind === 'planet');
   const bodies = nodes.map(node => ({ id: node.id, parentId:node.parentId, kind: node.kind, skin: node.kind === 'moon' ? node.moonSkin : node.skin, ...screen(positions[node.id]), diameter: bodyDiameter(node.kind, viewCamera.scale,node.moonSkin), color: node.color, active: !!node.bot?.busy, grabbed: grabbedId !== null && (grabbedId === node.id || grabbedId === node.parentId),
     background:!!focusId&&node.id!==focusId,callPhase:callPhases[node.id],state:solarState(node.bot,model.connected),tool:node.bot?.tool??undefined,activity:solarActivity(node.bot?.tool),signal:signals[node.id] }));
-  useEffect(() => { publishSolarPortraits(bodies, preferences, paused || !preferences.motion); }, [bodies, preferences, paused ]);
+  // Portraits re-lay bodies out in their own grid (position, size, background
+  // and grab are overridden), so only identity and activity matter here; the
+  // camera animating at 60fps must not republish them.
+  const portraitBodies = useMemo(() => nodes.map(node => ({ id: node.id, parentId: node.parentId, kind: node.kind, skin: node.kind === 'moon' ? node.moonSkin : node.skin, x: 0, y: 0, diameter: 0, color: node.color, active: !!node.bot?.busy,
+    callPhase: callPhases[node.id], state: solarState(node.bot, model.connected), tool: node.bot?.tool ?? undefined, activity: solarActivity(node.bot?.tool), signal: signals[node.id] })), [nodes, callPhases, signals, model.connected]);
+  useEffect(() => { publishSolarPortraits(portraitBodies, preferences, paused || !preferences.motion); }, [portraitBodies, preferences, paused]);
 
   return <div ref={root} className="solar-map" data-focused={focusId||undefined} data-many={planets.length >= 5 || undefined} data-paused={paused || !preferences.motion || undefined} data-compact={size.w >= 500 && size.w < 650 ? 'wide' : undefined} role="region" aria-label={t('jarvis.solar.map')}
     onPointerDown={event => { if (event.target === event.currentTarget) start(event, null); }}
@@ -203,19 +209,18 @@ export function SolarMap({ model, onBot, onSettings, onAdd, active = true, focus
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(); }
     }}>
     <div className="solar-starfield" aria-hidden="true" />
-    <svg className="solar-orbits" width={size.w} height={size.h} aria-hidden="true">
-      <defs>{nodes.filter(node=>node.parentId).map((node,i)=>{const parent=nodes.find(n=>n.id===node.parentId)!,p=screen(positions[parent.id]),q=screen(positions[node.id]);return <linearGradient key={node.id} id={`${linePrefix}-link-${i}`} gradientUnits="userSpaceOnUse" x1={p.x} y1={p.y} x2={q.x} y2={q.y}><stop offset="0" stopColor={parent.color}/><stop offset="1" stopColor={node.color}/></linearGradient>;})}</defs>
-      {lines && nodes.filter(node => node.parentId).map((node,index) => {
+    <SolarConnectionParticles width={size.w} height={size.h} paused={paused || !preferences.motion || !active || !!focusId} links={lines ? nodes.filter(node => node.parentId).flatMap(node => {
         const parent=nodes.find(n => n.id === node.parentId)!, p = screen(positions[node.parentId!]), q = screen(positions[node.id]);
-        const length=Math.hypot(q.x-p.x,q.y-p.y)||1, dx=(q.x-p.x)/length, dy=(q.y-p.y)/length;
         const a=bodyDiameter(parent.kind,viewCamera.scale,parent.moonSkin)/2*(parent.kind==='sun'?1.3:1.2), b=bodyDiameter(node.kind,viewCamera.scale,node.moonSkin)/2*1.2;
         const member=node.kind==='moon',waiting=!!node.bot?.waiting&&!member;
-        const base=length<a+b?null:<line key={node.id} className="solar-link" x1={p.x+dx*a} y1={p.y+dy*a} x2={q.x-dx*b} y2={q.y-dy*b} stroke={waiting?'#ff9800':`url(#${linePrefix}-link-${index})`} strokeOpacity={focusId?(member?.07:.10):(member?.4:.6)} strokeWidth="1.6" strokeDasharray="6 6" />;
-        if(!member||!node.bot?.waiting)return base;
-        const sun=nodes[0],s=screen(positions[sun.id]),distance=Math.hypot(q.x-s.x,q.y-s.y)||1,r=bodyDiameter('sun',viewCamera.scale)/2*1.3;
-        return [base,distance<r+b?null:<line key={`${node.id}-waiting`} x1={s.x+(q.x-s.x)/distance*r} y1={s.y+(q.y-s.y)/distance*r} x2={q.x-(q.x-s.x)/distance*b} y2={q.y-(q.y-s.y)/distance*b} stroke="#ff9800" strokeOpacity={focusId?.12:.6} strokeWidth="1.2"/>];
-      })}
-    </svg>
+        const base: SolarParticleLink = { id: node.id, from: p, to: q, fromRadius: a, toRadius: b,
+          color: waiting ? '#ff9800' : parent.color, targetColor: waiting ? '#ff9800' : node.color,
+          opacity: focusId ? (member ? .07 : .10) : (member ? .4 : .6) };
+        if(!member||!node.bot?.waiting)return [base];
+        const sun=nodes[0],s=screen(positions[sun.id]),r=bodyDiameter('sun',viewCamera.scale)/2*1.3;
+        return [base, { id: `${node.id}-waiting`, from: s, to: q, fromRadius: r, toRadius: b,
+          color: '#ff9800', targetColor: '#ff9800', opacity: focusId ? .12 : .6 }];
+      }) : []} />
     <SolarWorld bodies={bodies} width={size.w} height={size.h} paused={paused || !preferences.motion || !active} settings={preferences} onFailure={() => setRenderFailed(true)} />
     {renderFailed && <div className="solar-connection-note solar-glass" role="alert">{t('jarvis.solar.renderFailed')}<button type="button" onClick={() => window.location.reload()}>{t('orbit.retry')}</button></div>}
     <div className="solar-summary">

@@ -592,6 +592,7 @@ export type SteerQueueReason = "capacity" | "group-turn";
 export type BotQueuedMessages = Record<string, Array<{ queueId: string; text: string; reason?: SteerQueueReason }>>;
 
 export type ServerFrame =
+  | { kind: "agent.transfer"; id: string; from: string; to: string; at: number; result: boolean }
   | { kind: "sections"; sections: string[] }
   | { kind: "bot.queued"; queues: BotQueuedMessages }
   | { kind: "message"; threadId: string; message: WireMessage }

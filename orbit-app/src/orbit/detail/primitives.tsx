@@ -8,6 +8,10 @@ import { ChevronLeft, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 
+// Solar keeps this composition and only trades the blue highlight for gold.
+const SOLAR = import.meta.env.VITE_JARVIS_SOLAR === "true";
+const GOLD_ON = "border-[#ddbd89]/60 bg-[#ddbd89]/[0.1] text-[#f4dcb5] shadow-[0_0_18px_-8px_#ddbd89]";
+
 export const MONO_LABEL = "font-mono text-[10px] uppercase tracking-[0.1em] text-ink/50";
 
 export function DetailBody({ children, tour }: { children: ReactNode; tour?: string }) {
@@ -82,7 +86,7 @@ export function Seg({ label, cols, options, value, onSelect, note, noteTone, tou
             <button key={o.key} type="button" title={o.title ?? o.label} disabled={o.disabled} aria-pressed={on}
               onClick={() => onSelect(o.key)}
               className={cn("flex flex-col items-center gap-1.5 rounded-xl border px-1 pb-2 pt-2.5 text-[11.5px] font-medium leading-[1.2] disabled:cursor-not-allowed disabled:opacity-40",
-                on ? "border-ink/[0.22] bg-ink/[0.08] text-ink" : "border-ink/[0.07] text-ink/60 hover:bg-ink/[0.04]")}>
+                on ? (SOLAR ? GOLD_ON : "border-ink/[0.22] bg-ink/[0.08] text-ink") : "border-ink/[0.07] text-ink/60 hover:bg-ink/[0.04]")}>
               <Icon size={16} aria-hidden />
               {o.label}
             </button>
@@ -127,7 +131,7 @@ export function ChipRow({ label, chips }: { label: string; chips: Array<{ label:
         {chips.map((c, i) => (
           <button key={i} type="button" onClick={c.onClick} disabled={c.disabled} title={c.title} aria-pressed={c.active}
             className={cn("h-[26px] rounded-[13px] border px-2.5 text-[12px] font-medium text-ink disabled:cursor-not-allowed disabled:opacity-50",
-              c.active ? "border-ink/40 bg-ink/10" : "border-ink/[0.12] hover:bg-ink/[0.05]")}>
+              c.active ? (SOLAR ? GOLD_ON : "border-ink/40 bg-ink/10") : "border-ink/[0.12] hover:bg-ink/[0.05]")}>
             {c.label}
           </button>
         ))}
@@ -138,7 +142,7 @@ export function ChipRow({ label, chips }: { label: string; chips: Array<{ label:
 
 export const DOT_ON = "#38d591";
 export const DOT_OFF = "color-mix(in srgb, var(--color-ink) 20%, transparent)";
-export const DOT_ACCENT = "#1084fe";
+export const DOT_ACCENT = SOLAR ? "#eac185" : "#1084fe";
 export const DOT_WARN = "#ff9800";
 
 export interface ListItem {
@@ -168,7 +172,7 @@ export function List({ title, items, empty }: { title: string; items: ListItem[]
           <span className="min-w-0 flex-1 text-[13.5px] text-ink/90">{it.name}</span>
           {it.meta && <span className="max-w-[55%] truncate text-[12px] text-ink/50">{it.meta}</span>}
           {it.on !== undefined && (
-            <span aria-hidden className={cn("relative h-[18px] w-[30px] shrink-0 rounded-[9px] transition-colors", it.on ? "bg-[#1084fe]" : "bg-ink/[0.14]")}>
+            <span aria-hidden className={cn("relative h-[18px] w-[30px] shrink-0 rounded-[9px] transition-colors", it.on ? (SOLAR ? "bg-[#ddbd89]" : "bg-[#1084fe]") : "bg-ink/[0.14]")}>
               <span className="absolute top-[2px] size-[14px] rounded-full bg-white transition-[left]" style={{ left: it.on ? 14 : 2 }} />
             </span>
           )}

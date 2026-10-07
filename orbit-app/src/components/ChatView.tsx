@@ -36,6 +36,9 @@ import { MacCuaRecoveryActions } from "./MacCuaRecoveryActions";
 import { macCuaPermissionMessage, missingMacCuaPermissions } from "@/lib/mac-cua-permissions";
 import { isProviderSafetyBlock, PROVIDER_SAFETY_GUIDANCE, PROVIDER_SAFETY_HELP_URL } from "../../shared/provider-safety";
 import { TurnPresence } from "./TurnPresence";
+import { SolarTurnMeta } from "@/orbit/SolarTurnMeta";
+
+const JARVIS_SOLAR = import.meta.env.VITE_JARVIS_SOLAR === "true";
 import { showToolCallsEnabled, skillAuthoringEnabled } from "@/lib/feature-flags";
 import { MAUS_COLORS } from "@/lib/mascot";
 import { peerLine, type PeerLine } from "@/lib/peer-message";
@@ -76,7 +79,7 @@ import { TurnNarrationRun } from "./TurnNarrationRun";
 import { webhookMessageView } from "@/lib/webhook-message";
 import { splitTranscriptAttachments } from "@/lib/composer-attachments";
 import { BOTTOM_FOLLOW_THRESHOLD, shouldResumeBottomFollow, useBottomFollowResize } from "@/lib/bottom-follow";
-import { useComposerDockPad } from "@/lib/composer-dock";
+import { TRANSCRIPT_GAP, useComposerDockPad } from "@/lib/composer-dock";
 import {
   TRANSCRIPT_WINDOW_SIZE,
   expandWindowStart,
@@ -588,6 +591,7 @@ function Bubble({
           {formatTime(message.at)}
         </span>
       </div>
+      {JARVIS_SOLAR && isLastBotText && !user && !bot.busy && <SolarTurnMeta bot={bot} message={message} />}
       {savedMemory !== undefined && (
         <button
           type="button"
@@ -996,6 +1000,7 @@ export function ChatView({ bot: profile, panel }: { bot: Bot; panel?: ReactNode 
   const transcriptRef = useRef<HTMLDivElement>(null);
   const composerDockRef = useRef<HTMLDivElement>(null);
   const composerDock = useComposerDockPad(composerDockRef);
+  const solarChat = import.meta.env.VITE_JARVIS_SOLAR === 'true';
 
   const stream = useStreaming();
   const streaming = stream.streaming[bot.threadId];
@@ -1330,6 +1335,8 @@ export function ChatView({ bot: profile, panel }: { bot: Bot; panel?: ReactNode 
       <div
         ref={scrollRef}
         className="h-full overflow-x-hidden overflow-y-auto overscroll-y-contain px-1.5 [overflow-anchor:none] [mask-image:linear-gradient(to_bottom,transparent_0,black_28px)]"
+        data-chat-scroll
+        style={solarChat ? { height: `calc(100% - ${composerDock.height}px - var(--orbit-offer-pad, 0px))`, scrollbarGutter: 'stable' } : undefined}
         onPointerDown={(e) => {
           // grabbing the scrollbar is a scroll gesture too — the lane lives
           // past the content box (clientWidth excludes it)
@@ -1364,7 +1371,7 @@ export function ChatView({ bot: profile, panel }: { bot: Bot; panel?: ReactNode 
           ref={transcriptRef}
           className="flex w-full flex-col gap-2.5 pt-5"
           // --orbit-offer-pad: a file offer docked above the composer takes room too
-          style={{ paddingBottom: `calc(${composerDock.pad} + var(--orbit-offer-pad, 0px))` }}
+          style={{ paddingBottom: solarChat ? TRANSCRIPT_GAP : `calc(${composerDock.pad} + var(--orbit-offer-pad, 0px))` }}
           role="log"
           // off: a polite log re-reads every tick and chip while the bot
           // works; TranscriptAnnouncer below speaks once when it is done

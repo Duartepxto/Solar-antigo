@@ -1,4 +1,5 @@
 import type { OrbitBot, OrbitModel, Point } from './model';
+import { assignSolarSkins, loadSolarSkins, saveSolarSkins, type SolarSkinMap } from './solar-skins';
 
 export type SolarSkin = 'mercury' | 'venus' | 'earth' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
 export type SolarMoonSkin = 'moon-silver' | 'moon-ice' | 'moon-volcanic' | 'moon-sand' | 'moon-crater';
@@ -9,8 +10,10 @@ export interface SolarNode {
 export interface SolarLayout { version: 1; offsets: Record<string, Point> }
 export const SOLAR_LAYOUT_KEY = 'jarvis.solar.layout.v1';
 
-/** Existing Jarvis takes precedence; the built-in assistant otherwise occupies the sun. */
-export function solarNodes(model: OrbitModel): SolarNode[] {
+/** Existing Jarvis takes precedence; the built-in assistant otherwise occupies the sun.
+ * Skins come from `skins` (pure, nothing saved); without it, from the saved
+ * identities, and any newly given skin is saved so the agent keeps it for life. */
+export function solarNodes(model: OrbitModel, skins?: SolarSkinMap): SolarNode[] {
   const sun = model.bots.find(bot => /^jarvis(?:\s|$)/i.test(bot.name)) ?? model.orbitAgent ?? null;
   const result: SolarNode[] = [{ id: sun?.id ?? 'jarvis-home', bot: sun, parentId: null, kind: 'sun', name: 'Jarvis', team: '', color: '#ffc27a' }];
   const placed = new Set(sun ? [sun.id] : []);
@@ -29,10 +32,24 @@ export function solarNodes(model: OrbitModel): SolarNode[] {
   for (const bot of model.bots) if (!placed.has(bot.id)) {
     result.push({ id: bot.id, bot, parentId: result[0].id, kind: 'planet', name: bot.name, team: '', color: bot.color });
   }
-  const skins: SolarSkin[] = ['mercury','venus','earth','mars','jupiter','saturn','uranus','neptune'];
-  const moons: SolarMoonSkin[] = ['moon-silver','moon-ice','moon-volcanic','moon-sand','moon-crater'];
-  let index = 0, moonIndex = 0;
-  return result.map(node => node.kind === 'planet' ? { ...node, skin: skins[index++ % skins.length] } : node.kind === 'moon' ? { ...node, moonSkin: moons[moonIndex++ % moons.length] } : node);
+  const stored = skins ?? loadSolarSkins();
+  const assigned = assignSolarSkins(result.filter(node => node.kind === 'planet').map(node => node.id), result.filter(node => node.kind === 'moon').map(node => node.id), stored);
+  if (!skins && assigned !== stored) saveSolarSkins(assigned);
+  return result.map(node => node.kind === 'planet' ? { ...node, skin: assigned.planets[node.id] } : node.kind === 'moon' ? { ...node, moonSkin: assigned.moons[node.id] } : node);
+}
+
+const NEWCOMER_ID = '\u0000solar-newcomer';
+/** The body a bot created now would become (joining `section`, or no team) and the
+ * exact skin it would get: the creation preview shows this, and the map then agrees. */
+export function solarNewcomer(model: OrbitModel, section?: string | null, skins?: SolarSkinMap): { kind: 'planet' | 'moon'; skin: SolarSkin | SolarMoonSkin } {
+  const key = section?.trim() ?? '';
+  const newcomer = { id: NEWCOMER_ID, name: '', color: '#9aa0aa', teamKey: key } as OrbitBot;
+  // A new bot sorts last on the map (see buildModel's order), so it joins the end of its team.
+  const teams = model.teams.some(team => team.key === key)
+    ? model.teams.map(team => team.key === key ? { ...team, memberIds: [...team.memberIds, NEWCOMER_ID] } : team)
+    : [...model.teams, { key, name: key, color: newcomer.color, chiefId: null, coordinatorId: null, memberIds: [NEWCOMER_ID], loose: key === '' }];
+  const node = solarNodes({ ...model, bots: [...model.bots, newcomer], teams }, skins ?? loadSolarSkins()).find(candidate => candidate.id === NEWCOMER_ID);
+  return node?.kind === 'moon' ? { kind: 'moon', skin: node.moonSkin ?? 'moon-silver' } : { kind: 'planet', skin: node?.skin ?? 'earth' };
 }
 
 export function loadSolarLayout(): SolarLayout {

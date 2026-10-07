@@ -41,7 +41,7 @@ function restoreMemory(botId: string, memory: NonNullable<TeamBackup["bots"][num
 
 /** Preserve readable history without importing executable cards, live queue
  * entries, approval requests, local paths or provider session handles. */
-function messageText(message: Message): string {
+export function messageText(message: Message): string {
   const parts = [message.text ?? ""];
   if (message.card) parts.push(message.card.title, message.card.subtitle, ...message.card.options, message.card.answered ?? "");
   if (message.tool) parts.push(`[${message.tool.name}${message.tool.ok === false ? ": failed" : ""}]`);
@@ -52,8 +52,9 @@ function messageText(message: Message): string {
   return parts.filter(Boolean).join("\n");
 }
 
-export function createTeamBackup(store: Store, routines: Routine[], name: string): TeamBackup {
-  const botIds = new Set(store.bots.filter((bot) => bot.system !== "orbit").map((bot) => bot.id));
+export function createTeamBackup(store: Store, routines: Routine[], name: string, onlyBotId?: string): TeamBackup {
+  const exportedBots = store.bots.filter((bot) => bot.system !== "orbit" && (!onlyBotId || bot.id === onlyBotId));
+  const botIds = new Set(exportedBots.map((bot) => bot.id));
   const warnings: string[] = [];
   const history = (record: BotRecord | GroupRecord): BackupTask[] => {
     const tasks = record.tasks?.length ? record.tasks : [{ threadId: record.threadId, title: "Conversation", createdAt: record.createdAt }];
@@ -84,7 +85,7 @@ export function createTeamBackup(store: Store, routines: Routine[], name: string
       })),
     }));
   };
-  const groups = store.groups.map((group) => {
+  const groups = (onlyBotId ? [] : store.groups).map((group) => {
     const memberIds = group.memberIds.filter((id) => botIds.has(id));
     if (memberIds.length !== group.memberIds.length) warnings.push(`Room “${group.name}” contains deleted bots. Its conversation is included with the remaining members.`);
     return {
@@ -105,7 +106,7 @@ export function createTeamBackup(store: Store, routines: Routine[], name: string
     format: "orbit.backup", version: 1, name, exportedAt: Date.now(),
     warnings,
     // the Orbit agent is part of the app, not the team; its history spans every bot
-    bots: store.bots.filter((bot) => bot.system !== "orbit").map((bot) => ({
+    bots: exportedBots.map((bot) => ({
       key: bot.id, name: bot.name, title: bot.title, description: bot.description, soul: bot.soul,
       section: bot.section, color: bot.color,
       mascotExpression: bot.mascotExpression ?? undefined, mascotBody: bot.mascotBody ?? undefined,

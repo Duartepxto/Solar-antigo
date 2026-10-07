@@ -13,3 +13,13 @@ it('accepts bounded mono PCM and rejects malformed, stereo, binary and oversized
   const stereo=wav();stereo.writeUInt16LE(2,22);expect(()=>validateSolarWav(stereo.toString('base64'))).toThrow('mono');
   const wrongRate=wav();wrongRate.writeUInt32LE(48000,24);expect(()=>validateSolarWav(wrongRate.toString('base64'))).toThrow('16 kHz');
 });
+it('rejects inconsistent container sizes, byte rates and sample alignment', () => {
+  for (const [offset, value] of [[4, 1], [28, 1], [32, 1], [40, 1]] as const) {
+    const data = wav();
+    if (offset === 32) data.writeUInt16LE(value, offset); else data.writeUInt32LE(value, offset);
+    expect(() => validateSolarWav(data.toString('base64'))).toThrow('PCM WAV');
+  }
+  const tooLong = Buffer.alloc(928046); wav().copy(tooLong, 0, 0, 44);
+  tooLong.writeUInt32LE(tooLong.length - 8, 4); tooLong.writeUInt32LE(tooLong.length - 44, 40);
+  expect(() => validateSolarWav(tooLong.toString('base64'))).toThrow('29 seconds');
+});

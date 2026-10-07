@@ -286,7 +286,7 @@ class ProfileRulesTest {
         )
         assertEquals(
             "Your computer's built-in voices need no key, and it reports none it can use. " +
-                "Switch the voice engine in Orbit on the computer to turn speech back on.",
+                "Switch the voice engine in Solar on the computer to turn speech back on.",
             ProfileRules.voiceCopy(noVoices).footer,
         )
 
@@ -364,7 +364,7 @@ class ProfileRulesTest {
             ProfileRules.voiceCopy(unconfigured).unconfiguredNotice,
         )
         assertEquals(
-            "Add the shared Fish Audio API key in Orbit on the computer. " +
+            "Add the shared Fish Audio API key in Solar on the computer. " +
                 "The key is never returned to this phone.",
             ProfileRules.voiceCopy(unconfigured).footer,
         )
@@ -385,7 +385,7 @@ class ProfileRulesTest {
             ProfileRules.voiceCopy(noServer).unconfiguredNotice,
         )
         assertEquals(
-            "Add the address of your Chatterbox server in Orbit on the computer to turn " +
+            "Add the address of your Chatterbox server in Solar on the computer to turn " +
                 "speech back on.",
             ProfileRules.voiceCopy(noServer).footer,
         )

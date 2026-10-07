@@ -379,6 +379,8 @@ export function frameForMember(payload: Record<string, unknown>, ctx: FrameConte
   const str = (value: unknown) => (typeof value === "string" ? value : "");
   const field = (key: string) => (payload[key] && typeof payload[key] === "object" ? payload[key] as Record<string, unknown> : {});
   switch (kind) {
+    case "agent.transfer":
+      return visible.bot(str(payload.from)) && visible.bot(str(payload.to)) ? payload : undefined;
     case "sections": {
       const sections = Array.isArray(payload.sections) ? payload.sections.filter((s): s is string => typeof s === "string") : [];
       return { ...payload, sections: visible.sections(sections) };

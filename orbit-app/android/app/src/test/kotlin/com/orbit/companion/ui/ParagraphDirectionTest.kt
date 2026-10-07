@@ -308,7 +308,7 @@ class ParagraphDirectionTest {
     }
 
     private companion object {
-        /** "Welcome to Orbit" — strong RTL from its first letter. */
+        /** "Welcome to Solar" — strong RTL from its first letter. */
         const val ARABIC = "مرحبا بك في أوبن ماوس"
     }
 }

@@ -7,6 +7,8 @@ import { cn } from "@/lib/cn";
 const ACTIVE = 18;
 const DOT = 6;
 const GAP = 5;
+// the current step: Orbit's green, Solar's gold
+const ACTIVE_FILL = import.meta.env.VITE_JARVIS_SOLAR === "true" ? "bg-[#ddbd89]" : "bg-[#3ee09a]";
 
 export function ProgressDots({
   items,
@@ -31,7 +33,7 @@ export function ProgressDots({
       {items.map((item, i) => {
         const dot = (
           <span
-            className={cn("block h-1.5 rounded-[3px] transition-[width] duration-[250ms]", i === index ? "bg-[#3ee09a]" : "bg-ink/25")}
+            className={cn("block h-1.5 rounded-[3px] transition-[width] duration-[250ms]", i === index ? ACTIVE_FILL : "bg-ink/25")}
             style={{ width: i === index ? ACTIVE : DOT }}
           />
         );

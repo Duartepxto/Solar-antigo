@@ -79,6 +79,11 @@ interaction.
 
 ## Look
 
+- Preserve the approved Solar map. The owner rejected the added connected-app
+  strip and shortcut (2026-10-07); do not reintroduce them or redesign the map
+  from Agents Office. Evaluate references for useful behavior within existing
+  flows. Existing apps settings remain the place to manage connections.
+
 - Use Solar's tokens, never OpenMausBot's: text `text-ink`, `text-ink/55`
   (secondary), `text-ink/40` (tertiary); fills `bg-ink/[0.04]`–`[0.1]`;
   borders `border-ink/[0.1]`; surfaces `bg-panel`; danger `#ff8a96` (text) and
@@ -172,7 +177,53 @@ fixes come across; its interface doesn't.
 - A go-ahead from Pilot is the owner's: the workers act on it. Nothing is
   pushed without a yes, one push at a time, as a fast-forward of `main`.
 
+## Solar on Android and connection particles (owner, 2026-10-06)
+
+- Android uses Solar's own visual identity, rather than the inherited client:
+  dark graphite space, warm gold controls, local Manrope, Jarvis as the sun,
+  and the other agents as celestial bodies. The same agent appears on the map,
+  in its conversation and in selectors. The home map is the default; search,
+  thread management, approvals and existing transport remain available.
+- Persistent connections in the main map are lines of particles, never dashed
+  strokes. Preserve communication animations, data packets, sender colours,
+  arrival effects, relays, speaking and working states.
+- Mobile adapts the same world for an upright screen and keeps the exact
+  selected conversation without changing the desktop's active thread.
+- Android calls are foreground, turn-based: capture on the phone, bounded local
+  Whisper transcription on the computer, then speech on the phone. No simultaneous
+  audio or automatic replay after connection loss. Backgrounding, leaving the
+  chat or changing computer releases audio and ends the call.
+- The owner chose access outside the home through the existing private
+  Tailscale connection. Do not substitute a public tunnel or router port forward.
+- Physical phone and real microphone checks were deferred by the owner. Keep
+  those acceptance items pending; simulated tests do not complete them.
+
 ## Keeping this file
+
+- Dictation languages are selectable in Voice settings, saved per device for
+  all agents, independently of the Windows/interface language. Default to
+  Portuguese and English. One selection pins the local recognition language;
+  multiple selections use automatic detection for mixed speech. Browser
+  fallback uses the first selected language and must disclose this limitation
+  (2026-10-07).
+
+- Dictation must be available in Solar's conversation composer on Windows,
+  including Jarvis, through the same Solar voice pipeline as the map's mic.
+  Keep dictated text editable before sending; keep Stop reachable while
+  listening and support Escape cancellation. The conversation scrollbar
+  must end above the composer and track its measured height (2026-10-07).
+
+- Planets must be portable between the owner's PCs using a private file with
+  stable agent identity, instructions, all memory documents and conversations
+  (owner, 2026-10-07). Export/import lives in the planet's Memory panel. Preview
+  and confirm updates to an existing identity; preserve local conversation
+  branches and local accounts/tools. Never treat this as automatic sync or
+  transfer a provider process/session or account credentials.
+
+- Peer requests use the recipient's currently selected conversation model,
+  including its effort setting, for new and idle reused pair conversations.
+  They must not silently revert to an old bot default (owner, 2026-10-07).
+  Preserve conversation identity, history, permissions and ongoing turns.
 
 When the owner states a lasting preference about how Solar looks or behaves,
 it goes in this file in the same change that applies it, so the next piece of

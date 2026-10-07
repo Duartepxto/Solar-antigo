@@ -55,7 +55,7 @@ class PairingClientTest {
         assertEquals(
             "Couldn't reach this computer through any available route " +
                 "(http://mac.tail1234.ts.net:8810). Keep Phone access turned on in " +
-                "Orbit, then try again.",
+                "Solar, then try again.",
             error.message,
         )
         assertEquals(listOf("mac.tail1234.ts.net"), stub.requests.map { it.url.host })

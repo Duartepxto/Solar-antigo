@@ -9,6 +9,7 @@ import test from "node:test";
 import { EventEmitter } from "node:events";
 import {
   createMenuBar, createOrbitSummon, displayAt, hotkeyIdsFor, islandFrame, sideTalkFrame, islandHoverRect, shellSupported, voiceSupported, TALK_SIZE,
+  islandCornerBounds, ISLAND_MARGIN, ISLAND_OPEN_SIZE, ISLAND_PILL_SIZE,
 } from "./orbit-summon.mjs";
 import { createSystemTray } from "./system-tray.mjs";
 
@@ -81,7 +82,7 @@ function icon(path) {
 const primary = { id: 10, bounds: { x: 0, y: 0, width: 1920, height: 1080 }, workArea: { x: 0, y: 0, width: 1920, height: 1040 }, size: { width: 1920, height: 1080 }, scaleFactor: 1 };
 const topTaskbar = { id: 11, bounds: { x: 1920, y: 0, width: 2560, height: 1440 }, workArea: { x: 1920, y: 48, width: 2560, height: 1392 }, size: { width: 2560, height: 1440 }, scaleFactor: 1 };
 
-function fixture({ platform = "win32", hostTray = null, displays = [primary, topTaskbar], mainVisible = false } = {}) {
+function fixture({ platform = "win32", hostTray = null, displays = [primary, topTaskbar], mainVisible = false, solar = false } = {}) {
   fs.mkdirSync(scratchRoot, { recursive: true });
   const userData = fs.mkdtempSync(path.join(scratchRoot, `orbit-${platform}-`));
   FakeWindow.all = [];
@@ -93,6 +94,7 @@ function fixture({ platform = "win32", hostTray = null, displays = [primary, top
   let all = displays;
   let first = displays[0];
   const cursor = { x: 10, y: 10 };
+  const opened = [];
   const screen = Object.assign(new EventEmitter(), {
     getAllDisplays: () => all,
     getPrimaryDisplay: () => first,
@@ -133,6 +135,7 @@ function fixture({ platform = "win32", hostTray = null, displays = [primary, top
     userData, preloadPath: "preload.cjs", iconPath: "app-icon.png",
     rendererOrigin: () => "http://127.0.0.1:1", rendererArguments: () => [],
     showMainWindow() {}, openMainSettings() {}, openThread() {}, isMainWindowVisible: () => mainVisible, quit() {},
+    solar, openPage: (page) => opened.push(page),
     localOnly: (_channel, fn) => fn,
     notches: async () => { macCalls.push("screenNotches"); return new Map(); },
     platform,
@@ -147,7 +150,8 @@ function fixture({ platform = "win32", hostTray = null, displays = [primary, top
     summon.dispose();
     fs.rmSync(userData, { recursive: true, force: true });
   };
-  return { summon, surface, invoke, handlers, registered, macCalls, screen, setDisplays, cleanup };
+  const moveCursor = (point) => Object.assign(cursor, point);
+  return { summon, surface, invoke, handlers, registered, macCalls, screen, setDisplays, cleanup, opened, moveCursor };
 }
 
 const settle = () => new Promise((resolve) => setImmediate(resolve));
@@ -160,6 +164,77 @@ test("the shell runs on macOS and Windows, talk mode only where there is a voice
   assert.equal(voiceSupported("win32"), true);
   assert.deepEqual(hotkeyIdsFor("darwin"), ["quick", "talk"]);
   assert.deepEqual(hotkeyIdsFor("win32"), ["quick", "talk"]);
+  // Jarvis's island (Alt+J) is Solar's alone
+  assert.deepEqual(hotkeyIdsFor("win32", { solar: true }), ["quick", "talk", "island"]);
+  assert.deepEqual(hotkeyIdsFor("darwin", { solar: true }), ["quick", "talk", "island"]);
+});
+
+test("the island's window sits in the top-right corner of the work area, 12 px in", () => {
+  assert.equal(ISLAND_MARGIN, 12);
+  assert.deepEqual(islandCornerBounds(primary.workArea), { x: 1920 - 300 - 12, y: 12, ...ISLAND_PILL_SIZE });
+  assert.deepEqual(islandCornerBounds(primary.workArea, ISLAND_OPEN_SIZE), { x: 1920 - 380 - 12, y: 12, ...ISLAND_OPEN_SIZE });
+  // under a taskbar docked at the top, on a display to the right
+  assert.deepEqual(islandCornerBounds(topTaskbar.workArea, ISLAND_OPEN_SIZE), { x: 1920 + 2560 - 380 - 12, y: 48 + 12, ...ISLAND_OPEN_SIZE });
+  // never wider or taller than the work area allows
+  assert.deepEqual(islandCornerBounds({ x: 0, y: 0, width: 320, height: 400 }, ISLAND_OPEN_SIZE), { x: 12, y: 12, width: 296, height: 376 });
+});
+
+test("Solar: Alt+J toggles the island in the top-right corner of the display under the pointer", async () => {
+  const { summon, surface, invoke, registered, opened, moveCursor, cleanup } = fixture({ solar: true });
+  summon.start();
+  await settle();
+  assert.deepEqual([...registered.keys()], ["Alt+O", "Alt+T", "Alt+J"]);
+  assert.equal(summon.state().hotkeys.island.registered, true);
+  const island = surface("island");
+  assert.ok(island, "made at startup, like the quick bar, so Alt+J opens at once");
+  assert.equal(island.isVisible(), false);
+  assert.equal(island.options.frame, false);
+  assert.equal(island.options.transparent, true);
+  assert.equal(island.options.skipTaskbar, true);
+
+  moveCursor({ x: 2500, y: 600 });
+  registered.get("Alt+J")();
+  assert.equal(island.isVisible(), true);
+  assert.equal(island.focused, true, "focused, so it can be typed in and closes on a click elsewhere");
+  assert.deepEqual(island.level, ["floating", 0], "always on top");
+  assert.deepEqual(island.getBounds(), islandCornerBounds(topTaskbar.workArea, ISLAND_PILL_SIZE), "the pill, top right of the display under the pointer");
+  assert.ok(island.sent.some(([channel]) => channel === "orbit-shell:island-shown"));
+
+  // the page opens the pill into its panel: the window grows, still in the corner
+  invoke("orbit-shell:island-open", island, true);
+  assert.deepEqual(island.getBounds(), { x: 1920 + 2560 - 380 - 12, y: 60, ...ISLAND_OPEN_SIZE });
+  invoke("orbit-shell:island-open", island, false);
+  assert.deepEqual(island.getBounds(), islandCornerBounds(topTaskbar.workArea, ISLAND_PILL_SIZE));
+  // only the island's own page moves it
+  invoke("orbit-shell:island-open", surface("quick"), true);
+  assert.deepEqual(island.getBounds(), islandCornerBounds(topTaskbar.workArea, ISLAND_PILL_SIZE));
+
+  // a shared page opens in the app, and the island goes
+  invoke("orbit-shell:open-page", island, { key: "m1:/p.html", botId: "b1", threadId: "t1", messageId: "m1", href: "/p.html", file: "p.html", kind: "html", extra: 1 });
+  assert.deepEqual(opened, [{ key: "m1:/p.html", botId: "b1", threadId: "t1", messageId: "m1", href: "/p.html", file: "p.html", kind: "html" }]);
+  assert.equal(island.isVisible(), false);
+  invoke("orbit-shell:open-page", island, { botId: 3 });
+  assert.equal(opened.length, 1, "a malformed page is ignored");
+
+  // Esc (the page) hides it; a blur right after showing is the window settling
+  registered.get("Alt+J")();
+  island.emit("blur");
+  assert.equal(island.isVisible(), true);
+  invoke("orbit-shell:island-hide", island);
+  assert.equal(island.isVisible(), false);
+  cleanup();
+});
+
+test("Orbit has no island: no Alt+J, no window", async () => {
+  const { summon, surface, registered, cleanup } = fixture();
+  summon.start();
+  await settle();
+  assert.equal(registered.has("Alt+J"), false);
+  assert.equal(surface("island"), undefined);
+  summon.showIsland();
+  assert.equal(surface("island"), undefined);
+  assert.equal(summon.state().hotkeys.island.registered, false);
+  cleanup();
 });
 
 test("macOS: talk's island hangs from the top edge, over the notch, with the menu bar as its band", () => {
@@ -184,7 +259,7 @@ test("Windows: talk stays hidden until summoned, including after display changes
 });
 
 test("Windows: Alt+T summons the voice pill at the right centre of the work area", async () => {
-  const { summon, surface, handlers, registered, cleanup } = fixture();
+  const { summon, surface, registered, cleanup } = fixture();
   summon.start();
   await settle();
   assert.deepEqual([...registered.keys()], ["Alt+O", "Alt+T"]);

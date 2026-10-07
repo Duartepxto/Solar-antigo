@@ -14,6 +14,7 @@ import {
   type ReactNode,
 } from "react";
 import type { BotVisibility, CloudBackend, EffortLevel, ServerFrame, GroupThreadUsage, SteerQueueReason } from "../../shared/wire";
+import { createSolarTransferReceiver } from "../orbit/solar-communication";
 import type { TurnDigest } from "../../shared/digest";
 import type { ModelVariantOption, RuntimeEvent } from "../../shared/runtime-events";
 import type { MausColor, MausMotion } from "@/lib/mascot";
@@ -3542,6 +3543,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // ── initial load + SSE fold ──────────────────────────────────────────
   useEffect(() => {
     let alive = true;
+    const receiveTransfer = createSolarTransferReceiver(transfer =>
+      window.dispatchEvent(new CustomEvent("jarvis-solar-transfer", { detail: transfer })));
     type PeripheralKey = "instances" | "config" | "routines" | "webhooks";
     type PeripheralPart = {
       key: PeripheralKey;
@@ -3721,6 +3724,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           break;
         case "bot.queued":
           rawDispatch({ type: "botQueues", queues: frame.queues });
+          break;
+        case "agent.transfer":
+          receiveTransfer(frame);
           break;
         case "message": {
           rawDispatch({ type: "messageAdded", threadId: frame.threadId, message: frame.message as Message });

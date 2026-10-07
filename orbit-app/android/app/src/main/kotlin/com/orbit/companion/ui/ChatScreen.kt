@@ -961,6 +961,7 @@ private fun LoadedChat(
                 )
             }
 
+            SolarCallControls(chat, blocked = showingPlus || showingTasks || showingProfile || dictationLocked || sendingMessage || preparingAttachments)
             Composer(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)

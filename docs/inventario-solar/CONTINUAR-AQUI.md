@@ -1,7 +1,19 @@
 # Continuar o Solar
 
-Última sessão: **6 de outubro de 2026**. O utilizador pediu para guardar todo o
-trabalho no GitHub e continuar mais tarde.
+Última continuação: **7 de outubro de 2026**. Ler primeiro o
+[estado do ditado e scroll](DITADO-E-SCROLL-07-10-2026.md): Windows 0.1.95
+instalado, microfone no chat e barra de scroll limitada acima do compositor. O
+estado **Windows 0.1.93**: faixa de apps retirada a pedido do utilizador;
+manter o mapa aprovado e privilegiar funcionalidades. O
+[guia das ligações visíveis](LIGACOES-VISIVEIS-07-10-2026.md) para a versão
+Windows 0.1.92 e o
+[guia dos planetas portáteis](PLANETAS-PORTATEIS-07-10-2026.md) para a versão
+Windows 0.1.91, com exportação/importação manual de memória e conversas, e o
+[estado da continuação](CONTINUACAO-07-10-2026.md): Windows 0.1.88 instalado,
+Android Solar 1.0.1 preparado, partículas e chamada por turnos implementadas.
+O utilizador adiou os testes físicos e a recuperação da chave original.
+As alterações desta continuação estão locais; publicação depende da confirmação
+exigida em `orbit-app/PRODUCT.md`. O estado de 6/10 abaixo é histórico.
 
 Código e relatórios: [branch codex/solar-android-and-chat](https://github.com/Duartepxto/Solar/tree/codex/solar-android-and-chat).
 APK corrigido: [pré-lançamento Android de 6/10](https://github.com/Duartepxto/Solar/releases/tag/solar-android-preview-2026-10-06).

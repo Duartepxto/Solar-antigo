@@ -1,5 +1,11 @@
 @font-face { font-family: 'Jarvis Manrope'; src: url('/solar/fonts/Manrope-Variable.ttf') format('truetype'); font-weight: 200 800; font-style: normal; font-display: swap; }
-.orbit-root[data-jarvis-solar] {
+/* Tokens live on the document as well, so dialogs, the command palette and the
+   tours (rendered outside .orbit-root) speak Solar too, not Orbit's blue/Inter. */
+:root[data-solar],.orbit-root[data-jarvis-solar] {
+  --font-sans: 'Jarvis Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-focus: #ddbd89;
+  --color-menu: #171b21;
+  --color-card: #171b21;
   --solar-background: #050607;
   --solar-focus-edge: #050607;
   --color-app: #050607;
@@ -28,19 +34,18 @@
 .solar-brand > span { display: flex; flex-direction: column; gap: 3px; font-size: 15px; font-weight: 550; letter-spacing: -.02em; }
 .solar-brand small { font-size: 10px; font-weight: 400; color: #a4a8b0; letter-spacing: 0; }
 .solar-header-actions { display: flex; align-items: center; gap: 10px; }
-.solar-glass { background: linear-gradient(135deg,#ffffff19,transparent 42%,#ffffff06 75%,#ffffff10),rgba(19,23,29,.62); border: 1px solid #ffffff23; border-top-color:#ffffff42; border-bottom-color:#ffffff12; -webkit-backdrop-filter: blur(22px) saturate(1.65); backdrop-filter: blur(22px) saturate(1.65); box-shadow: inset 0 1px 1px #ffffff1c,inset 0 -1px 1px #0005,0 10px 28px #0005; }
 .solar-header button { cursor: pointer; color: #d2d5dc; }
 .solar-header button:hover { background-color: rgba(255,255,255,.06); color: #fff; }
 .solar-search { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 14px; border-radius: 22px; font-size: 12px; }
 .solar-search kbd { color: #a4a9b3; margin-left: 45px; font: inherit; font-size: 9px; }
 .solar-icon-button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; }
 .solar-create-wrap { position: relative; }
-.solar-create-menu { width: 285px; padding: 8px; background: linear-gradient(155deg,#21242aee,#111319f7); backdrop-filter: blur(32px); border-color: #ffffff25; }
+.solar-create-menu { width: 285px; padding: 8px; }
 .solar-create-menu button { min-height: 66px; }
 .solar-create-menu button > span:nth-child(2) { display:flex;flex:1;flex-direction:column;gap:5px; }
 .solar-create-menu small { color:#a8afbc; font-size:11px; font-weight:400; }
 .solar-create-icon { display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;border:1px solid #dcc59a28;border-radius:11px;color:#e7cca4;background:#dcc59a0d; }
-.solar-quick-settings { width:270px;padding:14px 17px;background:linear-gradient(155deg,#21242aee,#111319f7);backdrop-filter:blur(32px);border-color:#ffffff25; }
+.solar-quick-settings { width:270px;padding:14px 17px; }
 .solar-quick-settings > strong { display:block;font-size:13px;font-weight:500;margin-bottom:10px;color:#f0f1f4; }
 .solar-quick-settings label { display:flex;align-items:center;justify-content:space-between;min-height:44px;gap:15px;font-size:12px;color:#c7ced8;cursor:pointer; }
 .solar-quick-settings input[type=checkbox] { appearance:none;position:relative;width:32px;height:19px;flex-shrink:0;background:#ffffff20;border:1px solid #ffffff16;border-radius:12px;cursor:pointer;transition:background 180ms; }
@@ -51,16 +56,14 @@
 .solar-quick-settings .solar-glow-setting { flex-direction:column;align-items:stretch;gap:10px;padding:12px 0; }
 .solar-glow-setting input { width:100%;accent-color:#d4b787; }
 .solar-quick-settings .solar-all-settings { margin-top:8px;border-top:1px solid #ffffff13;border-radius:0;padding:14px 0 2px;justify-content:space-between;color:#aeb6c3;font-size:11px; }
-.solar-menu { position: absolute; top: calc(100% + 10px); right: 0; width: 200px; padding: 6px; border: 1px solid #ffffff23; border-top-color:#ffffff3d; border-radius: 17px; background: linear-gradient(135deg,#ffffff0e,transparent 55%),rgba(23,26,32,.9); -webkit-backdrop-filter:blur(26px) saturate(1.65); backdrop-filter:blur(26px) saturate(1.65); box-shadow: inset 0 1px 1px #ffffff12,0 12px 36px #0008; z-index: 25; }
+.solar-menu { position: absolute; top: calc(100% + 10px); right: 0; width: 200px; padding: 6px; border-radius: 20px; z-index: 25; transform-origin: top right; }
 .solar-menu button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; padding: 11px 12px; border-radius: 10px; color: #e5e8ef; font-size: 12px; text-align: left; }
 .solar-menu button:hover, .solar-menu button[aria-pressed=true] { background: #ffffff0c; }
 .solar-map { position: absolute; inset: 0; background: var(--solar-background); overflow: hidden; touch-action: none; user-select: none; color: #eef0f3; cursor: grab; }
 .solar-map:active { cursor: grabbing; }
 .solar-starfield { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(circle at 13% 25%,#a6b0c6 0 .7px,transparent 1px),radial-gradient(circle at 72% 18%,#8d9aac 0 .6px,transparent 1px),radial-gradient(circle at 81% 68%,#91999e 0 .6px,transparent 1px),radial-gradient(circle at 31% 81%,#777f88 0 .5px,transparent 1px),radial-gradient(circle at 58% 39%,#53585e 0 .6px,transparent 1px); background-size: 430px 380px,590px 510px,670px 590px,550px 570px,790px 450px; opacity: .42; }
 .solar-orbits { position: absolute; inset: 0; pointer-events: none; }
-.solar-link { animation:solar-link-stream 2s linear infinite; }
-@keyframes solar-link-stream { to { stroke-dashoffset:-36; } }
-@media(prefers-reduced-motion:reduce) { .solar-link { animation:none; } }
+.solar-connection-particles { width:100%;height:100%; }
 .solar-body-label { text-shadow:0 1px 3px #050607,0 0 5px #050607; }
 .solar-world-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 .solar-summary { position: absolute; top: 15px; left: 31px; display: flex; flex-direction: column; gap: 7px; pointer-events: none; font-size: 12px; font-weight: 500; }
@@ -115,7 +118,8 @@
 .solar-map[data-focused] .solar-body { pointer-events:none; }
 .solar-map[data-focused] .solar-body-label { display:none; }
 .solar-map[data-focused] .solar-body[data-focus-current] .solar-body-label { display:none; }
-.solar-map[data-focused]::after { content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 45%,var(--solar-focus-edge) 85%);pointer-events:none;z-index:3; }
+/* neighbours fade out before they reach the conversation, whatever its width */
+.solar-map[data-focused]::after { content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent calc(100% - var(--solar-chat-w,40%) - 150px),color-mix(in srgb,var(--solar-focus-edge) 92%,transparent) calc(100% - var(--solar-chat-w,40%) + 8px));pointer-events:none;z-index:3; }
 .solar-map-layer { isolation:isolate;z-index:0; }
 .solar-focus { z-index:5; }
 .solar-constellation { position:absolute;inset:0;pointer-events:none; }
@@ -287,24 +291,66 @@
 @media(prefers-reduced-motion:reduce) { .solar-map *, .solar-composer *, .solar-header * { animation: none !important; transition: none !important; } .solar-event { display: none; } }
 @media(prefers-reduced-motion:reduce) { .solar-arc-icon { transition:none; } }
 
-/* Optical glass stays on controls, preserving the open conversation canvas. */
-.solar-glass-filter { position:absolute;pointer-events:none;overflow:hidden; }
-.solar-glass,.solar-menu,.solar-create-menu,.solar-quick-settings {
+/* ── Liquid glass ─────────────────────────────────────────────────────────
+   Three layers, so text is never filtered:
+   ::before  the lens: backdrop refracted at the rim (url filter from
+             liquid-glass.ts, Chromium/Electron), lightly blurred, tinted.
+   ::after   the rim: a 1px light-catching edge plus a glint that follows
+             the pointer.
+   content   untouched, crisp.
+   Thickness is a set of variables: clear (controls), regular (composer),
+   thick (menus and anything holding long text). */
+@property --glass-glint { syntax:'<number>'; inherits:true; initial-value:0; }
+.solar-glass,.solar-menu,.solar-liquid,[data-solar] .orbit-root [data-tour=composer] {
+  --glass-tint: rgba(20,24,31,.26);
+  --glass-blur: 5px;
+  --glass-sat: 1.9;
+  --glass-rim: .5;
   isolation:isolate;
-  background:linear-gradient(155deg,#ffffff0d 0%,#ffffff03 44%,#b4d5ee08 100%),rgba(16,20,26,.36);
-  border:1px solid #d7e8f72b;border-top-color:#ffffff6b;border-bottom-color:#b5cddd2e;
-  -webkit-backdrop-filter:blur(14px) saturate(1.35);backdrop-filter:blur(14px) saturate(1.35);
-  box-shadow:inset 0 1px 1px #ffffff36,inset 1px 0 1px #ffffff1c,inset -1px -1px 1px #a1c9e31a,0 8px 22px #00000045;
+  background:transparent !important;
+  border:1px solid transparent !important;
+  -webkit-backdrop-filter:none !important;backdrop-filter:none !important;
+  box-shadow:0 12px 32px -10px #000a,0 2px 8px -2px #0006 !important;
+  transition:--glass-glint 260ms ease, box-shadow 260ms ease, transform 320ms cubic-bezier(.3,1.5,.5,1);
 }
-.solar-glass::before,.solar-menu::before,.solar-create-menu::before,.solar-quick-settings::before {
-  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
-  background:linear-gradient(115deg,#ffffff12,transparent 25%,transparent 76%,#d2eaff0a);
-  box-shadow:inset 0 0 0 1px #ffffff08;
+.solar-search,.solar-icon-button,.solar-arc-icon { position:relative; }
+:is(.solar-glass,.solar-menu,.solar-liquid,[data-solar] .orbit-root [data-tour=composer])::before {
+  content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:
+    radial-gradient(150px circle at var(--gx,50%) var(--gy,0%),rgb(255 255 255 / calc(var(--glass-glint) * .09)),transparent 70%),
+    linear-gradient(180deg,#ffffff0c,transparent 42%,#ffffff05),
+    var(--glass-tint);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(1.04);
+  backdrop-filter:var(--solar-lens,) blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(1.04);
+  box-shadow:inset 0 1px 1px #ffffff2a,inset 0 -10px 18px -14px #ffffff26,inset 0 0 22px #ffffff08;
 }
-.solar-header-search,.solar-header-create,.solar-header-settings { position:relative; }
-@media(prefers-contrast:more) {
-  .solar-glass,.solar-menu,.solar-create-menu,.solar-quick-settings {background:#161a20;border-color:#d7e8f785;}
-  .solar-glass::before,.solar-menu::before,.solar-create-menu::before,.solar-quick-settings::before {backdrop-filter:none;}
+:is(.solar-glass,.solar-menu,.solar-liquid,[data-solar] .orbit-root [data-tour=composer])::after {
+  content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;z-index:-1;padding:1px;
+  background:
+    radial-gradient(90px circle at var(--gx,50%) var(--gy,0%),rgb(255 255 255 / calc(var(--glass-glint) * .7)),transparent 75%),
+    linear-gradient(155deg,rgb(255 255 255 / calc(var(--glass-rim) + .1)) 0%,rgb(255 255 255 / .1) 24%,rgb(255 255 255 / .04) 55%,rgb(220 236 255 / calc(var(--glass-rim) * .55)) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+}
+:is(.solar-glass,.solar-menu,.solar-liquid,[data-solar] .orbit-root [data-tour=composer]):is(:hover,:focus-within) { --glass-glint:1; }
+/* Thickness */
+.solar-composer,[data-solar] .orbit-root [data-tour=composer] { --glass-tint: rgba(18,22,29,.42); --glass-blur: 9px; }
+.solar-menu,.solar-connection-note,.solar-liquid--thick { --glass-tint: rgba(16,19,25,.7); --glass-blur: 22px; --glass-sat: 1.6; --glass-rim: .38; }
+.solar-composer:focus-within,[data-solar] .orbit-root [data-tour=composer]:focus-within { --glass-rim: .62; box-shadow:0 12px 32px -10px #000a,0 0 0 4px #ddbd8914,0 2px 8px -2px #0006 !important; }
+/* Pressing a glass control squashes it slightly, like a drop. */
+:is(.solar-search,.solar-icon-button,.solar-map-tools button):active { transform:scale(.94); }
+.solar-icon-button:hover,.solar-search:hover { transform:translateY(-1px); }
+/* Menus open with a soft overshoot instead of a fade. No opacity or filter on
+   the menu itself: those would cut the backdrop out of the lens. */
+.solar-menu { animation:solar-glass-open 420ms cubic-bezier(.2,1.35,.4,1) both; }
+.solar-menu > * { animation:solar-glass-content 260ms 70ms ease-out both; }
+.solar-recipient-menu { transform-origin:bottom left; }
+@keyframes solar-glass-open { from { transform:scale(.82,.68) translateY(-6px); } to { transform:none; } }
+@keyframes solar-glass-content { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:none; } }
+@media(prefers-reduced-motion:reduce) { .solar-menu,.solar-menu > * { animation:none; } }
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {
+  :is(.solar-glass,.solar-menu,.solar-liquid,[data-solar] .orbit-root [data-tour=composer])::before { -webkit-backdrop-filter:none;backdrop-filter:none;background:#161a20; }
+  :is(.solar-glass,.solar-menu,.solar-liquid,[data-solar] .orbit-root [data-tour=composer])::after { background:#d7e8f785; }
 }
 
 /* Original Orbit system button composition: bare Lucide icon and three lines. */
@@ -319,25 +365,13 @@
 .solar-original-system-copy small {font-size:11px;color:#ffffff73;overflow:hidden;text-overflow:ellipsis;}
 .solar-original-hover-tool {display:none;font-size:11px;color:#ffffff99;}
 .solar-body:hover .solar-original-hover-tool,.solar-body:focus-visible .solar-original-hover-tool {display:block;}
-/* Text must never be inside an optical filter. Keep only the crisp material
-   rim until backdrop SVG behaviour is consistent across the app browsers. */
-.solar-glass::before,.solar-menu::before,.solar-create-menu::before,.solar-quick-settings::before {
-  -webkit-backdrop-filter:none;backdrop-filter:none;
-}
-.solar-glass,.solar-menu,.solar-create-menu,.solar-quick-settings {
-  -webkit-backdrop-filter:blur(10px) saturate(1.25);backdrop-filter:blur(10px) saturate(1.25);
-}
 .solar-orbit-particle-canvas {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 
 .orbit-root[data-solar-theme="deep-blue"] {--color-app:#040912;--solar-background:radial-gradient(ellipse at 25% 75%,#10273d 0%,#071322 48%,#040912 100%);--solar-focus-edge:#040912;}
 .orbit-root[data-solar-theme="graphite"] {--color-app:#0c0d10;--solar-background:radial-gradient(ellipse at 75% 25%,#292b30 0%,#16181d 50%,#0c0d10 100%);--solar-focus-edge:#0c0d10;}
-.solar-theme-picker {border:0;padding:0 0 12px;margin:0 0 8px;border-bottom:1px solid #ffffff13;display:flex;gap:6px;}
-.solar-theme-picker legend {font-size:11px;color:#aeb6c3;margin-bottom:10px;}
-.solar-quick-settings .solar-theme-picker label {position:relative;flex:1;flex-direction:column;justify-content:center;gap:6px;padding:8px 3px;border:1px solid #ffffff12;border-radius:10px;font-size:10px;}
-.solar-theme-picker input {position:absolute;opacity:0;width:1px;height:1px;}
-.solar-theme-picker label:has(input:checked) {border-color:#d7b685;background:#ffffff08;}
-.solar-theme-picker label:has(input:focus-visible) {outline:2px solid #d7b685;outline-offset:3px;}
-.solar-theme-swatch {width:24px;height:24px;border-radius:50%;border:1px solid #ffffff22;background:#050607;}
+.solar-theme-swatch {width:22px;height:22px;border-radius:50%;border:1px solid #ffffff2a;background:#050607;}
+.solar-range {appearance:none;height:4px;border-radius:2px;background:linear-gradient(90deg,#ddbd89 calc((var(--v,1) - .6) / .8 * 100%),#ffffff1c 0);accent-color:#ddbd89;cursor:pointer;}
+.solar-range::-webkit-slider-thumb {appearance:none;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0009;}
 [data-theme="deep-blue"] .solar-theme-swatch {background:linear-gradient(135deg,#1b4262,#040912);}
 [data-theme="graphite"] .solar-theme-swatch {background:linear-gradient(135deg,#45474e,#0c0d10);}
 
@@ -356,7 +390,35 @@
 .orbit-root[data-jarvis-solar] [data-orbit-new] [hidden] {display:none!important;}
 .orbit-root[data-jarvis-solar] [data-orbit-new] [data-solar-team-catalog]>button {border:0;border-bottom:1px solid #ffffff12;border-radius:0;background:transparent;padding:16px 4px;box-shadow:none;}
 .solar-create-empty {color:#a1a7b3;font-size:13px;padding:12px 0;}
-.solar-appearance .solar-theme-picker label {position:relative;flex:1;display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #ffffff20;border-radius:22px;font-size:12px;cursor:pointer;}
-.solar-appearance-row {display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid #ffffff12;color:#d2d5dc;font-size:13px;}
-.solar-appearance input {accent-color:#d7b685;}
 @media(prefers-reduced-motion:reduce){.solar-link{transition:none;}}
+
+/* ── Tools around the focused agent (settings A: refined original) ─────────
+   Each tool is a small glass orb on its spoke; labels sit outside the ring,
+   mirrored on the left. The open tool turns gold and its spoke goes solid,
+   with a point of light travelling out to it. */
+.solar-constellation .solar-instrument { display:flex;align-items:center;gap:10px;width:max-content;max-width:none;padding:0;border-radius:0;background:none;box-shadow:none;transform:translate(-17px,-50%);text-align:left;animation:solar-instrument-in 460ms calc(var(--i,0) * 28ms + 60ms) cubic-bezier(.2,1.2,.4,1) both; }
+.solar-constellation .solar-instrument[data-side=left] { flex-direction:row-reverse;transform:translate(calc(-100% + 17px),-50%);text-align:right; }
+.solar-constellation .solar-instrument:hover,.solar-constellation .solar-instrument[aria-pressed=true] { background:none; }
+@keyframes solar-instrument-in { from { opacity:0;scale:.8; } to { opacity:1;scale:1; } }
+.solar-instrument-orb { position:relative;display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:50%;color:#e6eaf0;--glass-tint:rgba(22,26,33,.42);--glass-blur:6px;transition:transform 280ms cubic-bezier(.3,1.6,.5,1),color 200ms; }
+.solar-instrument:hover .solar-instrument-orb { transform:scale(1.08);color:#fff;--glass-glint:1; }
+.solar-instrument:active .solar-instrument-orb { transform:scale(.93); }
+.solar-constellation .solar-original-system-copy { max-width:150px;gap:2px; }
+.solar-constellation .solar-original-system-copy strong { font-size:12.5px;font-weight:600;letter-spacing:-.01em;color:#eef0f3; }
+.solar-constellation .solar-original-system-copy small { font-size:11px;color:#9aa2ae;white-space:nowrap; }
+.solar-instrument[data-tone=warning] .solar-original-system-copy small { color:#efbd79; }
+.solar-instrument[data-tone=danger] .solar-original-system-copy small { color:#f5989c; }
+.solar-instrument[aria-pressed=true] .solar-instrument-orb { color:#eac185;--glass-tint:rgba(234,193,133,.14);--glass-rim:.9;box-shadow:0 0 22px -4px #eac18599,0 8px 20px -8px #000a !important; }
+.solar-instrument[aria-pressed=true] .solar-original-system-copy strong { color:#f4dcb5; }
+.solar-instrument[data-live] .solar-instrument-orb { color:#f4dcb5; }
+.solar-instrument:focus-visible { outline:none; }
+.solar-instrument:focus-visible .solar-instrument-orb { outline:2px solid #ddbd89;outline-offset:3px; }
+.solar-instrument-routes path { transition:stroke 220ms,stroke-width 220ms,stroke-opacity 220ms; }
+.solar-instrument-routes path[data-selected],.solar-instrument-routes path[data-live] { stroke:#eac185;stroke-opacity:.85;stroke-width:1.5;stroke-dasharray:none;filter:drop-shadow(0 0 3px #eac18580); }
+.solar-route-light { fill:#fff1d6;filter:drop-shadow(0 0 4px #eac185); }
+@media(prefers-reduced-motion:reduce) { .solar-constellation .solar-instrument { animation:none; } .solar-route-light { display:none; } }
+
+/* Under the last reply: what the turn cost, counted up as it settles. */
+.solar-turn-meta { margin:4px 0 0 2px;font-size:11.5px;color:#7f8794;font-variant-numeric:tabular-nums;animation:solar-turn-meta-in 520ms 120ms cubic-bezier(.2,.8,.2,1) both; }
+@keyframes solar-turn-meta-in { from { opacity:0;transform:translateY(4px); } to { opacity:1;transform:none; } }
+@media(prefers-reduced-motion:reduce) { .solar-turn-meta { animation:none; } }
