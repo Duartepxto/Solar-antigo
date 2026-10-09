@@ -10,8 +10,9 @@
 import { readFileSync } from "node:fs";
 import { appendFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import type { CostSource } from "./model-prices.ts";
+import { LIST_PRICES, ledgerCost, type CostSource } from "./model-prices.ts";
 import { billableFor, type PriceList } from "./prices.ts";
+import { usdToEur, type UsageCurrencyQuote } from "../shared/usage-currency.ts";
 
 /** Who asked for the turn. A person is named by the email they signed in
  * with when the server knows it (email sign-in), else by their device
@@ -46,6 +47,9 @@ export interface UsageRow {
   /** Where costUsd came from. Absent on rows written before estimates
    * existed, which read as reported when they carry a cost. */
   costSource?: CostSource;
+  /** Source of a read-time recovery for an older unpriced, measured turn. */
+  priceSource?: string;
+  priceAsOf?: string;
   trigger: UsageTrigger;
 }
 
@@ -58,7 +62,7 @@ export interface UsageGroup {
   turns: number;
   input: number;
   output: number;
-  cachedInput: number;
+  cachedInput?: number;
   /** Sum of the rows with a cost, reported or estimated; null when none had one. */
   costUsd: number | null;
   /** The part of costUsd that is an estimate; null when none of it is. */
@@ -119,7 +123,7 @@ export function appendUsage(dataDir: string, row: Omit<UsageRow, "at"> & { at?: 
     at: row.at ?? new Date().toISOString(),
     input: clean(row.input),
     output: clean(row.output),
-    ...(typeof row.cachedInput === "number" ? { cachedInput: clean(row.cachedInput) } : {}),
+    ...(typeof row.cachedInput === "number" ? { cachedInput: Math.min(clean(row.cachedInput), clean(row.input)) } : {}),
     ...(promptBytes ? { promptBytes } : {}),
     costUsd: finiteOrNull(row.costUsd),
   };
@@ -175,7 +179,7 @@ function monthsBetween(from: Date, to: Date): string[] {
 }
 
 /** Every row whose time falls inside the range, oldest first. */
-export function readUsage(dataDir: string, range: { from: Date; to: Date }): UsageRow[] {
+export function readUsage(dataDir: string, range: { from: Date; to: Date }, options: { estimateUnpriced?: boolean } = {}): UsageRow[] {
   const rows: UsageRow[] = [];
   const from = range.from.getTime();
   const to = range.to.getTime();
@@ -192,13 +196,26 @@ export function readUsage(dataDir: string, range: { from: Date; to: Date }): Usa
         const value: unknown = JSON.parse(line);
         if (!isUsageRow(value)) continue;
         const at = Date.parse(value.at);
-        if (at >= from && at <= to) rows.push(value);
+        if (at >= from && at <= to) rows.push(options.estimateUnpriced ? recoverRecordedUsagePrice(value) : value);
       } catch {
         /* a line torn mid-write: skip the fragment, keep the rest */
       }
     }
   }
   return rows;
+}
+
+/** Recover the missing GPT-6 rates added on 2026-10-08 without rewriting
+ * history. Only recorded, nonzero token measurements qualify. The original
+ * reported prices and unknown measurements remain exactly as recorded. */
+export function recoverRecordedUsagePrice(row: UsageRow): UsageRow {
+  if (row.costUsd !== null || clean(row.input) + clean(row.output) === 0) return row;
+  const model = row.model.trim().toLowerCase();
+  if (!["gpt-6-sol", "gpt-6.1-sol", "gpt-6-luna"].includes(model)) return row;
+  const price = LIST_PRICES[model];
+  const cost = ledgerCost(row, null, new Date(row.at));
+  if (!price || cost.costUsd === null) return row;
+  return { ...row, ...cost, priceSource: price.source, priceAsOf: price.asOf };
 }
 
 /** A date range from query strings: `YYYY-MM-DD` each, `to` inclusive to
@@ -283,7 +300,9 @@ function add(group: UsageGroup, row: UsageRow, prices: PriceList | null): void {
   group.turns += 1;
   group.input += clean(row.input);
   group.output += clean(row.output);
-  group.cachedInput += clean(row.cachedInput);
+  if (typeof row.cachedInput === "number") {
+    if (group.cachedInput !== undefined) group.cachedInput += Math.min(clean(row.cachedInput), clean(row.input));
+  } else if (clean(row.input) > 0) delete group.cachedInput;
   const cost = finiteOrNull(row.costUsd);
   if (cost === null) group.unpriced += 1;
   else {
@@ -330,8 +349,8 @@ export function csvCell(value: string | number | null): string {
 }
 
 /** One line per turn, spreadsheet-ready; a billable column when a price list is given. */
-export function usageCsv(rows: UsageRow[], prices: PriceList | null = null): string {
-  const header = ["time", "bot", "model", "engine", "triggered_by", "input_tokens", "output_tokens", "cached_input_tokens", "cost_usd", "cost_source", ...(prices ? ["billable_usd"] : []), "thread"];
+export function usageCsv(rows: UsageRow[], prices: PriceList | null = null, quote?: UsageCurrencyQuote): string {
+  const header = ["time", "bot", "model", "engine", "triggered_by", "input_tokens", "output_tokens", "cached_input_tokens", "cost_usd", "cost_source", ...(prices ? ["billable_usd"] : []), "thread", ...(quote ? ["cost_eur", ...(prices ? ["billable_eur"] : []), "currency", "usd_per_eur", "exchange_date", "exchange_source"] : [])];
   const lines = [header.join(",")];
   for (const row of rows) {
     lines.push([
@@ -342,11 +361,12 @@ export function usageCsv(rows: UsageRow[], prices: PriceList | null = null): str
       triggerLabel(row.trigger),
       clean(row.input),
       clean(row.output),
-      clean(row.cachedInput),
+      typeof row.cachedInput === "number" ? Math.min(clean(row.cachedInput), clean(row.input)) : null,
       finiteOrNull(row.costUsd),
       costSourceOf(row),
       ...(prices ? [billableFor(row, prices)] : []),
       row.threadId,
+      ...(quote ? [usdToEur(row.costUsd, quote), ...(prices ? [usdToEur(billableFor(row, prices), quote)] : []), quote.currency, quote.usdPerEur, quote.date, quote.source] : []),
     ].map(csvCell).join(","));
   }
   return lines.join("\n") + "\n";

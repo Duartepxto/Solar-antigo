@@ -2,9 +2,69 @@
 
 Este registo resume os marcos confirmados no histórico Git. As entradas de 3 de outubro são commits de desenvolvimento, não releases publicadas. Os links permitem consultar o código e o diff de cada alteração.
 
+## 9 de outubro de 2026 — consumo e continuação no PC fixo (0.2.2 em desenvolvimento)
+
+- Custos em euros com cotação BCE datada e exportação CSV identificada; valores
+  estimados e desconhecidos distinguem-se dos custos reportados pelo fornecedor.
+- Engine e disponibilidade refletem a conversa atual. Histórico durável atualiza
+  após turnos; os contadores separam entrada, cache, saída e contexto.
+- Prévia menor para resultados extensos das ferramentas Solar, com recuperação
+  completa por páginas; contabilização dos resumos auxiliares de compactação.
+- Testes relevantes e typecheck aprovados. Código preparado para continuar pela
+  branch `codex/solar-android-and-chat`; instalador 0.2.2 ainda por gerar e instalar.
+- Contexto e instruções em `docs/inventario-solar/CONTINUAR-DESKTOP-09-10-2026.md`.
+
+## 8 de outubro de 2026 — ditado contínuo e progressivo (0.2.1)
+
+- Ditado do campo de mensagem continua até Parar; deixam de existir o fim
+  por pausa de 1,8 segundos e o corte de sessão aos 29 segundos.
+- Texto progressivo em blocos curtos, com confirmação de frases completas
+  e sobreposição de áudio nas divisões longas. Pedidos de reconhecimento
+  serializados; cada clip mantém o limite de segurança de 29 segundos.
+- Parar conserva o rascunho sem enviar, mostra finalização e bloqueia envio
+  enquanto chegam as últimas palavras. Cancelamento impede resultados tardios.
+- Modelo local final small multilingual Q5_1 instalado e verificado; prévias
+  usam base para menor latência. Idiomas selecionados mantidos.
+- 31 testes aprovados, incluindo fluxo do composer, 41 segundos de captura,
+  pausas longas, áudio final, silêncio, idiomas e falhas. Modelos carregados
+  no runtime real; precisão com microfone pessoal ainda por validar.
+
+## 8 de outubro de 2026 — Alt+T e jardim 3D experimental (0.2.0)
+
+- Alt+T Windows substitui a pílula por uma barra escura encaixada na margem
+  direita, com recortes curvos e transcrição/avisos num painel à esquerda.
+  Os controlos de voz existentes permanecem; recolher o painel conserva o
+  texto, e uma nova chamada reinicia o estado de expansão. A área vazia
+  mantém click-through. Inspiração observada no reel `DdTh89HxNeH`; o segundo
+  reel fornecido ficou indisponível por restrição do Instagram.
+- Jardim 3D experimental, com Jarvis central e ilhas por equipa derivadas
+  do mesmo modelo do Solar original. Personagens com rostos, cabelo, roupa,
+  acessórios, portáteis, movimentos de escrita, pestanejar e acenar.
+- Quatro skins por agente, guardadas neste dispositivo; seleção no canvas
+  ou na lista, órbita, zoom, pausa de animações e movimento reduzido.
+- Entrada «3D» no Solar e retorno sem recarregar. As conversas continuam a
+  usar o histórico e as ferramentas existentes, sem cópias de agentes.
+- Tests isolados: 44 testes nativos do shell, fluxo Alt+T completo e fluxo
+  do jardim com equipas, skins, falha de armazenamento e versões desktop/mobile.
+  TypeScript da V2, lint dos ficheiros e catálogos de tradução válidos.
+
+## 8 de outubro de 2026 — correção dos interruptores (Windows 0.1.99)
+
+- Corrigida a regra global Solar que pintava de dourado toda a linha de um
+  interruptor ativo e de preto os seus textos, metadados e indicador de estado.
+- As duas famílias de interruptores identificam agora a pista e o botão móvel;
+  o tema aplica as cores apenas a essas peças. A correção abrange todas as
+  utilizações partilhadas: memória, voz, acesso, mapa e definições gerais.
+- Teste de interface isolado verifica cores calculadas, textos compridos,
+  estados ligados/desligados/desativados, encaixe, clique e teclado.
+  Capturas desktop e mobile revistas; três testes aprovados.
+- Lint dos ficheiros alterados e catálogos de tradução válidos.
+
 ## 7 de outubro de 2026 (noite) — identidade própria do Solar
 
-Ainda por gravar em commit; descreve o estado do working tree.
+Guardado no commit local `ed9250c` em 7/10 às 23:00 (Europe/Lisbon).
+A consulta ao GitHub em 8/10 confirmou que este commit ainda não foi enviado:
+`origin/codex/solar-android-and-chat` continua em `36ad27d`.
 
 - **Vidro líquido real.** Cada controlo de vidro recebe uma lente SVG gerada
   à medida (`src/orbit/liquid-glass.ts`) que refrata o fundo junto ao

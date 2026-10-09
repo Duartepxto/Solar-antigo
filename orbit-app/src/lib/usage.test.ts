@@ -69,14 +69,14 @@ describe("usage formatting", () => {
         { input: 1, output: 1, costUsd: Number.NaN, turns: 1 },
         { input: 2, output: 2, costUsd: 0.01, turns: 1 },
       ]),
-    ).toEqual({ input: 3, output: 3, costUsd: 0.01, turns: 2 });
+    ).toEqual({ input: 3, output: 3, costUsd: 0.01, turns: 2, unpriced: 1 });
   });
 
   it("does not invent a cache split when some input has no cache report", () => {
     // Missing reports make the combined cache split unknown.
     expect(sumUsage([{ input: 100, output: 10, costUsd: null, turns: 1 }, { input: 200, output: 20, cachedInput: 150, costUsd: null, turns: 1 }]))
-      .toEqual({ input: 300, output: 30, costUsd: null, turns: 2 });
-    expect(sumUsage([{ input: 100, output: 10, costUsd: null, turns: 1 }])).toEqual({ input: 100, output: 10, costUsd: null, turns: 1 });
+      .toEqual({ input: 300, output: 30, costUsd: null, turns: 2, unpriced: 2 });
+    expect(sumUsage([{ input: 100, output: 10, costUsd: null, turns: 1 }])).toEqual({ input: 100, output: 10, costUsd: null, turns: 1, unpriced: 1 });
     // Zero cache is reported explicitly; missing cache is combined input.
     expect(usageDetail({ input: 88_200, output: 1_200, cachedInput: 79_000, costUsd: null, turns: 5 })).toBe("9.2k uncached input · 79k cached input · 1.2k output");
     expect(usageDetail({ input: 900, output: 50, costUsd: null, turns: 1 })).toBe("900 input (cached + uncached) · 50 output");
@@ -90,7 +90,7 @@ describe("usage formatting", () => {
   it("builds the chip: tokens always, cost only when known, nothing when unused", () => {
     expect(usageChip({ input: 0, output: 0, costUsd: null, turns: 0 })).toBe("");
     expect(usageChip({ input: 10_000, output: 2_400, costUsd: null, turns: 3 })).toBe("10k input");
-    expect(usageChip({ input: 10_000, output: 2_400, costUsd: 0.06, turns: 3 })).toBe("$0.06");
+    expect(usageChip({ input: 10_000, output: 2_400, costUsd: 0.06, turns: 3 })).toBe("€0.05");
   });
 
   it("sums across tasks and leaves cost null until one reports it", () => {
@@ -99,6 +99,7 @@ describe("usage formatting", () => {
       output: 3,
       costUsd: null,
       turns: 2,
+      unpriced: 2,
     });
     expect(
       botUsage({
@@ -108,7 +109,7 @@ describe("usage formatting", () => {
           { threadId: "c", title: "", createdAt: 0, usage: { input: 5, output: 5, costUsd: null, turns: 2 } },
         ],
       }),
-    ).toEqual({ input: 10, output: 10, costUsd: 0.01, turns: 3 });
+    ).toEqual({ input: 10, output: 10, costUsd: 0.01, turns: 3, unpriced: 2 });
   });
 
   it("captions cost by billing", () => {
@@ -150,7 +151,7 @@ describe("usage formatting", () => {
     const longThread = { input: 1_900_000, output: 12_000, cachedInput: 1_862_000, costUsd: null, turns: 12 };
     expect(uncachedInput(longThread)).toBe(38_000);
     expect(usageChip(longThread)).toBe("38k uncached");
-    expect(usageChip({ ...longThread, costUsd: 4.2 })).toBe("$4.20");
+    expect(usageChip({ ...longThread, costUsd: 4.2 })).toBe("€3.75");
     // An engine without cache reports shows total input.
     expect(usageChip({ input: 1_900_000, output: 12_000, costUsd: null, turns: 12 })).toBe("1.9M input");
     expect(usageChip({ input: 0, output: 0, costUsd: null, turns: 0 })).toBe("");

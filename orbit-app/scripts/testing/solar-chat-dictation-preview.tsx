@@ -4,6 +4,16 @@ import { SolarDictationSettings } from '../../src/components/SolarDictationSetti
 import { StoreProvider, useStore } from '../../src/state/store';
 import '../../src/styles.css';
 
+// Observe requests from this isolated renderer. Tests can prove that clicking
+// Stop keeps a draft without silently creating a chat turn.
+const fixtureRequests = (window as any).testDictationRequests = [] as Array<{ path: string; method: string }>;
+const fixtureFetch = window.fetch.bind(window);
+window.fetch = (input, init) => {
+  const address = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  fixtureRequests.push({ path: new URL(address, window.location.href).pathname, method: init?.method ?? (input instanceof Request ? input.method : 'GET') });
+  return fixtureFetch(input, init);
+};
+
 class FakeRecognition {
   lang = ''; continuous = false; interimResults = false;
   onresult: ((event: { results: Array<Array<{ transcript: string }>> }) => void) | null = null;
@@ -15,11 +25,13 @@ class FakeRecognition {
 }
 (window as any).SpeechRecognition = FakeRecognition;
 if (new URLSearchParams(window.location.search).has('native')) {
-  const voice = (window as any).testSolarVoice = { transcript: null as any, end: null as any, options: null as any };
+  const voice = (window as any).testSolarVoice = { transcript: null as any, end: null as any, options: null as any,
+    starts: 0, finishes: 0, stops: 0, finishResolve: null as (() => void) | null };
   (window as any).ogb = {
     platform: 'darwin',
-    speechStart: async (options: unknown) => { voice.options = options; },
-    speechFinish: async () => {}, speechStop: async () => {},
+    speechStart: async (options: unknown) => { voice.options = options; voice.starts++; },
+    speechFinish: () => { voice.finishes++; return new Promise<void>(resolve => { voice.finishResolve = resolve; }); },
+    speechStop: async () => { voice.stops++; },
     onSpeechTranscript: (callback: unknown) => { voice.transcript = callback; return () => {}; },
     onSpeechEnd: (callback: unknown) => { voice.end = callback; return () => {}; },
   };

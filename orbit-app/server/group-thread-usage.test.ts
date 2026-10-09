@@ -13,6 +13,16 @@ beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "orbit-group-usage-")); mkdi
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
 describe("group thread accounting", () => {
+  it("combines estimated, reported and unavailable costs and recovers measured historical Luna turns", () => {
+    write("2026-09", [row("2026-09-02", { costUsd: 0.02, costSource: "estimated" }), row("2026-09-03", { costUsd: null })]);
+    write("2026-10", [row("2026-10-01"), row("2026-10-02", { costUsd: null, model: "gpt-6-luna", driverKind: "codex", input: 1_000_000, cachedInput: 900_000, output: 100_000 })]);
+    const original = readFileSync(join(dir, "usage", "2026-10.jsonl"), "utf8");
+    const usage = load(dir).forThread("room")!;
+    expect(usage).toMatchObject({ unpriced: 1, costSource: "mixed", lastTurn: { costUsd: 0.069, costSource: "estimated" } });
+    expect(usage.estimatedUsd).toBeCloseTo(0.089, 12);
+    expect(usage.costUsd).toBeCloseTo(0.099, 12);
+    expect(readFileSync(join(dir, "usage", "2026-10.jsonl"), "utf8")).toBe(original);
+  });
   it("does no disk work during lookups and rereads only changed months", () => {
     write("2026-08", [row("2026-08-02", { input: 75 })]);
     write("2026-09", [row("2026-09-02", { input: 90 })]);

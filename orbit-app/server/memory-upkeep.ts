@@ -56,7 +56,7 @@ export interface UpkeepDeps {
   bots: () => readonly UpkeepBot[];
   bot: (id: string) => UpkeepBot | undefined;
   /** The bot's engine when it may receive memory text (policy allows), else null. */
-  engine: (botId: string) => UpkeepEngine | null;
+  engine: (botId: string, threadId?: string) => UpkeepEngine | null;
   /** A turn is running for the bot: the scheduled tidy waits. */
   busy: (botId: string) => boolean;
   /** Append facts about the person to the shared About me; returns how many were added. */
@@ -199,7 +199,7 @@ export function createMemoryUpkeep(deps: UpkeepDeps): MemoryUpkeep {
     const at = now().getTime();
     const off: CaptureReport = { at, added: 0, topics: 0, aboutMe: 0, note: "upkeep is off" };
     if (!upkeepEnabled(bot)) return off;
-    const engine = deps.engine(bot.id);
+    const engine = deps.engine(bot.id, batch.threadId);
     if (!engine?.generateText) {
       const report = { at, added: 0, topics: 0, aboutMe: 0, note: NO_TEXT_ENGINE };
       record(bot.id, { lastCapture: report });

@@ -151,7 +151,13 @@ function fixture({ platform = "win32", hostTray = null, displays = [primary, top
     fs.rmSync(userData, { recursive: true, force: true });
   };
   const moveCursor = (point) => Object.assign(cursor, point);
-  return { summon, surface, invoke, handlers, registered, macCalls, screen, setDisplays, cleanup, opened, moveCursor };
+  const tickPointer = () => {
+    const timer = [...pending].find(({ fn }) => fn.name === "pointerTick");
+    assert.ok(timer, "a pointer watch is scheduled while talk is visible");
+    pending.delete(timer);
+    timer.fn();
+  };
+  return { summon, surface, invoke, handlers, registered, macCalls, screen, setDisplays, cleanup, opened, moveCursor, tickPointer };
 }
 
 const settle = () => new Promise((resolve) => setImmediate(resolve));
@@ -258,7 +264,7 @@ test("Windows: talk stays hidden until summoned, including after display changes
   cleanup();
 });
 
-test("Windows: Alt+T summons the voice pill at the right centre of the work area", async () => {
+test("Windows: Alt+T summons the voice dock at the right centre of the work area", async () => {
   const { summon, surface, registered, cleanup } = fixture();
   summon.start();
   await settle();
@@ -274,10 +280,49 @@ test("Windows: Alt+T summons the voice pill at the right centre of the work area
   const talk = surface("talk");
   assert.equal(talk.isVisible(), true);
   assert.deepEqual(talk.getBounds(), sideTalkFrame(primary));
-  assert.deepEqual(islandHoverRect(talk.getBounds(), { width: 84, height: 244 }, 6, true), { x: 1814, y: 392, width: 96, height: 256 });
+  assert.deepEqual(islandHoverRect(talk.getBounds(), { width: 56, height: 220 }, 6, true), { x: 1858, y: 404, width: 68, height: 232 });
+  assert.deepEqual(islandHoverRect(talk.getBounds(), { width: 328, height: 248 }, 6, true), { x: 1586, y: 390, width: 340, height: 260 });
   assert.equal(sideTalkFrame(topTaskbar).y, 514);
   assert.equal(talk.focused, undefined, "summoning never steals focus from the current app");
   cleanup();
+});
+
+test("Windows: talk hit testing follows the edge dock and its left details panel", async () => {
+  const { summon, surface, invoke, moveCursor, tickPointer, cleanup } = fixture();
+  try {
+    summon.start();
+    await summon.summonTalk();
+    const talk = surface("talk");
+    assert.deepEqual(talk.ignore, { ignore: true, forward: true });
+    assert.equal(talk.options.focusable, false, "the voice dock keeps focus in the current app");
+    const lastHover = () => talk.sent.filter(([channel]) => channel === "orbit-shell:island-hover").at(-1)?.[1].over;
+
+    invoke("orbit-shell:island-look", talk, { width: 56, height: 220 });
+    moveCursor({ x: 1919, y: 520 });
+    tickPointer();
+    assert.equal(lastHover(), true, "the far-right edge is interactive");
+    invoke("orbit-shell:talk-interactive", talk, true);
+    assert.deepEqual(talk.ignore, { ignore: false });
+
+    moveCursor({ x: 1700, y: 520 });
+    tickPointer();
+    assert.equal(lastHover(), false, "the desktop to the dock's left stays click-through");
+    invoke("orbit-shell:talk-interactive", talk, false);
+    assert.deepEqual(talk.ignore, { ignore: true, forward: true });
+
+    invoke("orbit-shell:island-look", talk, { width: 328, height: 248 });
+    tickPointer();
+    assert.equal(lastHover(), true, "opening details picks up a still pointer inside the panel");
+    invoke("orbit-shell:island-look", talk, { width: 56, height: 220 });
+    tickPointer();
+    assert.equal(lastHover(), false, "collapsing releases the panel's old area");
+
+    invoke("orbit-shell:island-look", surface("quick"), { width: 328, height: 248 });
+    tickPointer();
+    assert.equal(lastHover(), false, "another shell surface cannot change talk's hit area");
+  } finally {
+    cleanup();
+  }
 });
 
 test("Windows: the quick bar is a focusable topmost window, and closing it never calls app.hide()", async () => {

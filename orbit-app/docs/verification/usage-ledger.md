@@ -86,8 +86,29 @@ scope on both routes.
 
 ## Gotchas
 
-- Rows are appended when `turn.completed` folds. A turn that fails before it
-  settles leaves no row, so a failed turn is not billed.
+- Rows are appended when `turn.completed` folds, including failed and stopped
+  turns. Recorded usage still counts; a turn without measured tokens or a
+  reported cost stays unpriced, rather than appearing as a free model call.
+- The settled conversation tally and reply digest use the same cost as the
+  durable ledger. They preserve `costSource`, the estimated share and the
+  number of unpriced turns. Older conversation totals remain incomplete when
+  they did not store those costs; use History for the durable records.
+- The verified GPT-6 Luna, GPT-6 Sol and GPT-6.1 Sol rates were added on
+  2026-10-08. History can recover previously unpriced rows for these exact
+  models when nonzero tokens were recorded, by passing
+  `readUsage(dataDir, range, { estimateUnpriced: true })`. This only derives
+  an estimate while reading. Month files and reported prices are untouched;
+  zero-token and unknown-model rows remain unchanged. Recovered rows name
+  the official source and its verification date.
+- EUR CSV export appends `cost_eur`, optional `billable_eur`, `currency`,
+  `usd_per_eur`, `exchange_date` and `exchange_source`, retaining the original
+  USD columns. It uses the same dated ECB quote as the interface and keeps
+  unavailable prices blank. Tiny nonzero prices retain precision.
+- Unknown cache counts remain absent in summaries and blank in CSV instead
+  of labelling all input as fresh. Reported cache shares cannot exceed input.
+- Historical read-time price recovery is a display/export derivation. It does
+  not retroactively rewrite or enforce the optional monthly spend cap against
+  past unpriced activity. Future measured costs feed both the ledger and cap.
 - The cost column is what the engine reported (real on a metered key, an
   equivalent on a subscription) or, for engines that report none, an estimate
   from `server/model-prices.ts`, marked `~` in History and People and labelled
@@ -100,5 +121,43 @@ scope on both routes.
   process it finds the restored state among the session's recent results in
   `<data>/claude-cost-history.json`; without one, that first turn keeps its
   whole figure.
-- The renderer's History card is not driven headlessly here; the fixture
-  proves the server side and the table renders from a fixture in its unit test.
+- Codex reports thread totals and the final model call separately. The
+  driver subtracts the restored pre-turn baseline from the total, counting
+  every model call in this turn once. Cached input is included in input and
+  priced at the cache rate; reasoning output is already part of output.
+  Native helper notifications cannot settle or overwrite the parent turn.
+- Estimates are Standard short-context API equivalents, not subscription
+  invoices. The stream does not identify every service tier, cache write or
+  auxiliary tool fee, so Solar cannot infer an exact provider bill from
+  token counts alone. Historical zero-cost helper rows without token data
+  cannot retrospectively prove free usage and are not fabricated or rewritten.
+- The History renderer also has an isolated browser fixture in
+  `scripts/testing/solar-usage-ui.e2e.test.ts`: EUR costs, settlement refresh,
+  failed-filter clearing, CSV currency and mobile layout, without provider calls.
+
+## Verified OpenAI rates (2026-10-08)
+
+USD per million input / cached input / output tokens:
+
+- [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna):
+  0.10 / 0.01 / 0.50.
+- [GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol):
+  2.00 / 0.20 / 10.00.
+- [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol):
+  2.00 / 0.10 / 10.00.
+
+These are exact model identifiers, with no sibling-model aliases. Long
+context, Fast mode, regional processing and tool fees can change API charges;
+see the [official pricing page](https://developers.openai.com/api/docs/pricing).
+
+## 2026-10-08 accounting regression evidence
+
+`server/usage-ledger-api.test.ts` now also uses the isolated fake Codex CLI.
+It verifies a measured Luna turn (7 input, 4 cached, 3 output) has the same
+estimated USD cost in the conversation, ledger and summary. The next fake
+resume fails before model usage and remains unpriced instead of becoming a
+zero-cost estimate. Both rows are durable and contain no message text.
+
+`server/drivers/codex.test.ts` includes a multiple-call turn with restored
+usage. Its settled total is 27 input, 14 cached and 8 output, rather than the
+last call alone (7/4/3) or the restored thread's full lifetime usage.

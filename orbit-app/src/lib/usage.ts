@@ -2,6 +2,8 @@
 // Pure, so the numbers can be tested without the components.
 import type { Bot, TaskUsage } from "@/state/store";
 import { t } from "./i18n";
+import { formatCost } from './usage-currency';
+export { formatCost } from './usage-currency';
 
 export const EMPTY_USAGE: TaskUsage = { input: 0, output: 0, costUsd: null, turns: 0 };
 type TokenUsage = Pick<TaskUsage, "input" | "output"> & Partial<TaskUsage>;
@@ -21,6 +23,10 @@ export function sumUsage(items: Array<TaskUsage | undefined>): TaskUsage {
     out.turns += u.turns;
     if (hasFiniteCost(u.cachedInput)) out.cachedInput = (out.cachedInput ?? 0) + u.cachedInput;
     if (hasFiniteCost(u.costUsd)) out.costUsd = (out.costUsd ?? 0) + u.costUsd;
+    if (hasFiniteCost(u.estimatedUsd)) out.estimatedUsd = (out.estimatedUsd ?? 0) + u.estimatedUsd;
+    const unpriced = hasFiniteCost(u.unpriced) ? u.unpriced : hasFiniteCost(u.costUsd) ? 0 : u.turns;
+    if (unpriced > 0) out.unpriced = (out.unpriced ?? 0) + unpriced;
+    if (u.costSource) out.costSource = !out.costSource || out.costSource === u.costSource ? u.costSource : 'mixed';
   }
   if (items.some((u) => u && u.input > 0 && !cachedKnown(u))) delete out.cachedInput;
   return out;
@@ -154,7 +160,7 @@ export function lastTurnDetail(u: TaskUsage): string | null {
 /** Cost when reported; otherwise input only. Output stays in the tooltip. */
 export function usageChip(u: TaskUsage): string {
   if (u.turns === 0 && u.input + u.output === 0) return "";
-  if (hasFiniteCost(u.costUsd)) return formatUsd(u.costUsd);
+  if (hasFiniteCost(u.costUsd)) return usageCostLabel(u);
   if (cachedKnown(u)) return t("chat.usage.uncachedShort", { tokens: formatTokens(uncachedInput(u)) });
   return t("chat.usage.inputShort", { tokens: formatTokens(u.input) });
 }
@@ -164,4 +170,15 @@ export function costCaption(billing: "metered" | "subscription" | undefined): st
   if (billing === "subscription") return t("chat.usage.captionSubscription");
   if (billing === "metered") return t("chat.usage.captionMetered");
   return t("chat.usage.captionEngine");
+}
+
+export function usageCostLabel(u: Pick<TaskUsage, 'costUsd' | 'estimatedUsd' | 'unpriced' | 'costSource'>): string {
+  if (!hasFiniteCost(u.costUsd)) return '—';
+  const estimated = u.costSource === 'estimated' || u.costSource === 'mixed' || (u.estimatedUsd ?? 0) > 0;
+  return `${estimated ? '~' : ''}${formatCost(u.costUsd)}${(u.unpriced ?? 0) > 0 ? '*' : ''}`;
+}
+
+export function usageCostNote(u: TaskUsage): string {
+  return (u.unpriced ?? 0) > 0 ? t('usage.history.unpriced', { count: String(u.unpriced) }) :
+    u.costSource === 'estimated' || u.costSource === 'mixed' ? t('usage.costEstimated') : t('usage.costBasis');
 }

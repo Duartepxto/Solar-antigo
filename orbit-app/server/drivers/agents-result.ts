@@ -1,12 +1,15 @@
 import { redactSecretsInText } from "../../shared/redact.ts";
-import { TOOL_RESULT_MAX_CHARS, TOOL_RESULT_PREVIEW_CHARS, toolResultPrefix } from "../tool-results.ts";
+import { TOOL_RESULT_MAX_CHARS, toolResultPrefix } from "../tool-results.ts";
+
+export const AGENT_RESULT_INLINE_CHARS = 8_000;
+export const AGENT_RESULT_INITIAL_PREVIEW_CHARS = 4_000;
 
 /** The operation already happened. Saving overflow must never retry it or
  * turn a successful operation into a failed MCP call. Only cache I/O is timed. */
 export async function boundedAgentResult(text: string, save: (text: string, truncated: boolean) => Promise<unknown>): Promise<string> {
-  if (text.length <= 24_000) return text;
+  if (text.length <= AGENT_RESULT_INLINE_CHARS) return text;
   const redacted = redactSecretsInText(text);
-  const prefix = toolResultPrefix(redacted, TOOL_RESULT_PREVIEW_CHARS);
+  const prefix = toolResultPrefix(redacted, AGENT_RESULT_INITIAL_PREVIEW_CHARS);
   const retained = toolResultPrefix(redacted, TOOL_RESULT_MAX_CHARS);
   const truncated = retained.length < redacted.length;
   try {

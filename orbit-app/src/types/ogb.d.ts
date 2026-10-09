@@ -203,7 +203,7 @@ const __APP_VERSION__: string;
       };
       /** Start native dictation. Call mode supplies endpointMs so silence
        * finalizes a turn; composer dictation omits it and remains manual. */
-      speechStart(options?: { endpointMs?: number }): Promise<void>;
+      speechStart(options?: { endpointMs?: number; continuous?: boolean }): Promise<void>;
       speechStop(): Promise<void>;
       speechClaimLocal?(): Promise<string | null>;
       speechReleaseLocal?(token: string): Promise<boolean>;

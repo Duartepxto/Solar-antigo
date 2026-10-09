@@ -177,6 +177,15 @@ describe("CodexDriver turns (fake app-server)", () => {
     expect(await instance.snapshot()).not.toHaveProperty("account");
   });
 
+  it("counts all model calls within a resumed turn once, separating cache from fresh input", async () => {
+    await create({ mode: "usage-multi-call", environment: { FAKE_CODEX_RESTORED_USAGE: "1" } });
+    await instance.adapter.sendTurn({ threadId: "usage-multi-call", text: "synthetic accounting probe", model: "gpt-6-luna" });
+    const done = await recorder.until(event => event.type === "turn.completed");
+    expect(done).toMatchObject({ ok: true, usage: { input: 27, cachedInput: 14, output: 8 } });
+    expect(recorder.events.filter(event => event.type === "turn.completed")).toHaveLength(1);
+    expect(recorder.events.filter(event => event.type === "thread.token-usage.updated")).toHaveLength(2);
+  });
+
   it("runs the handshake and normalizes a full turn", async () => {
     await create();
     const dump = join(scratch, "dump.json");

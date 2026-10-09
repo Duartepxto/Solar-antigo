@@ -4,14 +4,17 @@
 import { useStore, type Bot } from "@/state/store";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
-import { contextChip, contextDetail, contextShare, costCaption, formatUsd, hasFiniteCost, lastTurnDetail, usageChip, usageDetail } from "@/lib/usage";
+import { contextChip, contextDetail, contextShare, costCaption, hasFiniteCost, lastTurnDetail, usageChip, usageDetail, usageCostNote } from "@/lib/usage";
+import { useUsageCurrency } from '@/lib/usage-currency';
+import { botEngineDetails } from '@/lib/bot-engine';
 
 export function ThreadUsageChip({ bot }: { bot: Bot }) {
+  useUsageCurrency();
   const { state, dispatch } = useStore();
   const usage = bot.tasks?.find((t) => t.threadId === bot.threadId)?.usage;
   const text = usage ? usageChip(usage) : "";
   if (!usage || !text) return null;
-  const billing = state.instances.find((i) => i.instanceId === bot.modelSelection.instanceId)?.snapshot.billing;
+  const billing = botEngineDetails(bot, state.instances).instance?.snapshot.billing;
   const share = contextShare(usage);
   const detail = [
     usage.turns === 1 ? t("chat.usage.turnsOne") : t("chat.usage.turnsMany", { count: usage.turns }),
@@ -22,7 +25,7 @@ export function ThreadUsageChip({ bot }: { bot: Bot }) {
     // model re-reading what it already saw — say so, or the figure reads as
     // a bug (issue #527); past 80% of the window the fix is a new thread
     share?.tone === "danger" ? t("chat.usage.contextNudge") : null,
-    hasFiniteCost(usage.costUsd) ? `${formatUsd(usage.costUsd)} ${costCaption(billing)}` : null,
+    hasFiniteCost(usage.costUsd) ? `${usageCostNote(usage)} · ${costCaption(billing)}` : t('usage.costUnknown'),
   ]
     .filter(Boolean)
     .join("\n");

@@ -1,0 +1,98 @@
+/* Alt+T: an edge dock with concave shoulders. The voice panel opens into
+   the desktop, leaving the dock anchored to the right work-area edge. */
+.solar-talk-pill {
+  --voice-paper: #f2f3f5;
+  --voice-muted: #b4bac4;
+  --voice-sun: #e9c29b;
+  position: relative;
+  flex-shrink: 0;
+  color: var(--voice-paper);
+  font-family: "Solar Voice", "Segoe UI", sans-serif;
+  transition: width 320ms cubic-bezier(.16,1,.3,1), height 320ms cubic-bezier(.16,1,.3,1), opacity 160ms ease;
+}
+.solar-voice-rail {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 56px;
+  height: 220px;
+  transform: translateY(-50%);
+}
+.solar-talk-pill[data-open="true"] .solar-voice-rail { animation: solar-dock-arrive 420ms cubic-bezier(.16,1,.3,1) both; }
+.solar-voice-edge { position: absolute; inset: 0; width: 100%; height: 100%; color: #10151e; }
+.solar-voice-rail-controls {
+  position: absolute;
+  inset: 35px 0 35px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+.solar-voice-orb, .solar-voice-action, .solar-voice-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.solar-voice-orb {
+  width: 34px;
+  height: 34px;
+  color: var(--voice-sun);
+  background: #e9c29b0d;
+  border: 1px solid #e9c29b33;
+}
+.solar-voice-orb svg { transition: transform 250ms ease; }
+.solar-voice-orb:hover svg { transform: rotate(24deg); }
+.solar-voice-orb[aria-expanded="true"] { background: #e9c29b22; border-color: #e9c29b99; }
+.solar-talk-pill[data-phase="thinking"] .solar-voice-orb svg { animation: solar-dock-think 6s linear infinite; }
+.solar-talk-pill[data-phase="listening"] .solar-voice-orb { border-color: #e9c29bcc; }
+.solar-talk-pill[data-phase="talking"] .solar-voice-orb { background: #e9c29b26; }
+.solar-voice-signal { display: flex; align-items: center; justify-content: center; height: 18px; color: var(--voice-sun); }
+.solar-voice-signal > span > span { background: var(--voice-sun); }
+.solar-voice-action { width: 30px; height: 30px; color: var(--voice-paper); background: #ffffff0b; border: 1px solid #ffffff1a; }
+.solar-voice-close { width: 26px; height: 26px; color: #a9b2c0; }
+.solar-voice-orb:hover, .solar-voice-action:hover, .solar-voice-close:hover { background: #ffffff17; color: var(--voice-paper); }
+.solar-voice-orb:active, .solar-voice-action:active, .solar-voice-close:active { transform: scale(.93); }
+.solar-voice-panel {
+  position: absolute;
+  right: 68px;
+  top: 50%;
+  width: 260px;
+  max-height: 248px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  border: 1px solid #ffffff24;
+  background: #121720;
+  box-shadow: -8px 12px 28px #00000038;
+  padding: 15px;
+  transform: translateY(-50%);
+  animation: solar-panel-arrive 300ms cubic-bezier(.16,1,.3,1) both;
+}
+.solar-voice-panel::after { content: ''; position: absolute; right: -5px; top: calc(50% - 4px); width: 8px; height: 8px; transform: rotate(45deg); background: #121720; border-top: 1px solid #ffffff24; border-right: 1px solid #ffffff24; }
+.solar-voice-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.solar-voice-brand { font-size: 13px; line-height: 18px; font-weight: 600; letter-spacing: -.015em; }
+.solar-voice-state { display: flex; gap: 5px; align-items: center; font-size: 11px; line-height: 18px; color: var(--voice-muted); white-space: nowrap; }
+.solar-voice-state > span { width: 4px; height: 4px; border-radius: 50%; background: var(--voice-sun); }
+.solar-voice-sr-status { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.solar-voice-content { min-height: 0; width: 100%; overflow-y: auto; margin-top: 12px; scrollbar-width: thin; scrollbar-color: #ffffff45 transparent; }
+.solar-voice-transcript { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; margin: 0; }
+.solar-voice-hint { color: var(--voice-muted); }
+.solar-voice-notice { display: flex; align-items: flex-start; gap: 5px; color: var(--voice-muted); font-size: 12px; line-height: 1.55; }
+.solar-voice-transcript + .solar-voice-notice { border-top: 1px solid #ffffff1f; margin-top: 12px; padding-top: 12px; }
+.solar-voice-notice p { flex: 1; margin: 0; }
+.solar-voice-notice button { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 6px; }
+.solar-voice-notice button:hover { background: #ffffff17; color: var(--voice-paper); }
+.solar-talk-pill button:focus-visible { outline: 2px solid var(--voice-sun); outline-offset: 2px; }
+.solar-talk-pill ::selection { color: #10151e; background: var(--voice-sun); }
+@keyframes solar-dock-arrive { from { opacity: 0; transform: translate(16px, -50%); } to { opacity: 1; transform: translate(0, -50%); } }
+@keyframes solar-panel-arrive { from { opacity: 0; transform: translate(10px, -50%) scale(.96); } to { opacity: 1; transform: translate(0, -50%) scale(1); } }
+@keyframes solar-dock-think { to { transform: rotate(360deg); } }
+@keyframes solar-voice-breathe { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .solar-talk-pill, .solar-voice-orb, .solar-voice-orb svg, .solar-voice-action, .solar-voice-close { transition: none; }
+  .solar-voice-rail, .solar-voice-panel, .solar-talk-pill[data-phase="thinking"] .solar-voice-orb svg { animation: none; }
+  .solar-talk-pill[data-open="true"] .solar-voice-rail { animation: none; }
+}

@@ -1,4 +1,5 @@
-import { solarSpeechReady, transcribeSolarVoice } from "./solar-speech.ts";
+import { solarSpeechStatus, transcribeSolarVoice } from "./solar-speech.ts";
+import { getUsageCurrency, usagePricesInUsd } from './usage-currency.ts';
 import { SolarWorkspace } from "./solar-workspace.ts";
 // Orbit server — the harness host. Clients hold no transports
 // (upstream rule): the React app dispatches typed commands over HTTP and
@@ -1317,7 +1318,7 @@ function operatorPrices(): PriceList | null {
  * engine reported tokens but no price, and let the spend cap see it at once.
  * The first booking that takes the month past the warning threshold, or to
  * the cap, notifies admins (once per month each; server/spend.ts). */
-function bookTurnUsage(row: Omit<UsageRow, "at" | "costSource">, tokensReported = true, notificationThreadId = row.threadId): void {
+function bookTurnUsage(row: Omit<UsageRow, "at" | "costSource">, tokensReported = true, notificationThreadId = row.threadId): UsageRow {
   // Missing helper usage is unpriced, not an estimated zero-dollar call.
   const cost = tokensReported || row.costUsd !== null ? ledgerCost(row, operatorPrices()) : { costUsd: null };
   const booked = { ...row, ...cost, at: new Date().toISOString() };
@@ -1329,6 +1330,7 @@ function bookTurnUsage(row: Omit<UsageRow, "at" | "costSource">, tokensReported 
   if (alert && state) {
     broadcast({ kind: "notify", notification: buildSpendNotification({ id: row.botId, name: row.botName }, notificationThreadId, spendAlertText(alert, state)) }, { adminOnly: true });
   }
+  return booked;
 }
 
 /** A queued line from before triggers were stored with it: its sender, else
@@ -4941,7 +4943,7 @@ function notify(notification: Notification | null) {
 
 // Group threads: the fold needs to know WHO is talking — the turn engine
 // records the active member here before dispatching its turn.
-const groupSpeakers = new Map<string, { botId: string; name: string; color: string }>();
+const groupSpeakers = new Map<string, { botId: string; name: string; color: string; modelSelection?: ModelSelection }>();
 
 // The latest running token totals for the turn in flight on each thread.
 // Providers report cumulative-within-turn numbers; the final value is folded
@@ -5110,9 +5112,10 @@ bus.subscribe((event: RuntimeEvent) => {
 const memoryUpkeep = createMemoryUpkeep({
   bots: () => store.bots,
   bot: (id) => store.bot(id) ?? undefined,
-  engine: (botId) => {
+  engine: (botId, sourceThreadId) => {
     const bot = store.bot(botId);
-    const instance = bot ? registry.get(bot.modelSelection.instanceId) : undefined;
+    const selection = bot ? store.taskByThread(bot.id, sourceThreadId ?? bot.threadId)?.modelSelection ?? bot.modelSelection : undefined;
+    const instance = selection ? registry.get(selection.instanceId) : undefined;
     // an engine the organisation disallows never receives memory text
     if (!bot || !instance || policyModelRefusal(instance)) return null;
     const generate = instance.generateText?.bind(instance);
@@ -5306,7 +5309,7 @@ async function scheduleTurnDigest(input: {
   reply: string;
   from?: Message["from"];
   isCurrent: () => boolean;
-  usage?: { input: number; output: number; cachedInput?: number; costUsd?: number | null };
+  usage?: { input: number; output: number; cachedInput?: number; costUsd?: number | null; costSource?: "reported" | "estimated" };
   succeeded?: boolean;
 }): Promise<void> {
   const at = Date.now();
@@ -6767,17 +6770,10 @@ bus.subscribe((event: RuntimeEvent) => {
         // the context figure: what the last model call's prompt held, with
         // the window from the driver or, failing that, the model's family
         const contextModel = store.taskByThread(bot.id, event.threadId)?.modelSelection?.model ?? bot.modelSelection.model;
-        store.addTaskUsage(bot.id, event.threadId, {
-          input: tokens?.input,
-          output: tokens?.output,
-          cachedInput: tokens?.cachedInput,
-          costUsd: event.cost ?? null,
-          context: { tokens: lastContext?.tokens, window: lastContext?.window ?? modelContextWindow(contextModel) },
-        });
         // and write the same figures to the month's ledger, which outlives
         // the task and answers "what did we spend, by whom" for a period
         const settledTask = store.taskByThread(bot.id, event.threadId);
-        const selection = settledTask?.modelSelection ?? bot.modelSelection;
+        const selection = directTurnBots.get(event.threadId)?.modelSelection ?? settledTask?.modelSelection ?? bot.modelSelection;
         // A provider that omitted a context measurement must not reuse a
         // stale reading from a different model or a pre-compaction session.
         const measuredSelection = directTurnBots.get(event.threadId)?.modelSelection ?? selection;
@@ -6785,7 +6781,7 @@ bus.subscribe((event: RuntimeEvent) => {
           ? `${measuredSelection.instanceId}:${measuredSelection.model}` : undefined });
         const promptBytes = turnPromptBytes.get(event.threadId);
         turnPromptBytes.delete(event.threadId);
-        bookTurnUsage({
+        const bookedUsage = bookTurnUsage({
           botId: bot.id,
           botName: bot.name,
           threadId: event.threadId,
@@ -6802,6 +6798,14 @@ bus.subscribe((event: RuntimeEvent) => {
             : internal
               ? { kind: "bot", ...(settledTask?.openedBy?.botId ? { botId: settledTask.openedBy.botId } : {}) }
               : turnTriggers.get(event.threadId) ?? { kind: "owner" },
+        }, !!tokens);
+        store.addTaskUsage(bot.id, event.threadId, {
+          input: tokens?.input,
+          output: tokens?.output,
+          cachedInput: tokens?.cachedInput,
+          costUsd: bookedUsage.costUsd,
+          costSource: bookedUsage.costSource,
+          context: { tokens: lastContext?.tokens, window: lastContext?.window ?? modelContextWindow(contextModel) },
         });
         const digestSettled = completedTurnId ? scheduleTurnDigest({
             botId: bot.id,
@@ -6813,7 +6817,7 @@ bus.subscribe((event: RuntimeEvent) => {
             instanceId: selection.instanceId,
             reply,
             isCurrent,
-            ...(tokens ? { usage: { input: tokens.input ?? 0, output: tokens.output ?? 0, ...(typeof tokens.cachedInput === "number" ? { cachedInput: tokens.cachedInput } : {}), costUsd: event.cost ?? null } } : {}),
+            ...(tokens ? { usage: { input: tokens.input ?? 0, output: tokens.output ?? 0, ...(typeof tokens.cachedInput === "number" ? { cachedInput: tokens.cachedInput } : {}), costUsd: bookedUsage.costUsd, costSource: bookedUsage.costSource } } : {}),
           }) : Promise.resolve();
         if (resourceOwner) settlingResourceOwners.set(resourceOwner.threadId, resourceOwner.generation);
         liveTurnByThread.delete(event.threadId);
@@ -6866,10 +6870,10 @@ bus.subscribe((event: RuntimeEvent) => {
         // against the workspace cap and the ledger. Book it under the speaker.
         const tokens = event.usage ?? lastReported;
         const speakingBot = store.bot(speaker.botId);
-        const selection = speakingBot?.modelSelection;
+        const selection = speaker.modelSelection ?? speakingBot?.modelSelection;
         const promptBytes = turnPromptBytes.get(event.threadId);
         turnPromptBytes.delete(event.threadId);
-        bookTurnUsage({
+        const bookedUsage = bookTurnUsage({
           botId: speaker.botId,
           botName: speaker.name,
           threadId: event.threadId,
@@ -6884,7 +6888,7 @@ bus.subscribe((event: RuntimeEvent) => {
           trigger: routineRun
             ? { kind: "routine", routineId: routineRun.routineId, label: routineRun.routineName }
             : turnTriggers.get(event.threadId) ?? { kind: "owner" },
-        });
+        }, !!tokens);
         // Appends are asynchronous. Refresh after persistence so the settled
         // turn appears immediately, without waiting for another message.
         void flushUsageLedger(DATA_DIR).then(() => {
@@ -6899,7 +6903,7 @@ bus.subscribe((event: RuntimeEvent) => {
             driverKind: selection && registry.get(selection.instanceId)?.driverKind,
             reply, from: speaker,
             isCurrent: () => store.groupByThread(event.threadId)?.id === group.id,
-            usage: { input: tokens?.input ?? 0, output: tokens?.output ?? 0, costUsd: event.cost ?? null },
+            ...(tokens ? { usage: { input: tokens.input ?? 0, output: tokens.output ?? 0, ...(typeof tokens.cachedInput === "number" ? { cachedInput: tokens.cachedInput } : {}), costUsd: bookedUsage.costUsd, costSource: bookedUsage.costSource } } : {}),
           });
         }
         liveTurnByThread.delete(event.threadId);
@@ -7227,7 +7231,20 @@ async function compactConversation(input: {
   const controller = new AbortController();
   compactionControllers.set(threadId, { generation, controller });
   try {
-    const summary = await draftSummary(fold.folded, { signal: controller.signal, generateText: instance.generateText?.bind(instance) });
+    const generate = instance.generateText?.bind(instance);
+    const summary = await draftSummary(fold.folded, { signal: controller.signal,
+      generateText: generate ? (prompt, options) => {
+        assertWithinBudget(cfg, DATA_DIR);
+        return generate(prompt, { ...options, onUsage: usage => bookTurnUsage({
+          botId: bot.id, botName: bot.name, threadId: `compaction-${randomUUID()}`,
+          instanceId: instance.instanceId, driverKind: instance.driverKind,
+          model: usage.model, input: usage.input ?? 0, output: usage.output ?? 0,
+          ...(usage.cachedInput !== undefined ? { cachedInput: usage.cachedInput } : {}),
+          costUsd: usage.costUsd ?? null,
+          trigger: manual ? turnTriggers.get(threadId) ?? { kind: "owner" } : { kind: "bot", botId: bot.id },
+        }, usage.input !== undefined && usage.output !== undefined, threadId) });
+      } : undefined,
+    });
     if (!directTurnClaimIsCurrent(bot.id, generation, threadId)) throw new DirectTurnSetupCancelled("context summarization stopped");
     controller.signal.throwIfAborted();
     // Appended teammate results remain after the fold. A changed prefix is
@@ -10787,7 +10804,7 @@ async function runGroupMemberTurn(
   turnResourceOwners.set(threadId, resourceOwner);
   let roomVmTarget: ReturnType<typeof localVmTargetForBot> | null = null;
   let retainRoomVmLease = false;
-  let roomSpeaker: { botId: string; name: string; color: string } | undefined;
+  let roomSpeaker: { botId: string; name: string; color: string; modelSelection?: ModelSelection } | undefined;
   let providerDispatched = false;
   let setupStalled = false;
   let unregisterSetupStall = () => {};
@@ -11379,6 +11396,12 @@ async function runGroupMemberTurn(
     // notes only in a room: a private chat reaches a room through the
     // explicit, disclosed session_search, never automatically
     const roomRecalled = cardContinuation ? "" : autoRecallPrompt(bot, threadId, resolvedLatestImages.text, { conversations: false, userName });
+    // Record the same exact selection passed below, including a routed
+    // instance's default, before streaming events can settle this turn.
+    if (roomSpeaker) roomSpeaker.modelSelection = {
+      ...(instance.instanceId === readyBot.modelSelection.instanceId ? readyBot.modelSelection : { model: instance.models.default }),
+      instanceId: instance.instanceId,
+    };
     guardTurnDispatch(instance.adapter.sendTurn({
         threadId,
         botId: readyBot.id,
@@ -19364,14 +19387,14 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (!bot) return json(res, 404, { error: "no such bot" });
       return json(res, 200, previewSystemPrompt(bot));
     }
-    if (path === "/api/solar-voice/status" && method === "GET") return json(res, 200, { ready: solarSpeechReady(), local: true });
+    if (path === "/api/solar-voice/status" && method === "GET") return json(res, 200, solarSpeechStatus());
     if (path === "/api/solar-voice/transcribe" && method === "POST") {
       const body = await readBody(req, 1_500_000);
       const cancelled = new AbortController();
       const onClose = () => { if (!res.writableFinished) cancelled.abort(); };
       res.once("close", onClose);
       try {
-        return json(res, 200, await transcribeSolarVoice(body?.audio, body?.language, cancelled.signal));
+        return json(res, 200, await transcribeSolarVoice(body?.audio, body?.language, cancelled.signal, body?.preview === true));
       } finally {
         res.off("close", onClose);
       }
@@ -20860,20 +20883,29 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // ── the usage ledger: what this workspace spent over a period ──
     // Read-only over the month files usage-ledger.ts appends at turn.completed.
     // Admin scope by default, like every route not opened to clients.
+    if (method === "GET" && path === '/api/usage/currency') {
+      res.setHeader('cache-control', 'no-store');
+      return json(res, 200, await getUsageCurrency(DATA_DIR));
+    }
     if (method === "GET" && (path === "/api/usage" || path === "/api/usage.csv")) {
       const range = parseUsageRange(url.searchParams.get("from"), url.searchParams.get("to"));
       if (!range) return json(res, 400, { error: "from and to must be YYYY-MM-DD, from no later than to, at most a year apart" });
-      const rows = readUsage(DATA_DIR, range);
+      const rows = readUsage(DATA_DIR, range, { estimateUnpriced: true });
       // The operator's price list is applied only with the billing entitlement.
-      const prices = operatorPrices();
+      const operatorCurrency = cfg.billing?.currency ?? 'USD';
+      const prices = usagePricesInUsd(operatorPrices(), operatorCurrency, operatorCurrency === 'EUR' ? await getUsageCurrency(DATA_DIR) : null);
       if (path === "/api/usage.csv") {
+        const currency = url.searchParams.get('currency') ?? 'USD';
+        if (!['USD', 'EUR'].includes(currency)) return json(res, 400, { error: 'currency must be USD or EUR' });
+        const quote = currency === 'EUR' ? await getUsageCurrency(DATA_DIR) : undefined;
+        if (currency === 'EUR' && !quote) return json(res, 503, { error: 'EUR reference rate unavailable' });
         const stamp = (date: Date) => date.toISOString().slice(0, 10);
         res.writeHead(200, {
           "content-type": "text/csv; charset=utf-8",
           "content-disposition": `attachment; filename="usage-${stamp(range.from)}-${stamp(range.to)}.csv"`,
           "cache-control": "no-store",
         });
-        res.end(usageCsv(rows, prices));
+        res.end(usageCsv(rows, prices, quote ?? undefined));
         return;
       }
       const requested = url.searchParams.get("groupBy") ?? "bot";
@@ -20888,7 +20920,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         groupBy,
         ...summarizeUsage(rows, groupBy, prices),
         budget: spendState(cfg, DATA_DIR),
-        billing: prices ? { currency: cfg.billing?.currency ?? "USD" } : null,
+        billing: prices ? { currency: 'USD' } : null,
       });
     }
 

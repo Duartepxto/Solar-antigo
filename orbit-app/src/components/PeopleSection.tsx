@@ -12,7 +12,7 @@ import { Check, Copy, ExternalLink, Link2, Loader2, Plus, RefreshCw } from "luci
 import { api } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import { formatUsd, hasFiniteCost } from "@/lib/usage";
+import { formatCost, hasFiniteCost } from "@/lib/usage";
 import { readMembership, type Membership } from "../lib/membership";
 import { readSessionState, type SessionState } from "../lib/session";
 import { canPairDevices } from "./ServerPairingCard";
@@ -135,7 +135,7 @@ export function PeopleTable({ people, busy, onRole, onRemove, onLink, readOnly =
           </span>
           <span className="text-right tabular-nums text-ink/55">{person.isDomain ? "—" : lastSeenLabel(person.lastSeenAt)}</span>
           <span className="text-right tabular-nums text-ink" title={t("people.turns", { turns: String(person.turns) })}>
-            {hasFiniteCost(person.costUsd) ? `${person.estimated ? "~" : ""}${formatUsd(person.costUsd)}` : "—"}
+            {hasFiniteCost(person.costUsd) ? `${person.estimated ? "~" : ""}${formatCost(person.costUsd)}` : "—"}
           </span>
           {readOnly ? <span /> : <span className="flex items-center justify-end gap-2 text-[12px]">
             <button type="button" disabled={busy} onClick={() => onLink(person)} aria-label={t("people.link")} title={t("people.link")} className="rounded-md p-1 text-ink/55 hover:bg-ink/[0.05] hover:text-ink disabled:opacity-50"><Link2 size={13} /></button>

@@ -7,7 +7,7 @@ import { Loader2, Plus, RefreshCw } from "lucide-react";
 import { api, useStore, type ConfigStatus } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import { formatUsd, hasFiniteCost } from "@/lib/usage";
+import { formatCost, hasFiniteCost } from "@/lib/usage";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CopyLink } from "./PeopleSection";
 import { Card } from "./SettingsPrimitives";
@@ -61,8 +61,8 @@ export function WorkspacesTable({ fleet, onAct, busy }: { fleet: FleetView; onAc
             </span>
             <span className={cn("text-right", suspended || workspace.status === "provisioning" ? "text-warning" : workspace.status === "running" && workspace.live === "active" ? "text-success" : "text-[#ff8a96]")}>{state}</span>
             <span className="text-right tabular-nums text-ink" title={workspace.usage.turns === null ? undefined : t("workspaces.turns", { turns: String(workspace.usage.turns) })}>
-              {hasFiniteCost(workspace.usage.costUsd) ? formatUsd(workspace.usage.costUsd) : "—"}
-              {hasFiniteCost(workspace.usage.billableUsd) && <span className="text-ink/55"> · {formatUsd(workspace.usage.billableUsd)}</span>}
+              {hasFiniteCost(workspace.usage.costUsd) ? formatCost(workspace.usage.costUsd) : "—"}
+              {hasFiniteCost(workspace.usage.billableUsd) && <span className="text-ink/55"> · {formatCost(workspace.usage.billableUsd)}</span>}
             </span>
             <span className="flex items-center justify-end gap-2 text-[12px]">
               {operational && <><button type="button" disabled={busy !== null} onClick={() => onAct(workspace.slug, "users")} className="text-ink/55 hover:text-ink disabled:opacity-50">{t("workspaces.users")}</button>

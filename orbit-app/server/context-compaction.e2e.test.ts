@@ -92,6 +92,10 @@ it("compacts durably, keeps corrections and starts a fresh native session withou
   expect(record.compaction.summary).toContain("CORRECTION");
   expect(Buffer.byteLength(record.compaction.summary)).toBeLessThanOrEqual(6_000);
   expect(record.compaction.by).toBe("person");
+  const usageFile = join(f.session.info.dataDir, "usage", `${new Date().toISOString().slice(0, 7)}.jsonl`);
+  await expect.poll(() => existsSync(usageFile) ? readFileSync(usageFile, "utf8").trim().split("\n").map(line => JSON.parse(line)).filter(row => row.threadId.startsWith("compaction-")).length : 0).toBe(1);
+  const summaryUsage = readFileSync(usageFile, "utf8").trim().split("\n").map(line => JSON.parse(line)).find(row => row.threadId.startsWith("compaction-"));
+  expect(summaryUsage).toMatchObject({ botId: f.bot.id, instanceId: "claude", driverKind: "claudeAgent", model: "claude-haiku-4-5", input: 15, output: 5, cachedInput: 2, costUsd: 0.01, costSource: "reported", trigger: { kind: "owner" } });
   expect(f.turns()).toHaveLength(turnsBefore);
   await f.compact();
   await f.idle();

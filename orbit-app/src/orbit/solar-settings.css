@@ -10,12 +10,14 @@
   caret-color: var(--color-accent);
 }
 
-/* The settings switch (SettingsPrimitives.Switch): gold track, dark knob,
-   as the quick-settings toggles in the Solar header. */
-:root[data-solar] button[role="switch"][aria-checked="true"] {
+/* Both compact switches and clickable list rows expose their visual parts.
+   A row's switch role describes behavior; it must not color the whole row,
+   its label, metadata or status dot. */
+:root[data-solar] [role="switch"][aria-checked="true"][data-slot="switch-track"],
+:root[data-solar] [role="switch"][aria-checked="true"] > [data-slot="switch-track"] {
   background-color: var(--color-accent);
 }
-:root[data-solar] button[role="switch"][aria-checked="true"] > span {
+:root[data-solar] [role="switch"][aria-checked="true"] [data-slot="switch-thumb"] {
   background-color: var(--color-accent-ink);
 }
 

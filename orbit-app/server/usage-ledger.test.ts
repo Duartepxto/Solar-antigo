@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { removeTempDir } from "./testing/cleanup.ts";
+import { ECB_USAGE_CURRENCY_SEED } from "../shared/usage-currency.ts";
 import {
   appendUsage,
   flushUsageLedger,
@@ -37,6 +38,24 @@ describe("usage ledger files", () => {
   let dataDir: string;
   beforeEach(() => { dataDir = mkdtempSync(join(tmpdir(), "orbit-usage-")); });
   afterEach(async () => { await removeTempDir(dataDir); });
+
+  it("recovers previously unknown GPT-6 prices only for measured turns without rewriting the ledger", async () => {
+    const at = "2026-10-07T10:00:00.000Z";
+    await appendUsage(dataDir, row({ at, model: "gpt-6-luna", driverKind: "codex", input: 1_000_000, cachedInput: 900_000, output: 100_000, costUsd: null }));
+    await appendUsage(dataDir, row({ at, model: "gpt-6-luna", input: 0, output: 0, costUsd: null }));
+    await appendUsage(dataDir, row({ at, model: "gpt-6-luna", input: 0, output: 0, costUsd: 0 }));
+    await appendUsage(dataDir, row({ at, model: "unlisted-model", costUsd: null }));
+    const file = usageFileFor(dataDir, new Date(at));
+    const original = readFileSync(file, "utf8");
+    const range = { from: new Date("2026-10-01"), to: new Date("2026-10-31") };
+    expect(readUsage(dataDir, range)[0].costUsd).toBeNull();
+    const recovered = readUsage(dataDir, range, { estimateUnpriced: true });
+    expect(recovered[0]).toMatchObject({ costUsd: 0.069, costSource: "estimated", priceAsOf: "2026-10-08", priceSource: "https://developers.openai.com/api/docs/models/gpt-6-luna" });
+    expect(recovered[1].costUsd).toBeNull();
+    expect(recovered[2]).toMatchObject({ costUsd: 0, costSource: "reported" });
+    expect(recovered[3].costUsd).toBeNull();
+    expect(readFileSync(file, "utf8")).toBe(original);
+  });
 
   it("appends one private row per turn into the month's file and reads it back in order", async () => {
     appendUsage(dataDir, row({ at: "2026-09-03T10:00:00.000Z" }));
@@ -191,6 +210,18 @@ describe("usage summaries", () => {
     expect(usageCsv([{ ...rows[0]!, costSource: "estimated" }]).split("\n")[1]).toContain(",0.012,estimated,t1");
   });
 
+  it("exports euros with a dated exchange rate, retains canonical dollars and preserves unknown values", () => {
+    const items = [{ ...rows[0]!, costUsd: 0.00000184, costSource: "estimated" as const }, { ...rows[0]!, costUsd: 0 }, { ...rows[0]!, costUsd: null }];
+    const lines = usageCsv(items, null, ECB_USAGE_CURRENCY_SEED).trim().split("\n");
+    const headers = lines[0].split(",");
+    const values = lines.slice(1).map(line => Object.fromEntries(line.split(",").map((value, i) => [headers[i], value])));
+    expect(values[0]).toMatchObject({ cost_usd: "0.00000184", cost_source: "estimated", currency: "EUR", usd_per_eur: "1.1186", exchange_date: "2026-10-08", exchange_source: "ECB" });
+    expect(Number(values[0].cost_eur)).toBeCloseTo(0.00000184 / 1.1186, 15);
+    expect(values[1].cost_eur).toBe("0");
+    expect(values[2].cost_eur).toBe("");
+    expect(usageCsv([rows[0]!], { default: { inputPerMillion: 1, outputPerMillion: 1 } }, ECB_USAGE_CURRENCY_SEED)).toContain("billable_eur");
+  });
+
   it("keeps estimates apart from reported cost, and reads rows written before estimates existed as reported", () => {
     const estimated = { ...rows[1]!, costUsd: 0.2, costSource: "estimated" as const };
     const legacy = { ...rows[0]! }; // costUsd 0.012, no costSource
@@ -203,5 +234,17 @@ describe("usage summaries", () => {
     expect(summary.groups.find((g) => g.label === "Scout")!.estimatedUsd).toBeNull();
     // an unpriced row is still counted as unpriced, never as a $0 estimate
     expect(summarizeUsage([rows[1]!], "bot").total).toMatchObject({ costUsd: null, estimatedUsd: null, unpriced: 1 });
+  });
+
+  it("preserves unknown cached input in grouped totals and CSV rather than counting it as fresh", () => {
+    const items = [rows[0]!, { ...rows[0]!, botId: "unknown-cache", cachedInput: undefined }];
+    const summary = summarizeUsage(items, "bot");
+    expect(summary.total.cachedInput).toBeUndefined();
+    expect(summary.groups.find(group => group.key === "bot:b1")?.cachedInput).toBe(900);
+    expect(summary.groups.find(group => group.key === "bot:unknown-cache")?.cachedInput).toBeUndefined();
+    const headers = usageCsv(items).split("\n")[0].split(",");
+    expect(usageCsv(items).split("\n")[2].split(",")[headers.indexOf("cached_input_tokens")]).toBe("");
+    expect(summarizeUsage([rows[0]!, { ...rows[0]!, input: 0, cachedInput: undefined }], "bot").total.cachedInput).toBe(900);
+    expect(summarizeUsage([{ ...rows[0]!, cachedInput: 1500 }], "bot").total.cachedInput).toBe(1200);
   });
 });

@@ -65,7 +65,8 @@ it.skipIf(process.env.ORBIT_UI_E2E !== '1')('dictates into the real chat compose
     await browser('wait', '--fn', "!!document.querySelector('button[aria-label=\"Start dictation\"]')");
     await browser('find', 'role', 'textbox', 'fill', '--name', 'Message Jarvis dictation fixture', 'Keep my draft');
     await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
-    expect((await browser('eval', 'window.testSolarVoice.options.endpointMs')).result).toBe(1800);
+    expect((await browser('eval', 'window.testSolarVoice.options.endpointMs === undefined')).result).toBe(true);
+    expect((await browser('eval', 'window.testSolarVoice.options.continuous')).result).toBe(true);
     await browser('eval', '(() => { window.testSolarVoice.transcript({error:"recognition server unavailable"}); window.testSolarVoice.end({code:1}); return true; })()');
     await browser('wait', '--fn', 'document.body.textContent.includes("Speech recognition could not start")');
     expect((await browser('eval', 'document.querySelector("textarea").value')).result).toBe('Keep my draft');
@@ -74,11 +75,41 @@ it.skipIf(process.env.ORBIT_UI_E2E !== '1')('dictates into the real chat compose
     await browser('wait', '--fn', 'document.body.textContent.includes("No speech was detected")');
     expect((await browser('eval', 'document.querySelector("textarea").value')).result).toBe('Keep my draft');
     await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
+    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"Olá, quero continuar",partial:true}); return true; })()');
+    await browser('wait', '--fn', 'document.querySelector("textarea").value === "Keep my draft Olá, quero continuar"');
+    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"Olá, quero continuar o projeto",partial:true}); return true; })()');
+    await browser('wait', '--fn', 'document.querySelector("textarea").value === "Keep my draft Olá, quero continuar o projeto"');
+    expect((await browser('eval', 'document.querySelector("textarea").readOnly')).result).toBe(true);
+    await browser('screenshot', join(evidence, 'live-draft.png'));
+    await browser('find', 'role', 'button', 'click', '--name', 'Stop dictation');
+    expect((await browser('eval', 'window.testSolarVoice.finishes')).result).toBe(1);
+    expect((await browser('eval', 'document.querySelector("textarea").readOnly && document.querySelector("button[aria-busy=true]").disabled')).result).toBe(true);
+    await browser('screenshot', join(evidence, 'finishing-draft.png'));
+    // Final text is intentionally delivered after Stop. Capture remains
+    // protected until that result settles and never submits the composer.
+    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"Olá, quero continuar o projeto com a equipa",partial:false}); window.testSolarVoice.end({code:0}); window.testSolarVoice.finishResolve?.(); return true; })()');
+    await browser('wait', '--fn', '!document.querySelector("textarea").readOnly');
+    expect((await browser('eval', 'document.querySelector("textarea").value')).result).toBe('Keep my draft Olá, quero continuar o projeto com a equipa');
+    expect((await browser('eval', 'window.testDictationRequests.filter(request => request.method.toUpperCase() === "POST" && /\\/(?:messages|prompt|send)$/.test(request.path))')).result).toEqual([]);
+    await browser('find', 'role', 'textbox', 'fill', '--name', 'Message Jarvis dictation fixture', 'Keep my draft');
+    await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
     await browser('find', 'role', 'textbox', 'click', '--name', 'Message Jarvis dictation fixture');
     await browser('press', 'Escape');
-    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"late words",partial:false}); window.testSolarVoice.end({code:1}); return true; })()');
+    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"late partial words",partial:true}); window.testSolarVoice.transcript({text:"late words",partial:false}); window.testSolarVoice.end({code:1}); return true; })()');
     expect((await browser('eval', 'document.querySelector("textarea").value')).result).toBe('Keep my draft');
     expect((await browser('eval', 'document.body.textContent.includes("Speech recognition could not start")')).result).toBe(false);
+    // Escape also cancels while Stop is waiting for final recognition.
+    await browser('find', 'role', 'button', 'click', '--name', 'Start dictation');
+    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"palavras em progresso",partial:true}); return true; })()');
+    await browser('wait', '--fn', 'document.querySelector("textarea").value.includes("palavras em progresso")');
+    await browser('find', 'role', 'button', 'click', '--name', 'Stop dictation');
+    await browser('wait', '--fn', 'document.activeElement === document.querySelector("textarea")');
+    await browser('press', 'Escape');
+    await browser('wait', '--fn', '!document.querySelector("textarea").readOnly');
+    const cancelledDraft = (await browser('eval', 'document.querySelector("textarea").value')).result;
+    await browser('eval', '(() => { window.testSolarVoice.transcript({text:"late final words after Stop",partial:false}); window.testSolarVoice.end({code:0}); window.testSolarVoice.finishResolve?.(); return true; })()');
+    expect((await browser('eval', 'document.querySelector("textarea").value')).result).toBe(cancelledDraft);
+    expect((await browser('eval', 'window.testDictationRequests.filter(request => request.method.toUpperCase() === "POST" && /\\/(?:messages|prompt|send)$/.test(request.path))')).result).toEqual([]);
   } catch (error) {
     console.error('Dictation fixture state:', JSON.stringify(await browser('snapshot').catch(() => null)));
     console.error('Dictation fixture errors:', JSON.stringify(await browser('errors').catch(() => null)));

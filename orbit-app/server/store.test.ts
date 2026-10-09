@@ -2214,6 +2214,19 @@ describe("Store task usage", () => {
     expect(store.addTaskUsage(bot.id, bot.threadId, { costUsd: null })).toMatchObject({ input: 0, output: 0, costUsd: null, turns: 1 });
   });
 
+  it("persists measured, estimated and unpriced shares without presenting an incomplete total as complete", () => {
+    const store = new Store(selection);
+    const bot = store.createBot();
+    store.addTaskUsage(bot.id, bot.threadId, { input: 10, output: 1, costUsd: null });
+    store.addTaskUsage(bot.id, bot.threadId, { input: 10, output: 1, costUsd: 0.02, costSource: "estimated" });
+    expect(store.addTaskUsage(bot.id, bot.threadId, { input: 10, output: 1, costUsd: 0.03, costSource: "reported" }))
+      .toMatchObject({ costUsd: 0.05, estimatedUsd: 0.02, unpriced: 1, costSource: "mixed", turns: 3, lastTurn: { costUsd: 0.03, costSource: "reported" } });
+    expect(new Store(selection).taskByThread(bot.id, bot.threadId)?.usage)
+      .toMatchObject({ costUsd: 0.05, estimatedUsd: 0.02, unpriced: 1, costSource: "mixed" });
+    expect(store.addTaskUsage(bot.id, bot.threadId, { costUsd: -5 }))
+      .toMatchObject({ costUsd: 0.05, estimatedUsd: 0.02, unpriced: 2 });
+  });
+
   it("ignores an unknown task", () => {
     const store = new Store(selection);
     const bot = store.createBot();

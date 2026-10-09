@@ -69,6 +69,12 @@ it.skipIf(!enabled)("talk mode's island listens, tucks in while Orbit thinks, an
     preview = await mountPreview({ info: { url: "http://127.0.0.1:9" } }, {
       entry: "/scripts/testing/island-preview.tsx", route: "/__island.html", title: "Isolated talk island", logLevel: "warn",
       extraRoutes: [
+        // Use the fixture's scripted voice recorder for both Solar and Orbit.
+        // Solar's real Windows bridge would request the host microphone.
+        { path: "/src/lib/solar-voice.ts", handler: (_req, res) => {
+          res.setHeader("content-type", "text/javascript");
+          res.end("export const solarSpeechBridge = () => window.ogb;");
+        } },
         { path: "/api/events", handler: logged((req, res) => {
           res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
           res.write(": open\n\n");
@@ -123,10 +129,11 @@ it.skipIf(!enabled)("talk mode's island listens, tucks in while Orbit thinks, an
     await waitFor(`${island}.getBoundingClientRect().width === 273`);
     expect(await evalJs(box)).toEqual([273, 32]);
     expect(await evalJs("window.__island.talkState.at(-1)")).toBe("listening");
-    expect(await evalJs("Boolean(document.querySelector('.orbit-island canvas'))")).toBe(true);
+    expect(await evalJs("Boolean(document.querySelector('.orbit-island canvas, .orbit-island .shell-solar-face > .solar-mini-render, .orbit-island .shell-solar-face > .solar-mini-planet'))")).toBe(true);
+    const animatedCharacter = await evalJs("Boolean(document.querySelector('.orbit-island canvas'))");
     await evalJs("window.__load.frames = 0; true");
     await browser("wait", "500");
-    expect(await evalJs("window.__load.frames")).toBeGreaterThan(5);
+    if (animatedCharacter) expect(await evalJs("window.__load.frames")).toBeGreaterThan(5);
     await browser("screenshot", join(EVIDENCE, "2-listening.png"));
 
     // what it hears opens it 640 wide
@@ -179,21 +186,54 @@ it.skipIf(!enabled)("talk mode's island listens, tucks in while Orbit thinks, an
     await evalJs("window.__talk.summon({ id: 20, capture: { ok: false, reason: 'paused' }, display: { id: '1', bounds: {}, topInset: 0, notch: null } })");
     await waitFor("window.__island.talkState.at(-1) === 'listening'");
     await browser("wait", "500");
-    expect(await evalJs("(() => { const r = document.querySelector('.solar-talk-pill').getBoundingClientRect(); return [Math.round(r.right), Math.round(r.y+r.height/2)]; })()")).toEqual([324, 230]);
+    expect(await evalJs("(() => { const r = document.querySelector('.solar-talk-pill').getBoundingClientRect(); return [Math.round(r.right), Math.round(r.y+r.height/2)]; })()")).toEqual([340, 230]);
     await browser("screenshot", join(EVIDENCE, "7-windows-listening.png"));
     expect(await evalJs("document.querySelector('.solar-talk-pill canvas')")).toBe(null);
+    // A notice opens details automatically, but the dock button can still
+    // close them without discarding the notice or stopping the microphone.
+    await evalJs("document.querySelector('.solar-voice-orb').click()");
+    await waitFor("document.querySelector('.solar-voice-panel') === null");
+    expect(await evalJs("document.querySelector('.solar-voice-orb').getAttribute('aria-expanded')")).toBe("false");
+    expect(await evalJs("window.__island.talkState.at(-1)")).toBe("listening");
+    await evalJs("document.querySelector('.solar-voice-orb').click()");
+    await waitFor("document.querySelector('.solar-voice-notice') !== null");
     await evalJs("document.querySelector('.solar-voice-notice button').click()");
+    await evalJs("document.querySelector('.solar-voice-orb').click()");
     await browser("wait", "400");
-    expect(await evalJs("(() => { const r=document.querySelector('.solar-talk-pill').getBoundingClientRect(); return [Math.round(r.width),Math.round(r.height)]; })()")).toEqual([48, 108]);
+    expect(await evalJs("(() => { const r=document.querySelector('.solar-talk-pill').getBoundingClientRect(); return [Math.round(r.width),Math.round(r.height)]; })()")).toEqual([56, 220]);
+    await browser("mouse", "move", "320", "230");
+    await waitFor("window.__island.interactive.at(-1) === true");
+    await browser("mouse", "move", "180", "230");
+    await waitFor("window.__island.interactive.at(-1) === false");
+    // The dock stays at the edge while details open to its left.
+    await evalJs("document.querySelector('.solar-voice-orb').click()");
+    await waitFor("document.querySelector('.solar-voice-panel') !== null");
+    await waitFor("window.__island.interactive.at(-1) === true");
+    await browser("wait", "400");
+    expect(await evalJs("document.querySelector('.solar-voice-panel').getBoundingClientRect().right < document.querySelector('.solar-voice-rail').getBoundingClientRect().left")).toBe(true);
+    await evalJs("document.querySelector('.solar-voice-orb').click()");
+    await waitFor("window.__island.interactive.at(-1) === false");
+    await browser("wait", "400");
     await browser("screenshot", join(EVIDENCE, "8-solar-compact.png"));
     await evalJs("window.__talk.end({ code: 0 })");
     await waitFor("window.__island.starts === 2 && window.__island.talkState.at(-1) === 'listening'");
+    // A new summon resets the previous collapse choice: its notice is
+    // visible again until the owner chooses to close details.
+    expect(await evalJs("document.querySelector('.solar-voice-orb').getAttribute('aria-expanded')")).toBe("true");
+    expect(await evalJs("Boolean(document.querySelector('.solar-voice-notice'))")).toBe(true);
     expect(sent).toHaveLength(1);
     await evalJs("window.__talk.transcript({ text: 'hello from the Windows pill' }); window.__talk.end({ code: 0 })");
     for (let waited = 0; sent.length < 2 && waited < 8_000; waited += 100) await pause(100);
     expect(sent[1]).toMatchObject({ surface: "talk", text: "hello from the Windows pill" });
     expect(await evalJs("getComputedStyle(document.querySelector('.solar-talk-pill')).opacity")).toBe("1");
     expect(await evalJs("document.querySelector('.solar-voice-transcript').textContent")).toBe("hello from the Windows pill");
+    await evalJs("document.querySelector('.solar-voice-orb').click()");
+    await waitFor("document.querySelector('.solar-voice-panel') === null");
+    // Streaming another transcript does not override an explicit collapse.
+    await evalJs("window.__talk.transcript({ text: 'hello from the Windows pill, still here' })");
+    expect(await evalJs("document.querySelector('.solar-voice-panel')")).toBe(null);
+    await evalJs("document.querySelector('.solar-voice-orb').click()");
+    await waitFor("document.querySelector('.solar-voice-transcript')?.textContent === 'hello from the Windows pill, still here'");
     await browser("screenshot", join(EVIDENCE, "9-solar-thinking.png"));
     push({ kind: "message", threadId: "t-orbit", message: { id: "a2", role: "bot", kind: "text", text: "Hello, I am ready." } });
     push({ kind: "runtime", event: { type: "turn.completed", threadId: "t-orbit" } });

@@ -38,6 +38,15 @@ describe("built-in list prices", () => {
       expect(listPriceFor(model), model).toBeNull();
     }
   });
+
+  it("prices each current Sol and Luna model from its own published rate", () => {
+    expect(listPriceFor("gpt-6.1-sol")).toEqual({ inputPerMillion: 2, cachedInputPerMillion: 0.1, outputPerMillion: 10 });
+    expect(listPriceFor("gpt-6-sol")).toEqual({ inputPerMillion: 2, cachedInputPerMillion: 0.2, outputPerMillion: 10 });
+    expect(listPriceFor("gpt-6-luna")).toEqual({ inputPerMillion: 0.1, cachedInputPerMillion: 0.01, outputPerMillion: 0.5 });
+    expect(listPriceFor("gpt-6-sol-fake")).toBeNull();
+    expect(ledgerCost({ driverKind: "codex", model: "gpt-6-luna", input: 1_000_000, cachedInput: 900_000, output: 100_000, costUsd: null }, null))
+      .toEqual({ costUsd: 0.069, costSource: "estimated" });
+  });
 });
 
 describe("what the ledger books for a settled turn", () => {

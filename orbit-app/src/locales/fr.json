@@ -641,8 +641,6 @@
   "keys.vps.descAfter": " pour la forme d’alias requise.",
   "keys.vps.aria": "Alias de la config SSH du VPS auto-hébergé",
   "keys.vps.removeAlias": "Supprimer l’alias enregistré",
-  "usage.title": "Utilisation",
-  "usage.subtitle": "Jetons et coût par bot, additionnés sur chaque tour terminé. Seuls les moteurs qui rapportent un prix en affichent un.",
   "usage.empty": "Rien de dépensé pour l’instant — les chiffres apparaissent après le premier tour d’un bot.",
   "usage.colBot": "Bot",
   "usage.colTurns": "Tours",

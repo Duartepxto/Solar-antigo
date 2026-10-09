@@ -172,8 +172,8 @@ export function List({ title, items, empty }: { title: string; items: ListItem[]
           <span className="min-w-0 flex-1 text-[13.5px] text-ink/90">{it.name}</span>
           {it.meta && <span className="max-w-[55%] truncate text-[12px] text-ink/50">{it.meta}</span>}
           {it.on !== undefined && (
-            <span aria-hidden className={cn("relative h-[18px] w-[30px] shrink-0 rounded-[9px] transition-colors", it.on ? (SOLAR ? "bg-[#ddbd89]" : "bg-[#1084fe]") : "bg-ink/[0.14]")}>
-              <span className="absolute top-[2px] size-[14px] rounded-full bg-white transition-[left]" style={{ left: it.on ? 14 : 2 }} />
+            <span data-slot="switch-track" aria-hidden className={cn("relative h-[18px] w-[30px] shrink-0 rounded-[9px] transition-colors", it.on ? (SOLAR ? "bg-[#ddbd89]" : "bg-[#1084fe]") : "bg-ink/[0.14]")}>
+              <span data-slot="switch-thumb" className="absolute top-[2px] size-[14px] rounded-full bg-white transition-[left]" style={{ left: it.on ? 14 : 2 }} />
             </span>
           )}
         </>;

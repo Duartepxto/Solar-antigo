@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Box } from "lucide-react";
 import { openNotificationTarget, StoreProvider, useStore } from "@/state/store";
 import { useWelcomeViewer, WelcomeGate } from "@/components/onboarding/WelcomeGate";
 import { spotlightsQuiet } from "@/lib/onboarding";
@@ -14,11 +15,58 @@ import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import { setLocale, setSystemLocale } from "@/lib/i18n";
 import { shouldOpenKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { OrbitShell } from "@/orbit/OrbitShell";
+import { ORBIT_FOCUS_EVENT } from "@/orbit/events";
 import { effectiveLanguage, useLanguageChoice } from "@/lib/language-preference";
+import { t } from "@/lib/i18n";
+import "@/workspace-v2/workspace-v2.css";
+import { useUsageCurrencyRefresh } from '@/lib/usage-currency';
+
+const WorkspaceV2 = lazy(() => import("@/workspace-v2/WorkspaceV2").then(module => ({ default: module.WorkspaceV2 })));
+const WORKSPACE_HISTORY_BOT = "solarWorkspaceConversationBotId";
+
+function workspaceHistoryBot(state: unknown): string | null {
+  if (!state || typeof state !== "object") return null;
+  const id = (state as Record<string, unknown>)[WORKSPACE_HISTORY_BOT];
+  return typeof id === "string" && id ? id : null;
+}
 
 function Shell() {
+  useUsageCurrencyRefresh();
   const { state, dispatch } = useStore();
   const { capabilities } = useDesktopCapabilities();
+  const [workspaceV2, setWorkspaceV2] = useState(() => new URLSearchParams(window.location.search).get("workspace") === "v2");
+  const pendingWorkspaceBot = useRef<string | null>(workspaceV2 ? null : workspaceHistoryBot(window.history.state));
+  const switchWorkspace = (next: boolean, botId?: string) => {
+    pendingWorkspaceBot.current = next ? null : botId ?? null;
+    const url = new URL(window.location.href);
+    if (next) url.searchParams.set("workspace", "v2");
+    else url.searchParams.delete("workspace");
+    // Keep other app history fields while recording the conversation that
+    // belongs to this Solar entry. A normal exit still returns to the map.
+    const historyState = { ...window.history.state };
+    if (!next && botId) historyState[WORKSPACE_HISTORY_BOT] = botId;
+    else delete historyState[WORKSPACE_HISTORY_BOT];
+    window.history.pushState(historyState, "", `${url.pathname}${url.search}${url.hash}`);
+    setWorkspaceV2(next);
+  };
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      const next = new URLSearchParams(window.location.search).get("workspace") === "v2";
+      pendingWorkspaceBot.current = next ? null : workspaceHistoryBot(event.state);
+      setWorkspaceV2(next);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+  useEffect(() => {
+    if (workspaceV2 || !state.connected || !pendingWorkspaceBot.current) return;
+    const botId = pendingWorkspaceBot.current;
+    if (!state.bots.some(bot => bot.id === botId && !bot.hidden)) return;
+    pendingWorkspaceBot.current = null;
+    // OrbitShell deliberately ignores the first snapshot's selection. Send
+    // its existing focus event after the map has mounted its listeners.
+    window.dispatchEvent(new CustomEvent(ORBIT_FOCUS_EVENT, { detail: { botId } }));
+  }, [workspaceV2, state.connected, state.bots]);
   const unreadCount =
     state.bots.filter((bot) => !bot.hidden && bot.unread).length +
     state.groups.filter((group) => group.unread).length;
@@ -148,7 +196,18 @@ function Shell() {
       {/* fixed-position pill, top centre — outside the layout flow */}
       <UpdateBanner />
       <div className="relative flex min-h-0 flex-1">
-      <OrbitShell onSearch={() => setPaletteRequest((n) => n + 1)} paletteOpen={paletteOpen} />
+      {workspaceV2 ? <Suspense fallback={<div className="workspace-v2" role="status"><p className="m-auto">{t("workspaceV2.sceneLoading")}</p></div>}>
+        <WorkspaceV2 windowChrome={capabilities.windowChrome} onExit={() => switchWorkspace(false)} onOpenConversation={id => {
+          dispatch({ type: "select", id });
+          switchWorkspace(false, id);
+        }} />
+      </Suspense> : <>
+        <OrbitShell onSearch={() => setPaletteRequest((n) => n + 1)} paletteOpen={paletteOpen} />
+        <a className="workspace-v2-entry" data-window-chrome={capabilities.windowChrome} href="?workspace=v2" onClick={event => {
+          event.preventDefault();
+          switchWorkspace(true);
+        }} aria-label={t("workspaceV2.enter")} title={t("workspaceV2.enter")}><Box size={16} aria-hidden="true" /><span>{t("workspaceV2.entryLabel")}</span></a>
+      </>}
       {/* The Local VM workspace takes the bot's stage (OrbitShell). */}
       {/* The panels below are siblings, so their keys must differ even
           though each is remounted per bot. Two siblings keyed `bot.id`

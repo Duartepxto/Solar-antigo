@@ -35,8 +35,13 @@ Cleanup stops the exact fixture children and removes their temporary data.
 
 ## Bounds and limitations
 
-Only built-in agents-tool text results are changed. Replies above 24,000 UTF-16
-code units receive a prefix of at most 16,000 plus a short notice. Pages use
+Only built-in agents-tool text results are changed. Since 2026-10-08, replies
+above 8,000 UTF-16 code units receive an initial prefix of at most 4,000 plus
+a short notice (previously 24,000 / 16,000). A requested `tool_result_read`
+page still returns up to 16,000, and retained text remains 128 Ki code units.
+This reduces automatic medium/large tool-output context while preserving
+on-demand recovery. It does not limit native CLI commands, external MCP
+servers or the fixed tool catalogue. Pages use
 those same character offsets without splitting surrogate pairs. Cache I/O has
 a three-second timeout; the original tool call is not retried or cancelled
 by that timeout. Tool errors keep their error status.

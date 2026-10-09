@@ -4,12 +4,13 @@
 
 import { useEffect, useState } from "react";
 import { t } from "@/lib/i18n";
-import { api, currentTaskBot, useStore, type Bot } from "@/state/store";
+import { api, useStore, type Bot } from "@/state/store";
 import { MAUS_COLORS, MAUS_COLOR_NAMES } from "@/lib/mascot";
 import type { BotOverview } from "@/lib/bot-overview-types";
 import type { LocaleKey } from "@/locales";
 import { effectivePlace, placeLabelKey } from "@/lib/place";
 import { approvalModeFor } from "../../../shared/approval-mode";
+import { botEngineDetails } from "@/lib/bot-engine";
 import { BOT_PROFILE_LIMITS } from "../../../shared/bot-profile";
 import { useBotSettingsDerived } from "@/components/bot-settings/useBotSettingsDerived";
 import { SoulField } from "@/components/SoulField";
@@ -77,9 +78,9 @@ export function ProfilePanel({ bot, onBack, open }: { bot: Bot; onBack: () => vo
 export function OverviewPanel({ bot: profile, onBack, open }: { bot: Bot; onBack: () => void; open: (p: BotPanelKey) => void }) {
   const { state, flushBotPatches, dispatch } = useStore();
   // this conversation's settings, the ones its header chips show and change
-  const bot = currentTaskBot(profile);
+  const { bot, engine, model } = botEngineDetails(profile, state.instances);
   // any bot whose engine can coordinate may set itself up, as upstream offered
-  const { canCoordinate } = useBotSettingsDerived(profile);
+  const { canCoordinate } = useBotSettingsDerived(bot);
   const [overview, setOverview] = useState<BotOverview | null>(null);
   const [prompt, setPrompt] = useState<PromptPreviewData | null>(null);
   const [error, setError] = useState(false);
@@ -92,7 +93,6 @@ export function OverviewPanel({ bot: profile, onBack, open }: { bot: Bot; onBack
     ])).catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };
   }, [bot.id, bot.threadId, bot.approvalMode, bot.autoApprove, bot.modelSelection.instanceId, flushBotPatches]);
-  const engine = state.instances.find((i) => i.instanceId === bot.modelSelection.instanceId);
   const level = approvalModeFor(bot);
   const skillsNote = overview?.does.length ?? 0;
   return (
@@ -104,7 +104,7 @@ export function OverviewPanel({ bot: profile, onBack, open }: { bot: Bot; onBack
       {error && !overview && <Warning>{t("orbit.p.overview.error")}</Warning>}
       <Rows rows={[
         { k: t("orbit.p.overview.status"), v: bot.activity === "waiting-on-you" ? t("orbit.val.waiting") : bot.busy ? t("orbit.val.working") : t("orbit.val.idle") },
-        { k: t("orbit.p.overview.model"), v: `${engine?.displayName ?? bot.modelSelection.instanceId} · ${engine?.models.options.find((o) => o.id === bot.modelSelection.model)?.label ?? bot.modelSelection.model}` },
+        { k: t("orbit.p.overview.model"), v: `${engine} · ${model}` },
         { k: t("orbit.p.overview.works"), v: t(placeLabelKey(effectivePlace(bot))) },
         { k: t("orbit.p.overview.approvals"), v: t(`approvalMode.${level}.label` as LocaleKey) },
         { k: t("orbit.p.overview.does"), v: t("orbit.p.overview.doesCount", { count: skillsNote }) },

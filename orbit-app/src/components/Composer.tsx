@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import { ArrowUp, BookOpen, Clock, Mic, Paperclip, Plus, Square, Target, Users, X } from "lucide-react";
+import { ArrowUp, BookOpen, Clock, LoaderCircle, Mic, Paperclip, Plus, Square, Target, Users, X } from "lucide-react";
 import { useStore, visibleMessages, currentTaskBot, type Bot, type Group, type Message } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { activeLocale, t } from "@/lib/i18n";
@@ -208,7 +208,8 @@ export function Composer({
   const [speechError, setSpeechError] = useState<string | null>(null);
   const solarComposer = import.meta.env.VITE_JARVIS_SOLAR === 'true';
   const solarVoice = useSolarDictation(text, editText, draftId);
-  const isRecording = solarComposer ? solarVoice.listening : recording;
+  const isFinishingDictation = solarComposer && solarVoice.finishing;
+  const isRecording = solarComposer ? solarVoice.listening || solarVoice.finishing : recording;
   const visibleSpeechError = solarComposer && solarVoice.error
     ? t(`jarvis.solar.voice.${solarVoice.error === 'unsupported' ? 'unavailable' : ['not-allowed', 'service-not-allowed'].includes(solarVoice.error) ? 'permission' : solarVoice.error === 'no-speech' ? 'noSpeech' : solarVoice.error === 'busy-elsewhere' ? 'busy' : solarVoice.error === 'no-microphone' ? 'noMicrophone' : 'error'}`)
     : speechError;
@@ -559,7 +560,7 @@ export function Composer({
     }
   };
   const send = () => {
-    if (solarComposer && solarVoice.listening) return;
+    if (solarComposer && (solarVoice.listening || solarVoice.finishing)) return;
     if (locked || attachmentPending) return;
     if (
       attachments.some((attachment) => attachment.kind === "image") &&
@@ -727,7 +728,13 @@ export function Composer({
   }, [recording, editText]);
 
   const toggleMic = () => {
-    if (solarComposer) { solarVoice.toggle(); return; }
+    if (solarComposer) {
+      solarVoice.toggle();
+      // Keep Escape reachable after Stop replaces the mic with a disabled
+      // processing control. The editable draft retains focus throughout.
+      requestAnimationFrame(() => inputRef.current?.focus());
+      return;
+    }
     if (!capabilities.dictation.available || !window.ogb) {
       setSpeechError(t("composer.dictation.unavailable"));
       return;
@@ -1060,7 +1067,7 @@ export function Composer({
           // already refuses while an attachment is pending.
           disabled={Boolean(approval) || locked}
           readOnly={solarComposer && isRecording}
-          aria-busy={bot?.awaitingThreadSnapshot || undefined}
+          aria-busy={isFinishingDictation || bot?.awaitingThreadSnapshot || undefined}
           placeholder={
             setupLocked
               ? t("composer.placeholder.locked")
@@ -1068,6 +1075,8 @@ export function Composer({
               ? t("composer.placeholder.approval")
               : attachmentPending
               ? t("composer.placeholder.attaching")
+              : isFinishingDictation
+              ? t("composer.dictation.finishing")
               : isRecording
               ? t("composer.placeholder.listening")
               : busy && canSteer
@@ -1106,17 +1115,21 @@ export function Composer({
         {!locked && ((!busy && (solarComposer || !hasContent)) || isRecording) && (solarComposer || capabilities.dictation.available) && (
           <button
             onClick={toggleMic}
-            aria-label={isRecording ? t("composer.dictation.stop") : t("composer.dictation.start")}
+            aria-label={isFinishingDictation ? t("composer.dictation.finishing") : isRecording ? t("composer.dictation.stop") : t("composer.dictation.start")}
             aria-pressed={isRecording}
+            aria-busy={isFinishingDictation || undefined}
+            disabled={isFinishingDictation}
             className={cn(
               "flex size-8 shrink-0 items-center justify-center rounded-full",
-              isRecording
+              isFinishingDictation
+                ? "text-ink/55"
+                : isRecording
                 ? "animate-pulse bg-[#ff5667]/20 text-[#ff8a96]"
                 : "text-ink/55 hover:bg-ink/[0.06] hover:text-ink",
             )}
-            title={isRecording ? t("composer.dictation.stopHint") : t("composer.dictation.hint")}
+            title={isFinishingDictation ? t("composer.dictation.finishingHint") : isRecording ? t(solarComposer ? "composer.dictation.stopDraftHint" : "composer.dictation.stopHint") : t("composer.dictation.hint")}
           >
-            <Mic size={18} />
+            {isFinishingDictation ? <LoaderCircle size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Mic size={18} />}
           </button>
         )}
         {hasContent && !locked && (
@@ -1138,7 +1151,7 @@ export function Composer({
                     : t("chat.send")
             }
             className={cn(
-              "flex size-9 shrink-0 items-center justify-center rounded-full",
+              "flex size-9 shrink-0 items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-40",
               busy && !canSteer
                   ? "bg-ink/[0.06] text-ink/55 hover:bg-ink/[0.1]"
                   : "bg-ink text-app hover:opacity-90",

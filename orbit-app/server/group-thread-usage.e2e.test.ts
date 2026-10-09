@@ -1,4 +1,6 @@
 import { expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { launchVerificationServer, runControlOrbit } from "../scripts/control-orbit.ts";
 import { appendUsage, flushUsageLedger } from "./usage-ledger.ts";
 import type { WireBot, WireGroup } from "../shared/wire.ts";
@@ -14,7 +16,7 @@ it("projects historical usage, clears it on thread switch, and refreshes after a
     return result.group;
   };
   try {
-    const bot = (await control("new-bot", "--name", "Usage fixture") as { bot: Pick<WireBot, "id" | "name"> & { activeTaskId: string } }).bot;
+    const bot = (await control("new-bot", "--name", "Usage fixture") as { bot: Pick<WireBot, "id" | "name" | "modelSelection"> & { activeTaskId: string } }).bot;
     const group = (await control("new-channel", "--name", "Usage room", "--members", bot.id) as { channel: Pick<WireGroup, "id" | "name"> & { activeTaskId: string } }).channel;
     const read = async () => {
       const response = await fetch(url + "/api/bots?messages=0");
@@ -36,6 +38,10 @@ it("projects historical usage, clears it on thread switch, and refreshes after a
     expect(await control("wait", "--channel", group.id, "--timeout", "30")).toMatchObject({ status: "settled" });
     await expect.poll(async () => (await read()).usage?.turns, { timeout: 5000 }).toBe(2);
     expect((await read()).usage?.lastSpeaker?.botId).toBe(bot.id);
+    const rows = readFileSync(join(dataDir, "usage", `${new Date().toISOString().slice(0, 7)}.jsonl`), "utf8").trim().split("\n").map(line => JSON.parse(line));
+    const settled = rows.find(row => row.threadId === group.activeTaskId);
+    expect(settled).toMatchObject({ instanceId: bot.modelSelection.instanceId, model: bot.modelSelection.model, driverKind: "claudeAgent", costUsd: 0.01, costSource: "reported" });
+    expect((await read()).usage).toMatchObject({ costSource: "reported", lastTurn: { costUsd: 0.01, costSource: "reported" } });
     expect((await post(`/api/groups/${group.id}/tasks/${fresh.threadId}`)).usage).toBeNull();
   } finally { await fixture.close(); }
 }, 60_000);

@@ -1,13 +1,15 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { GroupThreadUsage } from "../shared/wire.ts";
+import { recoverRecordedUsagePrice, type UsageRow } from "./usage-ledger.ts";
 
-type Row = { at: string; threadId: string; botId: string; botName?: string; input: number; output: number; cachedInput?: number; costUsd?: number | null };
+type Row = { at: string; threadId: string; botId: string; botName?: string; model?: string; driverKind?: string; input: number; output: number; cachedInput?: number; costUsd?: number | null; costSource?: "reported" | "estimated" };
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 const valid = (row: Partial<Row> | null): row is Row => Boolean(row && typeof row.threadId === "string" && typeof row.botId === "string" && typeof row.at === "string" && Number.isFinite(Date.parse(row.at)) && finite(row.input) && finite(row.output));
 
 type Summary = { usage: GroupThreadUsage; lastAt: number };
 function addRow(totals: Map<string, Summary>, row: Row) {
+  if (typeof row.model === "string" && typeof row.driverKind === "string") row = recoverRecordedUsagePrice(row as UsageRow);
   const summary = totals.get(row.threadId) ?? { usage: { input: 0, output: 0, costUsd: null, turns: 0, cachedInput: 0 }, lastAt: -Infinity };
   const total = summary.usage;
   const input = Math.trunc(row.input), output = Math.trunc(row.output);
@@ -15,11 +17,16 @@ function addRow(totals: Map<string, Summary>, row: Row) {
   total.input += input; total.output += output; total.turns++;
   if (cached === undefined) delete total.cachedInput;
   else if (total.cachedInput !== undefined) total.cachedInput += cached;
-  if (finite(row.costUsd)) total.costUsd = (total.costUsd ?? 0) + row.costUsd;
+  if (finite(row.costUsd)) {
+    total.costUsd = (total.costUsd ?? 0) + row.costUsd;
+    const source = row.costSource ?? "reported";
+    total.costSource = !total.costSource || total.costSource === source ? source : "mixed";
+    if (source === "estimated") total.estimatedUsd = (total.estimatedUsd ?? 0) + row.costUsd;
+  } else total.unpriced = (total.unpriced ?? 0) + 1;
   const at = Date.parse(row.at);
   if (at >= summary.lastAt) {
     summary.lastAt = at;
-    total.lastTurn = { input, output, ...(cached === undefined ? {} : { cachedInput: cached }), costUsd: finite(row.costUsd) ? row.costUsd : null };
+    total.lastTurn = { input, output, ...(cached === undefined ? {} : { cachedInput: cached }), costUsd: finite(row.costUsd) ? row.costUsd : null, ...(finite(row.costUsd) ? { costSource: row.costSource ?? "reported" } : {}) };
     total.lastSpeaker = { botId: row.botId, name: typeof row.botName === "string" && row.botName ? row.botName : row.botId };
   }
   totals.set(row.threadId, summary);
@@ -72,6 +79,9 @@ export class GroupUsageReader {
             if (total.usage.cachedInput === undefined || part.usage.cachedInput === undefined) delete total.usage.cachedInput;
             else total.usage.cachedInput += part.usage.cachedInput;
             if (part.usage.costUsd !== null) total.usage.costUsd = (total.usage.costUsd ?? 0) + part.usage.costUsd;
+            total.usage.unpriced = (total.usage.unpriced ?? 0) + (part.usage.unpriced ?? 0);
+            if (part.usage.estimatedUsd != null) total.usage.estimatedUsd = (total.usage.estimatedUsd ?? 0) + part.usage.estimatedUsd;
+            if (part.usage.costSource) total.usage.costSource = !total.usage.costSource || total.usage.costSource === part.usage.costSource ? part.usage.costSource : "mixed";
             if (part.lastAt >= total.lastAt) {
               total.lastAt = part.lastAt;
               total.usage.lastTurn = part.usage.lastTurn;

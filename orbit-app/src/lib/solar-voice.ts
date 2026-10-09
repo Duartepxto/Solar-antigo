@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { api } from '@/state/store';
 import { dictationEngineLanguage } from '../../shared/solar-dictation-language';
 import { readDictationLocales } from './solar-dictation-settings';
+import { createSolarDictationStream } from './solar-dictation-stream';
+export { appendSolarTranscript } from './solar-dictation-stream';
 
 type Transcript = { text?: string; partial?: boolean; error?: string };
 type End = { code: number | null; reason?: string };
@@ -32,11 +34,11 @@ const bridge: Bridge = {
     const language = dictationEngineLanguage(readDictationLocales());
     let stream: MediaStream | null = null, context: AudioContext | null = null, processor: ScriptProcessorNode | null = null;
     const controller = new AbortController();
-    let lease: string | null = null;
+    let lease: string | null = null, reported = false;
     const releaseLease = () => { if (lease) { void window.ogb?.speechReleaseLocal?.(lease); lease = null; } };
     const cleanup = () => { if(processor){processor.onaudioprocess=null;processor.disconnect();}stream?.getTracks().forEach(track=>track.stop());void context?.close().catch(()=>{}); };
     release=()=>{controller.abort();cleanup();releaseLease();};
-    const report = (reason: string) => { if(token!==generation)return;cleanup();releaseLease();release=null;finish=null;for(const callback of transcripts)callback({error:reason});for(const callback of endings)callback({code:1,reason}); };
+    const report = (reason: string) => { if(token!==generation||reported)return;reported=true;controller.abort();cleanup();releaseLease();release=null;finish=null;for(const callback of transcripts)callback({error:reason});for(const callback of endings)callback({code:1,reason}); };
     try {
       if (window.ogb?.speechClaimLocal) {
         lease = await window.ogb.speechClaimLocal();
@@ -48,6 +50,41 @@ const bridge: Bridge = {
       context=new AudioContext({sampleRate:16000}); await context.resume();
       if(token!==generation){cleanup();return;}
       const source=context.createMediaStreamSource(stream); processor=context.createScriptProcessor(1024,1,1); const silence=context.createGain();silence.gain.value=0;source.connect(processor);processor.connect(silence);silence.connect(context.destination);
+      if (options?.continuous) {
+        const current = () => token === generation && !controller.signal.aborted && !reported;
+        const capture = createSolarDictationStream({
+          rate: context.sampleRate, current,
+          recognize: async (chunks, preview) => {
+            const bytes = encodeSolarWav(chunks, context!.sampleRate);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+            const result = await api<{ text: string }>('/api/solar-voice/transcribe', {
+              method: 'POST', body: JSON.stringify({ audio: btoa(binary), language, preview }), signal: controller.signal,
+            });
+            return result.text ?? '';
+          },
+          partial: text => { if (current()) for (const callback of transcripts) callback({ text, partial: true }); },
+          error: error => report(error instanceof Error ? error.message : String(error)),
+        });
+        let completion: Promise<void> | null = null;
+        finish = () => {
+          if (completion) return completion;
+          if (!current()) return Promise.resolve();
+          cleanup();
+          completion = (async () => {
+            const result = await capture.finish();
+            if (!current() || result.failed) return;
+            releaseLease(); release = null; finish = null;
+            for (const callback of transcripts) callback({ text: result.text, partial: false });
+            if (current()) for (const callback of endings) callback({ code: 0, reason: 'completed' });
+          })();
+          return completion;
+        };
+        processor.onaudioprocess = event => {
+          capture.push(new Float32Array(event.inputBuffer.getChannelData(0)), performance.now());
+        };
+        return;
+      }
       const chunks:Float32Array[]=[],started=performance.now();let spoke=false,lastVoice=started,finishing=false;
       const endpoint=Math.max(400,Math.min(3000,options?.endpointMs??850));
       finish=async()=>{

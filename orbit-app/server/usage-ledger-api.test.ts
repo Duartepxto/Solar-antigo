@@ -12,7 +12,7 @@ describe("usage ledger through real turns", () => {
   let session: VerificationServer;
 
   beforeEach(async () => {
-    session = await launchVerificationServer();
+    session = await launchVerificationServer(process.env, undefined, undefined, undefined, undefined, undefined, ["codex"]);
   }, 60_000);
 
   afterEach(async () => {
@@ -33,6 +33,36 @@ describe("usage ledger through real turns", () => {
     expect(paired.token).toBeTypeOf("string");
     return paired.token;
   };
+
+  it("prices a measured Codex turn consistently and keeps an unmeasured failed turn unavailable", async () => {
+    const created = await control(["new-bot", "--name", "Codex usage probe"]);
+    const botId = created.bot.id as string;
+    await control(["set-model", "--bot", botId, "--instance", "codex", "--model", "gpt-6-luna"]);
+    for (let i = 0; i < 2; i++) {
+      await control(["send", "--bot", botId, "--text", `synthetic measured turn ${i}`]);
+      // The default fake has no restored rollout: the second turn fails
+      // before using the model and must remain unavailable, never a €0 estimate.
+      expect(JSON.stringify(await control(["wait", "--bot", botId, "--timeout", "30"]))).toContain(i === 0 ? "settled" : "failed");
+    }
+    const file = join(session.info.dataDir, "usage", `${new Date().toISOString().slice(0, 7)}.jsonl`);
+    await expect.poll(() => existsSync(file) ? readFileSync(file, "utf8").trim().split("\n").filter(line => JSON.parse(line).botId === botId).length : 0, { timeout: 10_000 }).toBe(2);
+    const rows = readFileSync(file, "utf8").trim().split("\n").map(line => JSON.parse(line)).filter(row => row.botId === botId);
+    const turnCost = (3 * 0.1 + 4 * 0.01 + 3 * 0.5) / 1_000_000;
+    expect(rows[0]).toMatchObject({ driverKind: "codex", model: "gpt-6-luna", input: 7, output: 3, cachedInput: 4, costSource: "estimated", trigger: { kind: "owner" } });
+    expect(rows[0].costUsd).toBeCloseTo(turnCost, 12);
+    expect(rows[1]).toMatchObject({ driverKind: "codex", model: "gpt-6-luna", input: 0, output: 0, costUsd: null });
+    expect(rows[1]).not.toHaveProperty("costSource");
+    const bots = await (await api("/api/bots")).json() as any;
+    const bot = bots.bots.find((item: any) => item.id === botId);
+    const task = bot.tasks.find((item: any) => item.id === bot.activeTaskId) ?? bot.tasks[0];
+    expect(task.usage).toMatchObject({ input: 7, output: 3, cachedInput: 4, turns: 2, costSource: "estimated", unpriced: 1, lastTurn: { costUsd: null } });
+    expect(task.usage.costUsd).toBeCloseTo(turnCost, 12);
+    expect(task.usage.estimatedUsd).toBeCloseTo(turnCost, 12);
+    const summary = await (await api("/api/usage?groupBy=engine")).json() as any;
+    expect(summary.total).toMatchObject({ turns: 2, unpriced: 1 });
+    expect(summary.total.costUsd).toBeCloseTo(turnCost, 12);
+    expect(readFileSync(file, "utf8")).not.toContain("synthetic measured turn");
+  }, 120_000);
 
   it("writes one row per settled turn naming who asked, and reports it by person, bot and model", async () => {
     const created = await control(["new-bot", "--name", "Ledger probe"]);

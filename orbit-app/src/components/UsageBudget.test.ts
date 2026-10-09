@@ -2,7 +2,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ConfigStatus } from "@/state/store";
-import { budgetTone, entitledTo, UsageBudgetCards, type BudgetState } from "./UsageBudget";
+import { budgetTone, entitledTo, euroInput, priceRowsFrom, usdFromEuroInput, usdPriceFromRow, UsageBudgetCards, type BudgetState } from "./UsageBudget";
+import { formatCost } from "@/lib/usage-currency";
+import { ECB_USAGE_CURRENCY_SEED } from "../../shared/usage-currency";
 
 const fixture = vi.hoisted(() => ({ config: null as ConfigStatus | null }));
 vi.mock("@/state/store", async (importOriginal) => ({
@@ -34,7 +36,8 @@ describe("usage budget and prices cards", () => {
     const budgetsOnly = renderToStaticMarkup(createElement(UsageBudgetCards, { budget }));
     expect(budgetsOnly).toContain("Monthly spend limit");
     expect(budgetsOnly).toContain("Nearing the limit");
-    expect(budgetsOnly).toContain("$42.50 of $50.00 (85%)");
+    expect(budgetsOnly).toContain(`${formatCost(42.5)} of ${formatCost(50)} (85%)`);
+    expect(budgetsOnly).toContain(`value="${euroInput(50)}"`);
     expect(budgetsOnly).toContain('aria-valuenow="85"');
     expect(budgetsOnly).not.toContain("Sell prices");
 
@@ -53,5 +56,47 @@ describe("usage budget and prices cards", () => {
     expect(budgetTone(budget)).toBe("warning");
     expect(budgetTone({ ...budget, exceeded: true })).toBe("danger");
     expect(budgetTone({ ...budget, warn: false })).toBe("quiet");
+  });
+
+  it("converts an edited EUR cap to USD and preserves unchanged source precision", () => {
+    const original = 123.456789123456;
+    const displayed = euroInput(original);
+    expect(Number(displayed)).toBeCloseTo(original / 1.1186, 8);
+    expect(usdFromEuroInput(displayed, displayed, original)).toBe(original);
+    expect(usdFromEuroInput("25", displayed, original)).toBeCloseTo(27.965, 10);
+    expect(usdFromEuroInput("25,5", displayed, original)).toBeCloseTo(28.5243, 10);
+    expect(usdFromEuroInput("", displayed, original)).toBe(0);
+    expect(usdFromEuroInput("-1", displayed, original)).toBeNull();
+  });
+
+  it("keeps tiny USD prices visible in EUR and round-trips untouched canonical amounts", () => {
+    const price = { inputPerMillion: 0.00000001567890123, outputPerMillion: 9.123456789123, cachedInputPerMillion: 0.00001 };
+    const row = priceRowsFrom({ fixture: price })[0]!;
+    expect(Number(row.input)).toBeGreaterThan(0);
+    expect(usdPriceFromRow(row)).toEqual(price);
+    expect(usdPriceFromRow({ ...row, output: "2", cached: "" })).toEqual({ inputPerMillion: price.inputPerMillion, outputPerMillion: 2.2372 });
+  });
+
+  it("treats saved EUR prices as euros already, then saves canonical USD", () => {
+    const row = priceRowsFrom({ fixture: { inputPerMillion: 4, outputPerMillion: 20 } }, "EUR")[0]!;
+    expect(row).toMatchObject({ input: "4", output: "20", cached: "" });
+    expect(usdPriceFromRow(row)).toEqual({ inputPerMillion: 4.4744, outputPerMillion: 22.372 });
+  });
+
+  it("locks an unsupported currency and preserves its displayed amounts", () => {
+    fixture.config = config(["billing"], { billing: { currency: "GBP", prices: { fixture: { inputPerMillion: 4, outputPerMillion: 20 } } } });
+    const html = renderToStaticMarkup(createElement(UsageBudgetCards, { budget: null }));
+    expect(html).toContain('value="GBP"');
+    expect(html).toContain('value="4"');
+    expect(html).toContain('role="alert"');
+    expect(html).toContain('disabled=""');
+    expect(priceRowsFrom(fixture.config.billing?.prices, "GBP")[0]?.input).toBe("4");
+  });
+
+  it("uses the supplied frozen draft quote for edited values after rate refresh", () => {
+    const newer = { ...ECB_USAGE_CURRENCY_SEED, usdPerEur: 1.3 };
+    const row = priceRowsFrom({ fixture: { inputPerMillion: 4, outputPerMillion: 20 } }, "USD", ECB_USAGE_CURRENCY_SEED)[0]!;
+    expect(usdPriceFromRow({ ...row, input: "5" }, ECB_USAGE_CURRENCY_SEED)?.inputPerMillion).toBeCloseTo(5.593, 10);
+    expect(usdPriceFromRow({ ...row, input: "5" }, newer)?.inputPerMillion).toBe(6.5);
   });
 });

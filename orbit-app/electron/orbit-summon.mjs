@@ -103,7 +103,7 @@ export const POINTER_NEAR_TOP = 80;
 export function islandHoverRect(windowBounds, size, inset = ISLAND_HOVER_INSET, side = false) {
   if (!windowBounds || !size || !(size.width > 0) || !(size.height > 0)) return null;
   return {
-    x: windowBounds.x + (side ? windowBounds.width - size.width - 16 : (windowBounds.width - size.width) / 2) - inset,
+    x: windowBounds.x + (side ? windowBounds.width - size.width : (windowBounds.width - size.width) / 2) - inset,
     y: windowBounds.y + (side ? (windowBounds.height - size.height) / 2 : 0) - inset,
     width: size.width + 2 * inset,
     height: size.height + 2 * inset,

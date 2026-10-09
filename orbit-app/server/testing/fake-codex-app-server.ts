@@ -208,8 +208,13 @@ const finishTurn = () => {
   // turn/start (a resumed thread restoring earlier usage), so the driver's
   // per-turn figure must still come out as 7/4/3.
   const carried = process.env.FAKE_CODEX_RESTORED_USAGE ? { inputTokens: 100, cachedInputTokens: 50, outputTokens: 10 } : { inputTokens: 0, cachedInputTokens: 0, outputTokens: 0 };
+  const earlier = mode === "usage-multi-call" ? { inputTokens: 20, cachedInputTokens: 10, outputTokens: 5 } : { inputTokens: 0, cachedInputTokens: 0, outputTokens: 0 };
+  if (mode === "usage-multi-call") notify("thread/tokenUsage/updated", { tokenUsage: {
+    total: { inputTokens: carried.inputTokens + earlier.inputTokens, cachedInputTokens: carried.cachedInputTokens + earlier.cachedInputTokens, outputTokens: carried.outputTokens + earlier.outputTokens },
+    last: earlier,
+  } });
   notify("thread/tokenUsage/updated", { tokenUsage: {
-    total: { inputTokens: carried.inputTokens + 7, cachedInputTokens: carried.cachedInputTokens + 4, outputTokens: carried.outputTokens + 3 },
+    total: { inputTokens: carried.inputTokens + earlier.inputTokens + 7, cachedInputTokens: carried.cachedInputTokens + earlier.cachedInputTokens + 4, outputTokens: carried.outputTokens + earlier.outputTokens + 3 },
     last: { inputTokens: 7, cachedInputTokens: 4, outputTokens: 3 },
     modelContextWindow: 272000,
   } });

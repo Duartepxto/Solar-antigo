@@ -24,7 +24,7 @@ win:
     # Builder concatenates this array; repeating them races copies on Windows.
     - from: dist-native/solar-speech
       to: solar-speech
-      filter: ["whisper-cli.exe", "*.dll", "ggml-base.bin", "LICENSE.txt", "manifest.json"]
+      filter: ["whisper-cli.exe", "*.dll", "ggml-base.bin", "ggml-small-q5_1.bin", "LICENSE.txt", "manifest.json"]
 nsis:
   oneClick: true
   perMachine: false

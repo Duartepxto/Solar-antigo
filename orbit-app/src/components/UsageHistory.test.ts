@@ -39,7 +39,7 @@ describe("usage history table", () => {
     expect(html).toContain("Bot to bot");
     expect(html).toContain("Person");
     expect(html).toContain("3 turn(s) used a model with no known price");
-    expect(html).toContain("$1.26");
+    expect(html).toContain("€1.13");
     expect(html).not.toContain("~");
   });
 
@@ -50,9 +50,9 @@ describe("usage history table", () => {
       total: group("total", "total", { turns: 6, costUsd: 1.22, estimatedUsd: 0.8 }),
     };
     const html = renderToStaticMarkup(createElement(UsageHistoryTable, { summary }));
-    expect(html).toContain("$0.80 of this is estimated");
+    expect(html).toContain("€0.72 of this is estimated");
     expect(html.match(/>~</g)).toHaveLength(2); // the codex row and the total, not the claude row
-    expect(html).toContain("$0.80 in this period is priced from list prices");
+    expect(html).toContain("€0.72 in this period is priced from list prices");
   });
 
   it("says so when the period is empty", () => {
@@ -75,6 +75,6 @@ describe("usage history helpers", () => {
     expect(usageGroupLabel("user", group("owner", "This computer"))).toBe("This computer");
     expect(usageGroupLabel("user", group("routine:r9", "Routine: Weekly"))).toBe("Routine: Weekly");
     expect(usageGroupLabel("bot", group("bot:b1", "Scout"))).toBe("Scout");
-    expect(usageExportHref({ from: "2026-09-01", to: "2026-09-30" })).toBe("/api/usage.csv?from=2026-09-01&to=2026-09-30");
+    expect(usageExportHref({ from: "2026-09-01", to: "2026-09-30" })).toBe("/api/usage.csv?from=2026-09-01&to=2026-09-30&currency=EUR");
   });
 });

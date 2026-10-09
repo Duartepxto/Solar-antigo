@@ -79,6 +79,23 @@ interaction.
 
 ## Look
 
+- The owner requested an experimental V2 on 2026-10-08: a real 3D workspace
+  with small animated characters and persistent skins for each agent.
+  The world is a garden, not an office: characters have laptops, expressive
+  faces and distinct clothes/accessories. Preserve the original Solar
+  hierarchy with Jarvis central and clearly separated team areas derived
+  from the existing team model. No invented teams or parallel agent records.
+  Develop it alongside the current Solar interface, with a clear preview
+  entry and return path. Reuse the existing agents and conversation system;
+  the 3D view must not create another account, engine or copy of their data.
+- Windows Alt+T is an edge dock, inspired by the owner's Instagram reference
+  `DdTh89HxNeH`: a dark narrow rail attached to the right work-area edge,
+  with concave shoulders and details opening left. Preserve voice capture,
+  cancel, replies and click-through outside its visible interaction area.
+  Listening, thinking and speaking have distinct motion with reduced-motion
+  alternatives. The second reference `Dd8mrD0OX5v` was restricted on Instagram
+  when inspected; do not claim its video was reviewed.
+
 - Preserve the approved Solar map. The owner rejected the added connected-app
   strip and shortcut (2026-10-07); do not reintroduce them or redesign the map
   from Agents Office. Evaluate references for useful behavior within existing
@@ -199,6 +216,13 @@ fixes come across; its interface doesn't.
   those acceptance items pending; simulated tests do not complete them.
 
 ## Keeping this file
+
+- Composer dictation is manual and continuous (owner, 2026-10-08): show the
+  cumulative transcript while the person speaks, keep recording across pauses
+  and past 29 seconds by recognizing bounded clips. Stop finalizes text in
+  the editable draft; it never submits a message. Finalizing must be visible,
+  cancellation remains reachable, and stale results cannot overwrite a draft.
+  Preserve turn-based silence endpoints for calls and Alt+T.
 
 - Dictation languages are selectable in Voice settings, saved per device for
   all agents, independently of the Windows/interface language. Default to

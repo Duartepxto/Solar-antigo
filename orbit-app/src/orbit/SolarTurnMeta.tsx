@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Bot, Message } from '@/state/store';
-import { formatTokens } from '@/lib/usage';
+import { formatTokens, hasFiniteCost, usageCostLabel, usageDetail } from '@/lib/usage';
+import { useUsageCurrency } from '@/lib/usage-currency';
 import { formatElapsed } from '@/lib/working-time';
 import { t } from '@/lib/i18n';
 
@@ -28,15 +29,18 @@ function useRollUp(target: number, key: string) {
 
 /** What the last turn cost and how long it took, under the reply it produced. */
 export function SolarTurnMeta({ bot, message }: { bot: Bot; message: Message }) {
+  useUsageCurrency();
   const digest = message.turnId ? bot.messages.find(m => m.kind === 'digest' && m.digest?.turnId === message.turnId)?.digest : undefined;
   const last = bot.tasks?.find(task => task.threadId === bot.threadId)?.usage?.lastTurn;
-  const usage = digest?.usage ?? last;
+  const newestReply = bot.messages.findLast(candidate => candidate.role === 'bot' && candidate.kind === 'text');
+  const usage = digest?.usage ?? (newestReply?.id === message.id ? last : undefined);
   const total = usage ? usage.input + usage.output : 0;
   const tokens = useRollUp(total, message.id);
   if (!usage || !total) return null;
   const parts = [t('jarvis.solar.turn.tokens', { tokens: formatTokens(tokens) })];
+  if (hasFiniteCost(usage.costUsd)) parts.push(usageCostLabel({ costUsd: usage.costUsd, costSource: usage.costSource }));
   if (digest?.durationMs) parts.push(formatElapsed(digest.durationMs));
   const calls = digest?.toolCalls ?? digest?.tools.length;
   if (calls) parts.push(t('jarvis.solar.turn.steps', { count: calls }));
-  return <div className="solar-turn-meta" title={`${formatTokens(usage.input)} in · ${formatTokens(usage.output)} out`}>{parts.join(' · ')}</div>;
+  return <div className="solar-turn-meta" title={usageDetail(usage)}>{parts.join(' · ')}</div>;
 }

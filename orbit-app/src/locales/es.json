@@ -641,8 +641,6 @@
   "keys.vps.descAfter": " para ver la forma de alias requerida.",
   "keys.vps.aria": "Alias del SSH config del VPS propio",
   "keys.vps.removeAlias": "Quitar el alias guardado",
-  "usage.title": "Uso",
-  "usage.subtitle": "Tokens y coste por bot, sumados de cada turno completado. Solo muestran precio los motores que informan uno.",
   "usage.empty": "Todavía no hay gasto: las cifras aparecen tras el primer turno de un bot.",
   "usage.colBot": "Bot",
   "usage.colTurns": "Turnos",

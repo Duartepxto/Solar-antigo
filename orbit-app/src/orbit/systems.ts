@@ -5,6 +5,7 @@
 import { AppWindow, Blocks, Brain, CalendarClock, Cpu, Mic, Monitor, ShieldCheck, Smartphone, Sparkles, type LucideIcon } from "lucide-react";
 import type { AppState, Bot } from "@/state/store";
 import { t } from "@/lib/i18n";
+import { botEngineDetails, engineReadiness } from "@/lib/bot-engine";
 import { effectivePlace, placeLabelKey } from "@/lib/place";
 import type { LocaleKey } from "@/locales";
 import type { BotPanelKey } from "./detail/BotPanels";
@@ -27,12 +28,6 @@ export interface OrbitSystem {
   run(): void;
 }
 
-function modelLabel(bot: Bot, state: AppState) {
-  const inst = state.instances.find((i) => i.instanceId === bot.modelSelection.instanceId);
-  const model = inst?.models.options.find((o) => o.id === bot.modelSelection.model)?.label ?? bot.modelSelection.model;
-  return { model: model || inst?.models.default || "—", engine: inst?.displayName ?? bot.modelSelection.instanceId };
-}
-
 /** Facts a bot's systems show that live behind their own routes; fetched
  * while the bot is in view. */
 export interface BotFacts {
@@ -40,8 +35,9 @@ export interface BotFacts {
   memory?: { lines: number; maxLines: number; topics: number; level: "ok" | "near" | "over" };
 }
 
-export function botSystems(bot: Bot, state: AppState, openPanel: (panel: BotPanelKey) => void, facts: BotFacts, activePanel: BotPanelKey | null): OrbitSystem[] {
-  const { model, engine } = modelLabel(bot, state);
+export function botSystems(profile: Bot, state: AppState, openPanel: (panel: BotPanelKey) => void, facts: BotFacts, activePanel: BotPanelKey | null): OrbitSystem[] {
+  const { bot, model, engine, instance, selection } = botEngineDetails(profile, state.instances);
+  const readiness = engineReadiness(instance, selection);
   const effort = bot.modelSelection.effort;
   const level = bot.approvalMode ?? (bot.autoApprove ? "auto" : "ask");
   const place = effectivePlace(bot);
@@ -57,7 +53,7 @@ export function botSystems(bot: Bot, state: AppState, openPanel: (panel: BotPane
     ({ key, icon, label: t(label), value, status, run: () => openPanel(key), selected: activePanel === key, ...extra });
   const nextRoutine = routines.find((r) => r.enabled);
   return [
-    sys("engine", Cpu, "orbit.sys.engine", `${engine} · ${effort ? `${model} · ${effort}` : model}`, busy ? t("orbit.st.streaming") : t("orbit.st.ready"), { tour: "cap-engine", live: busy }),
+    sys("engine", Cpu, "orbit.sys.engine", `${engine} · ${effort ? `${model} · ${effort}` : model}`, busy ? t("orbit.st.streaming") : readiness.label, { tour: "cap-engine", live: busy, tone: !busy && !readiness.ready ? "warning" : undefined }),
     sys("computer", Monitor, "orbit.sys.computer", t(placeLabelKey(place)), busy && hasScreen ? t("orbit.st.live") : place === "off" ? t("orbit.st.none") : t("orbit.st.idle"), { tour: "cap-computer", live: busy && hasScreen }),
     sys("browser", AppWindow, "orbit.sys.browser", browserOn ? t("orbit.st.ownProfile") : t("orbit.val.off"), browserOn ? t("orbit.st.logins") : t("orbit.st.unavailable")),
     sys("phone", Smartphone, "orbit.sys.phone", t("orbit.st.phone"), t("orbit.st.pairPhone")),

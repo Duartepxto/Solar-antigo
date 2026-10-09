@@ -11,9 +11,11 @@ import type { LocaleKey } from "@/locales";
 import { approvalModeFor, modelSwitchNeedsAsk, type ApprovalMode } from "../../../shared/approval-mode";
 import { suggestedModels } from "@/lib/custom-models";
 import { configuredModelInstances } from "@/lib/engine-rail";
+import { botEngineDetails, engineReadiness } from "@/lib/bot-engine";
 import { mcpServersForBot, useMcpServers } from "@/lib/mcp-servers";
 import { requestNotificationPermission } from "@/lib/notify";
-import { botUsage, costCaption, formatTokens, formatUsd, hasFiniteCost } from "@/lib/usage";
+import { botUsage, formatTokens, hasFiniteCost, usageCostLabel, usageCostNote, cachedKnown, cachedInput, uncachedInput, contextDetail, lastTurnDetail } from "@/lib/usage";
+import { useUsageCurrency, usageCurrencyNote } from '@/lib/usage-currency';
 import { routineNextLabel } from "@/lib/routine-display";
 import { isRoutineProblemRun } from "../../../shared/routines";
 import type { HistoryRow } from "@/components/bot-settings/HistorySection";
@@ -98,9 +100,10 @@ function modelIcon(label: string): LucideIcon {
 
 export function EnginePanel({ bot: profile, onBack }: PanelProps) {
   const { state, dispatch, refreshInstances, refreshModels } = useStore();
-  const bot = currentTaskBot(profile);
-  const selection = profile.modelSelection;
-  const engine = state.instances.find((i) => i.instanceId === selection.instanceId);
+  const { bot, selection, instance: engine } = botEngineDetails(profile, state.instances);
+  const defaultEngine = state.instances.find((i) => i.instanceId === profile.modelSelection.instanceId);
+  const defaultModel = defaultEngine?.models.options.find((o) => o.id === profile.modelSelection.model)?.label ?? profile.modelSelection.model;
+  const readiness = engineReadiness(engine, selection);
   const [pending, setPending] = useState<{ instance: InstanceInfo; model: string; name: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const busy = Boolean(profile.busy);
@@ -113,7 +116,7 @@ export function EnginePanel({ bot: profile, onBack }: PanelProps) {
   // and the selected idle thread with it; a provider switch that would
   // leave a trusted level on a new engine asks first.
   const pick = (instance: InstanceInfo, model: string) => {
-    if (busy || instance.policy) return;
+    if (busy || !engineReadiness(instance, { instanceId: instance.instanceId, model }).ready) return;
     const next = modelSelectionForPick(selection, instance, model);
     const targets = [currentTaskBot(profile, profile.threadId), profile];
     if (targets.some((target) => modelSwitchNeedsAsk(approvalModeFor(target), state.instances.find((c) => c.instanceId === target.modelSelection.instanceId)?.driverKind, instance.driverKind))) {
@@ -127,38 +130,41 @@ export function EnginePanel({ bot: profile, onBack }: PanelProps) {
     setRefreshing(true);
     void refreshInstances().then(() => refreshModels(engine.instanceId)).catch(() => {}).finally(() => setRefreshing(false));
   };
-  const engines = configuredModelInstances(state.instances);
+  const engines = configuredModelInstances(state.instances, selection.instanceId);
   return (
     <Frame bot={bot} panel="engine" onBack={onBack}
       title={engine ? `${engine.displayName} · ${label(selection.model)}` : selection.model}
       desc={t("orbit.p.engine.desc")}>
       {models.length > 0 && engine && (
         <Seg label={t("orbit.p.engine.model")} cols={Math.min(3, models.length)} value={selection.model}
-          options={models.map((o) => ({ key: o.id, label: o.label, icon: modelIcon(o.label), disabled: busy }))}
+          options={models.map((o) => ({ key: o.id, label: o.label, icon: modelIcon(o.label), disabled: busy || !engineReadiness(engine, { ...selection, model: o.id }).ready }))}
           onSelect={(id) => pick(engine, id)}
-          note={busy ? t("model.busy") : models.length > 1 ? undefined : t("orbit.p.engine.oneModel", { engine: engine.displayName })}
-          noteTone={busy ? "warning" : "muted"} />
+          note={busy ? t("model.busy") : !readiness.ready ? readiness.label : models.length > 1 ? undefined : t("orbit.p.engine.oneModel", { engine: engine.displayName })}
+          noteTone={busy || !readiness.ready ? "warning" : "muted"} />
       )}
       <ChipRow label={levels.length ? t("orbit.p.engine.effort") : t("orbit.p.engine.effortNone")}
         chips={[undefined, ...levels].map((level) => ({
           label: level ? effortLabel(level) : t("orbit.p.engine.effortDefault"),
           active: selection.effort === level,
-          disabled: !levels.length || busy,
-          onClick: () => dispatch({ type: "setModel", botId: profile.id, updateBotDefault: true, selection: { ...selection, effort: level } }),
+          disabled: !levels.length || busy || !readiness.ready,
+          onClick: () => dispatch({ type: "setModel", botId: profile.id, threadId: bot.threadId, updateBotDefault: true, selection: { ...selection, effort: level } }),
         }))} />
       <Rows rows={[
+        { k: t("orbit.p.engine.status"), v: readiness.label },
+        { k: t("orbit.p.engine.defaultModel"), v: `${defaultEngine?.displayName ?? profile.modelSelection.instanceId} · ${defaultModel}` },
         { k: t("orbit.p.engine.driver"), v: engine?.driverKind ?? "—" },
-        { k: t("orbit.p.engine.coordination"), v: engine?.capabilities?.agentsMcp ? t("orbit.p.engine.supported") : t("orbit.p.engine.chatOnly") },
+        { k: t("orbit.p.engine.coordination"), v: !engine ? t("orbit.st.unavailable") : engine.capabilities?.agentsMcp ? t("orbit.p.engine.supported") : t("orbit.p.engine.chatOnly") },
       ]} />
       <List title={t("orbit.p.engine.switch")} items={[
         ...engines.map((inst) => {
           const inUse = inst.instanceId === selection.instanceId;
-          const ready = inst.snapshot.state === "available" && inst.snapshot.authenticated !== false;
+          const candidateReadiness = engineReadiness(inst, { instanceId: inst.instanceId, model: inst.models.default });
+          const ready = candidateReadiness.ready;
           return {
             key: inst.instanceId, name: inst.displayName,
-            meta: inUse ? t("orbit.p.engine.inUse") : inst.policy ? inst.policy.reason : engineStatus(inst) || t("orbit.p.engine.ready"),
+            meta: inUse ? `${t("orbit.p.engine.inUse")} · ${readiness.label}` : !ready ? candidateReadiness.label : engineStatus(inst),
             dot: inUse ? DOT_ACCENT : ready ? DOT_ON : DOT_WARN,
-            disabled: busy || Boolean(inst.policy),
+            disabled: busy || !ready,
             onClick: inUse ? undefined : () => pick(inst, inst.models.default),
           };
         }),
@@ -494,18 +500,25 @@ export function VoicePanelDetail({ bot, onBack }: PanelProps) {
 // ---- USAGE -------------------------------------------------------------
 
 export function UsagePanelDetail({ bot, onBack }: PanelProps) {
-  const { state, dispatch } = useStore();
+  useUsageCurrency();
+  const { dispatch } = useStore();
   const usage = botUsage(bot);
-  const instance = state.instances.find((i) => i.instanceId === bot.modelSelection.instanceId);
   const priced = hasFiniteCost(usage.costUsd);
   return (
     <Frame bot={bot} panel="usage" onBack={onBack} title={t("orbit.p.usage.turns", { count: usage.turns })}
-      desc={usage.turns === 0 ? t("orbit.p.usage.none") : priced ? t("orbit.p.usage.desc", { caption: costCaption(instance?.snapshot.billing) }) : t("orbit.p.usage.unpriced")}>
+      desc={usage.turns === 0 ? t("orbit.p.usage.none") : priced ? usageCostNote(usage) : t("orbit.p.usage.unpriced")}>
       <Rows rows={[
         { k: t("orbit.p.usage.turnsRow"), v: String(usage.turns) },
         { k: t("orbit.p.usage.tokens"), v: <span title={`${formatTokens(usage.input)} in · ${formatTokens(usage.output)} out`}>{formatTokens(usage.input + usage.output)}</span> },
-        { k: t("orbit.p.usage.cost"), v: priced ? formatUsd(usage.costUsd ?? 0) : "—" },
+        { k: t('chat.usage.totalInput', { tokens: '' }).trim(), v: formatTokens(usage.input) },
+        { k: t('chat.usage.uncachedInput', { tokens: '' }).trim(), v: cachedKnown(usage) ? formatTokens(uncachedInput(usage)) : t('usage.cacheUnknown') },
+        { k: t('chat.usage.cachedInput', { tokens: '' }).trim(), v: cachedKnown(usage) ? formatTokens(cachedInput(usage)) : t('usage.cacheUnknown') },
+        { k: t('chat.usage.output', { tokens: '' }).trim(), v: formatTokens(usage.output) },
+        { k: t("orbit.p.usage.cost"), v: usageCostLabel(usage) },
       ]} />
+      {lastTurnDetail(usage) && <p className="text-[12px] leading-relaxed text-ink/55">{lastTurnDetail(usage)}</p>}
+      {contextDetail(bot.tasks?.find(task => task.threadId === bot.threadId)?.usage ?? usage) && <p className="text-[12px] leading-relaxed text-ink/55">{contextDetail(bot.tasks?.find(task => task.threadId === bot.threadId)?.usage ?? usage)}</p>}
+      <p className="text-[12px] leading-relaxed text-ink/55">{t('usage.currentConversations')} · {usageCurrencyNote()}</p>
       <Actions actions={[{ label: t("orbit.p.usage.all"), onClick: () => dispatch({ type: "toggleAppSettings", open: true, section: "usage" }) }]} />
     </Frame>
   );

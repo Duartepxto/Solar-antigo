@@ -641,8 +641,6 @@
   "keys.vps.descAfter": "。",
   "keys.vps.aria": "自建 VPS 的 SSH config 别名",
   "keys.vps.removeAlias": "移除已保存的别名",
-  "usage.title": "用量",
-  "usage.subtitle": "按机器人统计的词元与费用，来自每一个已结算的轮次。只有会报告价格的引擎才显示金额。",
   "usage.empty": "还没有消耗——机器人跑完第一个轮次后就会出现数据。",
   "usage.colBot": "机器人",
   "usage.colTurns": "轮次",

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { X, Mic, Square, Send } from "lucide-react";
+import { X, Mic, Square, Send, Sun } from "lucide-react";
 import { solarSpeechBridge } from "@/lib/solar-voice";
 import { t } from "@/lib/i18n";
 import { orbitShell, type ShellCapture, type ShellCaptureResult } from "@/lib/orbit-shell";
@@ -141,6 +141,9 @@ export function TalkSurface() {
   const [notch, setNotch] = useState<{ width: number; height: number } | null>(null);
   // talk mode shown: grown out of the notch; false while it opens or shrinks away
   const [open, setOpen] = useState(false);
+  // null follows the current transcript/notice; an explicit choice lasts
+  // until the next summon so new words cannot reopen a collapsed panel.
+  const [sideDetails, setSideDetails] = useState<boolean | null>(null);
   const phaseRef = useRef<Phase>("idle");
   const captureRef = useRef<ShellCapture | null>(null);
   const heardRef = useRef("");
@@ -386,6 +389,7 @@ export function TalkSurface() {
 
   const begin = useCallback((capture: ShellCaptureResult | null) => {
     calling.current = true;
+    setSideDetails(null);
     turnRef.current += 1;
     threadRef.current = null;
     speaker.stop();
@@ -447,7 +451,7 @@ export function TalkSurface() {
   // notice; back in the notch while Orbit works on the question.
   const said = side ? (phase === "talking" ? answer : heard.trim()) : phase === "listening" ? heard.trim() : "";
   const out = open && (side || phase !== "thinking" || Boolean(notice));
-  const talkExpanded = Boolean(notice || said);
+  const talkExpanded = side ? (sideDetails ?? Boolean(notice || said)) : Boolean(notice || said);
   const [talkContent, setTalkContent] = useState(0);
   const look: IslandLook = useMemo(() => {
     if (!out) return { kind: "hidden" };
@@ -455,9 +459,9 @@ export function TalkSurface() {
   }, [out, talkExpanded, talkContent]);
 
   const shape = notch ?? virtualNotch(topInset);
-  const size = side ? { width: talkExpanded ? 232 : 48, height: talkExpanded ? 192 : 108 } : islandSize(look, shape);
+  const size = side ? { width: talkExpanded ? 328 : 56, height: talkExpanded ? 248 : 220 } : islandSize(look, shape);
   const hit = useCallback((point: { x: number; y: number }, next: { width: number; height: number }) => side
-    ? point.x >= window.innerWidth - next.width - 22 && point.x <= window.innerWidth - 10
+    ? point.x >= window.innerWidth - next.width - 6 && point.x <= window.innerWidth + 6
       && Math.abs(point.y - window.innerHeight / 2) <= next.height / 2 + 6
     : overIsland(point, next, window.innerWidth), [side]);
   const radius = islandRadius(look, shape);
@@ -582,30 +586,39 @@ export function TalkSurface() {
     const actionLabel = phase === "listening" ? t("solar.voice.finishSpeaking") : phase === "thinking" || phase === "talking" ? t("call.ui.interrupt") : t("call.ui.tryMicrophoneAgain");
     const phaseLabel = t(`solar.voice.${phase === "sleepy" ? "idle" : phase}`);
     return (
-      <div className="flex h-full w-full select-none items-center justify-end pr-4">
-        <section aria-label={t("orbitShell.talk.label", { name })} title={phaseLabel} className="solar-talk-pill" data-phase={phase} data-expanded={talkExpanded}
+      <div className="flex h-full w-full select-none items-center justify-end">
+        <section aria-label={t("orbitShell.talk.label", { name })} title={phaseLabel} className="solar-talk-pill" data-phase={phase} data-expanded={talkExpanded} data-open={open}
           style={{ width: size.width, height: size.height, opacity: open ? 1 : 0, visibility: open ? "visible" : "hidden" }}>
+          <div className="solar-voice-rail">
+            <svg className="solar-voice-edge" viewBox="0 0 56 220" fill="none" aria-hidden="true">
+              <path d="M56 0C56 15 48 20 35 20C18 20 8 29 8 46V174C8 191 18 200 35 200C48 200 56 205 56 220Z" fill="currentColor"/>
+              <path d="M55.5 1C55.5 15 48 20.5 35 20.5C18 20.5 8.5 29 8.5 46V174C8.5 191 18 199.5 35 199.5C48 199.5 55.5 205 55.5 219" stroke="white" strokeOpacity=".16"/>
+            </svg>
+            <div className="solar-voice-rail-controls">
+              <button type="button" className="solar-voice-orb" aria-label={t(talkExpanded ? "sidebar.section.collapse" : "sidebar.section.expand", { name })} title={phaseLabel} aria-expanded={talkExpanded} aria-controls={talkExpanded ? "solar-voice-details" : undefined} onClick={() => setSideDetails(!talkExpanded)}>
+                <Sun size={19} strokeWidth={1.6}/>
+              </button>
+              <span className="solar-voice-signal" aria-hidden="true"><Bars active={phase === "listening" || phase === "talking"} level={phase === "talking" ? () => speaker.level() : undefined}/></span>
+              <button type="button" className="solar-voice-action" title={actionLabel} aria-label={actionLabel} onClick={() => {
+                if (phase === "listening") finishListening();
+                else if (phase === "thinking" || phase === "talking") { stop(); void shell?.talkSummon(); }
+                else void shell?.talkSummon();
+              }}>{phase === "thinking" || phase === "talking" ? <Square size={12} /> : phase === "listening" ? <Send size={13} /> : <Mic size={14} />}</button>
+              <button type="button" className="solar-voice-close" title={t("call.ui.hangUp")} aria-label={t("call.ui.hangUp")} onClick={() => { stop(); setSideDetails(null); setOpen(false); void shell?.talkDismiss(); }}><X size={13}/></button>
+            </div>
+          </div>
+          <div className="solar-voice-state solar-voice-sr-status" role="status">{phaseLabel}</div>
+          {talkExpanded && <div id="solar-voice-details" className="solar-voice-panel">
           <header className="solar-voice-header">
             <span className="solar-voice-brand">{t("solar.voice.brand")}</span>
-            <button type="button" className="solar-voice-close" title={t("call.ui.hangUp")} aria-label={t("call.ui.hangUp")} onClick={() => { stop(); setOpen(false); void shell?.talkDismiss(); }}><X size={16} /></button>
+            <span className="solar-voice-state"><span />{phaseLabel}</span>
           </header>
-          <svg className="solar-voice-aperture" width="28" height="28" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-            <path className="solar-voice-arcs" d="M17 7a18 18 0 0 0 0 34M31 7a18 18 0 0 1 0 34" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <rect className="solar-voice-bar" x="19" y="15" width="3" height="18" rx="1.5" fill="currentColor" />
-            <rect className="solar-voice-bar" x="26" y="12" width="3" height="24" rx="1.5" fill="currentColor" />
-          </svg>
-          <div className="solar-voice-state" role="status"><span />{phaseLabel}</div>
-          {talkExpanded && <div className="solar-voice-content">
+          <div className="solar-voice-content">
             {said && <p className="solar-voice-transcript">{said}</p>}
             {notice && <div className="solar-voice-notice"><p>{notice.text}</p><button type="button" aria-label={t("common.close")} onClick={() => setNotice(null)}><X size={14} /></button></div>}
-          </div>}
-          <div className="solar-voice-controls">
-          <button type="button" className="solar-voice-action" title={actionLabel} aria-label={actionLabel} onClick={() => {
-            if (phase === "listening") finishListening();
-            else if (phase === "thinking" || phase === "talking") { stop(); void shell?.talkSummon(); }
-            else void shell?.talkSummon();
-          }}>{phase === "thinking" || phase === "talking" ? <Square size={12} /> : phase === "listening" ? <Send size={13} /> : <Mic size={14} />}</button>
+            {!said && !notice && <p className="solar-voice-transcript solar-voice-hint">{t("solar.voice.finishSpeaking")}</p>}
           </div>
+          </div>}
         </section>
       </div>
     );

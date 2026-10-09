@@ -95,11 +95,15 @@ export interface TaskUsage {
   /** cached share of input (context the model re-read); absent on records
    * from builds before it was tracked */
   cachedInput?: number;
-  /** null until any turn reported a cost — most engines never do */
+  /** Sum of measured or estimated costs; null when no turn is priced. */
   costUsd: number | null;
+  /** Optional on older records. Keeps estimates and incomplete totals visible. */
+  estimatedUsd?: number | null;
+  unpriced?: number;
+  costSource?: "reported" | "estimated" | "mixed";
   turns: number;
   /** the most recent settled turn on its own */
-  lastTurn?: { input: number; output: number; cachedInput?: number; costUsd: number | null };
+  lastTurn?: { input: number; output: number; cachedInput?: number; costUsd: number | null; costSource?: "reported" | "estimated" };
   /** what filled the model's window on the last model call, and the window's size when known */
   context?: { tokens: number; window?: number };
 }

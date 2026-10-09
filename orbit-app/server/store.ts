@@ -2146,12 +2146,12 @@ export class Store {
   addTaskUsage(
     botId: string,
     threadId: string,
-    turn: { input?: number; output?: number; cachedInput?: number; costUsd: number | null; context?: { tokens?: number; window?: number } },
+    turn: { input?: number; output?: number; cachedInput?: number; costUsd: number | null; costSource?: "reported" | "estimated"; context?: { tokens?: number; window?: number } },
   ): TaskUsage | null {
     const task = this.taskByThread(botId, threadId);
     if (!task) return null;
     const prev: TaskUsage = { input: 0, output: 0, costUsd: null, turns: 0, ...task.usage };
-    const cost = typeof turn.costUsd === "number" && Number.isFinite(turn.costUsd) ? turn.costUsd : null;
+    const cost = typeof turn.costUsd === "number" && Number.isFinite(turn.costUsd) && turn.costUsd >= 0 ? turn.costUsd : null;
     const prevCost = typeof prev.costUsd === "number" ? prev.costUsd : null;
     // providers occasionally report NaN or a negative on a partial turn —
     // never let that poison a running tally
@@ -2165,16 +2165,23 @@ export class Store {
       + Math.min(clean(turn.cachedInput), turnInput);
     const contextTokens = clean(turn.context?.tokens);
     const contextWindow = clean(turn.context?.window);
+    const costSource = cost === null ? undefined : turn.costSource ?? "reported";
+    const previousSource = prev.costSource ?? (prevCost !== null ? "reported" : undefined);
+    const combinedSource = !costSource ? previousSource : !previousSource || previousSource === costSource ? costSource : "mixed";
     task.usage = {
       input: prevInput + turnInput,
       output: prev.output + clean(turn.output),
       ...(cachedKnown ? { cachedInput: nextCachedInput } : {}),
       costUsd: cost === null ? prevCost : (prevCost ?? 0) + cost,
+      estimatedUsd: costSource === "estimated" ? (prev.estimatedUsd ?? 0) + cost! : prev.estimatedUsd ?? null,
+      unpriced: (prev.unpriced ?? (prevCost === null ? prev.turns : 0)) + (cost === null ? 1 : 0),
+      ...(combinedSource ? { costSource: combinedSource } : {}),
       turns: prev.turns + 1,
       lastTurn: {
         input: turnInput, output: clean(turn.output),
         ...(typeof turn.cachedInput === "number" ? { cachedInput: Math.min(clean(turn.cachedInput), turnInput) } : {}),
         costUsd: cost,
+        ...(costSource ? { costSource } : {}),
       },
       // a turn that reported no context keeps the previous reading rather
       // than pretending the window emptied

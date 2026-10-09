@@ -6,10 +6,12 @@ import { useStore } from "@/state/store";
 import { BotFace } from "@/orbit/OrbitFace";
 import { Card } from "./SettingsPrimitives";
 import { t } from "@/lib/i18n";
-import { botUsage, cachedUsageNote, costCaption, formatTokens, formatUsd, hasFiniteCost, headlineTokens, sumUsage, tokensColumnLabel, usageDetail } from "@/lib/usage";
+import { botUsage, cachedUsageNote, formatTokens, hasFiniteCost, headlineTokens, sumUsage, tokensColumnLabel, usageDetail, usageCostLabel, usageCostNote } from "@/lib/usage";
+import { useUsageCurrency } from '@/lib/usage-currency';
 import { UsageHistory } from "./UsageHistory";
 
 export function UsageSection() {
+  useUsageCurrency();
   const { state } = useStore();
   const rows = state.bots
     .filter((b) => !b.hidden)
@@ -26,11 +28,11 @@ export function UsageSection() {
       return costOf(b.usage.costUsd) - costOf(a.usage.costUsd) || headlineTokens(b.usage) - headlineTokens(a.usage);
     });
   const total = sumUsage(rows.map((r) => r.usage));
-  const billings = new Set(rows.map((r) => r.billing));
   const cachedNote = cachedUsageNote(total);
 
   return (
     <>
+    <UsageHistory />
     <Card title={t("usage.title")} subtitle={t("usage.subtitle")}>
       {rows.length === 0 ? (
         <div className="text-[13px] text-ink/55">{t("usage.empty")}</div>
@@ -52,30 +54,26 @@ export function UsageSection() {
               <span className="text-right tabular-nums text-ink" title={usageDetail(usage)}>
                 {formatTokens(headlineTokens(usage))}
               </span>
-              <span className="text-right tabular-nums text-ink">{hasFiniteCost(usage.costUsd) ? formatUsd(usage.costUsd) : <span className="text-ink/55">—</span>}</span>
+              <span className="text-right tabular-nums text-ink" title={usageCostNote(usage)}>{usageCostLabel(usage)}</span>
             </div>
           ))}
           <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-5 pt-2.5 text-[13px] font-medium text-ink">
             <span>{t("usage.allBots")}</span>
             <span className="text-right tabular-nums">{total.turns}</span>
             <span className="text-right tabular-nums" title={usageDetail(total)}>{formatTokens(headlineTokens(total))}</span>
-            <span className="text-right tabular-nums">{hasFiniteCost(total.costUsd) ? formatUsd(total.costUsd) : "—"}</span>
+            <span className="text-right tabular-nums" title={usageCostNote(total)}>{usageCostLabel(total)}</span>
           </div>
           {cachedNote && (
             <div className="mt-3 text-[12px] leading-relaxed text-ink/55">{cachedNote}</div>
           )}
           {hasFiniteCost(total.costUsd) && (
             <div className="mt-3 text-[12px] leading-relaxed text-ink/55">
-              {t("usage.costLine", {
-                caption:
-                  billings.size === 1 ? costCaption([...billings][0]) : t("usage.costMixed"),
-              })}
+              {usageCostNote(total)}
             </div>
           )}
         </div>
       )}
     </Card>
-    <UsageHistory />
     </>
   );
 }

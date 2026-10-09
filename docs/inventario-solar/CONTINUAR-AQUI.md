@@ -1,5 +1,41 @@
 # Continuar o Solar
 
+**9/10: continuação para desktop solicitada.** Ler
+[o estado real e pendentes](CONTINUAR-DESKTOP-09-10-2026.md).
+0.2.1 é a última instalação confirmada; alterações 0.2.2 estão guardadas,
+com testes relevantes e typecheck aprovados; falta compilar e instalar no PC fixo.
+
+Continuação mais recente: **0.2.1**, ditado contínuo no composer com texto
+progressivo e Parar sem enviar. Ler
+[as causas, alterações e verificação](DITADO-CONTINUO-08-10-2026.md).
+Instalada e aberta: executável 0.2.1.0, bundle e modelo verificados por SHA-256,
+saúde HTTP 200 e reconhecimento local pronto (small final, base nas prévias).
+31 testes passaram; precisão com a voz real ainda depende de teste manual.
+
+Nova continuação de 8/10: **0.2.0**, Alt+T em barra lateral e primeira V2
+experimental num jardim 3D, com personagens, portáteis e equipas do Solar.
+Ler [a direção e verificações](JARDIM-3D-E-ALT-T-08-10-2026.md).
+Entrar pelo link «3D» da app; as conversas mantêm a interface atual e o histórico.
+Versão instalada e aberta, bundle verificado e saúde HTTP 200. Jardim aberto
+com os agentes reais. Integração do renderer compilado aprovada sem enviar
+mensagens: conversa, voltar/avançar e recarga preservam id e todo o histórico.
+
+Continuação de 8/10: Windows **0.1.99** corrige as linhas de interruptores
+que apareciam douradas com blocos pretos sobre os textos. A regra de tema
+agora usa `data-slot="switch-track"` e `data-slot="switch-thumb"` nas duas
+famílias de controlos. Teste e capturas em
+`orbit-app/.orbit-scratch/verify-evidence/solar-settings-controls/`.
+Instalada e aberta: executável 0.1.99.0, bundle instalado idêntico ao compilado,
+`/api/health` HTTP 200. Três testes da correção aprovados, lint dos ficheiros
+alterados e verificação dos catálogos válidos.
+
+Atualização de 8/10/2026: ler primeiro
+[a verificação do código e instalação](ATUALIZACAO-08-10-2026.md).
+O commit local `ed9250c`, de 7/10 às 23:00, inclui as alterações noturnas
+e a continuação anterior. Ainda não está no GitHub: a branch remota foi
+verificada em 8/10 e permanece em `36ad27d` (6/10).
+Os estados e pendentes abaixo são históricos.
+
 Última continuação: **7 de outubro de 2026**. Ler primeiro o
 [estado do ditado e scroll](DITADO-E-SCROLL-07-10-2026.md): Windows 0.1.95
 instalado, microfone no chat e barra de scroll limitada acima do compositor. O

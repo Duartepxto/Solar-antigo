@@ -19,14 +19,16 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { orbitNavigate } from "../events";
 import { MAUS_COLORS } from "@/lib/mascot";
 import { SKINS, applySkin, readSkin, type SkinId } from "@/lib/skins";
-import { botUsage, formatTokens, formatUsd, hasFiniteCost } from "@/lib/usage";
+import { botUsage, sumUsage, usageCostLabel, hasFiniteCost } from "@/lib/usage";
+import { UsageSection } from '@/components/UsageSection';
+import { useUsageCurrency } from '@/lib/usage-currency';
 import { routineNextLabel, routineRunLabel } from "@/lib/routine-display";
 import { isRoutineProblemRun } from "../../../shared/routines";
 import type { TeamComputer, TeamComputersPayload } from "../../../shared/team-computer";
 import { useAppSettingsSections, AppSettingsSectionContent } from "@/components/SettingsModal";
 import { engineStatus } from "@/components/ModelPicker";
 import { CanvasComputers } from "@/components/CanvasComputers";
-import { Actions, DetailBody, DetailHeader, Warning, DOT_ACCENT, DOT_OFF, DOT_ON, DOT_WARN, Gauge, List, MONO_LABEL, Rows, Seg, SMALL_PRIMARY } from "./primitives";
+import { Actions, DetailBody, DetailHeader, Warning, DOT_ACCENT, DOT_OFF, DOT_ON, DOT_WARN, List, MONO_LABEL, Rows, Seg, SMALL_PRIMARY } from "./primitives";
 import { OrbitFace } from "../OrbitFace";
 import type { OrbitTeam } from "../model";
 
@@ -195,9 +197,8 @@ export function youHubValue(key: YouHubKey, state: ReturnType<typeof useStore>["
     case "apps": return [t("orbit.hub.v.appsExplore"), t("orbit.hub.v.appsAndMcp")];
     case "remote": return phone?.pairedCount ? [tCount("orbit.hub.v.pairedDevices", phone.pairedCount), phone.label] : [t("orbit.hub.v.devices"), phone?.label ?? t("orbit.hub.v.pair")];
     case "usage": {
-      const spent = state.bots.reduce((sum, b) => sum + (botUsage(b).costUsd ?? 0), 0);
-      const budget = state.config?.budgets?.monthlyUsd;
-      return [budget ? t("orbit.hub.v.spendOf", { spent: formatUsd(spent), budget: formatUsd(budget) }) : formatUsd(spent), budget ? t("orbit.hub.v.pct", { pct: Math.round((spent / budget) * 100) }) : t("orbit.hub.v.allTime")];
+      const total = sumUsage(state.bots.map(botUsage));
+      return [hasFiniteCost(total.costUsd) ? usageCostLabel(total) : t('usage.costUnknown'), t('usage.currentConversations')];
     }
     case "calendar": {
       const next = state.routines.find((r) => r.enabled);
@@ -211,7 +212,8 @@ export function youHubValue(key: YouHubKey, state: ReturnType<typeof useStore>["
   }
 }
 
-export function YouHubPanel({ panel, openLibrary, focusBot }: { panel: YouHubKey; openLibrary: () => void; focusBot: (id: string) => void }) {
+export function YouHubPanel({ panel, openLibrary }: { panel: YouHubKey; openLibrary: () => void; focusBot: (id: string) => void }) {
+  useUsageCurrency();
   const { state, dispatch } = useStore();
   const meta = YOU_HUB.find((h) => h.key === panel)!;
   const head = (title: string, desc: string) => <DetailHeader icon={meta.icon} kicker={t(meta.label as never)} title={title} desc={desc} />;
@@ -255,18 +257,7 @@ export function YouHubPanel({ panel, openLibrary, focusBot }: { panel: YouHubKey
       case "remote":
         return head(t("orbit.hub.p.remote"), t("orbit.hub.p.remoteDesc"));
       case "usage": {
-        const rows = state.bots.map((b) => ({ b, u: botUsage(b) })).filter((x) => x.u.turns > 0).sort((a, b) => (b.u.costUsd ?? 0) - (a.u.costUsd ?? 0) || (b.u.input + b.u.output) - (a.u.input + a.u.output));
-        const spent = rows.reduce((s, x) => s + (x.u.costUsd ?? 0), 0);
-        const budget = state.config?.budgets?.monthlyUsd;
-        const warn = state.config?.budgets?.warnAtPercent;
-        return <>
-          {head(t("orbit.hub.p.usage"), t("orbit.hub.p.usageDesc"))}
-          {budget ? <Gauge pct={(spent / budget) * 100} color={import.meta.env.VITE_JARVIS_SOLAR === "true" ? "var(--color-accent)" : MAUS_COLORS.blue} label={t("orbit.hub.p.budget", { spent: formatUsd(spent), budget: formatUsd(budget), warn: warn ?? 80 })} /> : null}
-          <List title={t("orbit.hub.p.byBot")} empty={t("orbit.p.usage.none")} items={rows.map(({ b, u }) => ({
-            key: b.id, name: b.name, dot: MAUS_COLORS[b.color], onClick: () => focusBot(b.id),
-            meta: `${hasFiniteCost(u.costUsd) ? formatUsd(u.costUsd ?? 0) : "—"} · ${formatTokens(u.input + u.output)} ${t("orbit.hub.p.tokens")}`,
-          }))} />
-        </>;
+        return <div className="orbit-settings flex min-w-0 flex-col gap-4"><UsageSection /></div>;
       }
       case "calendar": {
         const runs = [...state.routineRuns].sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0)).filter((r) =>

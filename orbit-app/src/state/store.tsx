@@ -344,9 +344,12 @@ export interface TaskUsage {
   /** null until any turn reported a cost — most engines never do; records
    * from builds before cost existed lack the field entirely */
   costUsd: number | null;
+  estimatedUsd?: number | null;
+  unpriced?: number;
+  costSource?: 'reported' | 'estimated' | 'mixed';
   turns: number;
   /** the most recent settled turn on its own */
-  lastTurn?: { input: number; output: number; cachedInput?: number; costUsd: number | null };
+  lastTurn?: { input: number; output: number; cachedInput?: number; costUsd: number | null; costSource?: 'reported' | 'estimated' };
   /** what filled the model's window on the last model call, and the window's size when known */
   context?: { tokens: number; window?: number };
 }

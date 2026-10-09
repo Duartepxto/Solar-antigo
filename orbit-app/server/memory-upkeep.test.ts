@@ -3,7 +3,7 @@
 // About me suggestions, and the upkeep loop against a scripted engine.
 import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DATA_DIR } from "./config.ts";
 import { CaptureBuffer, capturePrompt, newCandidates, parseCandidates, topicFileName } from "./memory-capture.ts";
@@ -210,10 +210,10 @@ describe("the upkeep loop", () => {
   let organizeAnswer: string;
   let organizePrompts: string[];
 
-  const upkeep = () => createMemoryUpkeep({
+  const upkeep = (resolveEngine?: (botId: string, threadId?: string) => UpkeepEngine | null) => createMemoryUpkeep({
     bots: () => [BOT],
     bot: (id) => (id === BOT.id ? BOT : undefined),
-    engine: () => engine,
+    engine: resolveEngine ?? (() => engine),
     busy: () => busy,
     addToAboutMe: (_from, texts) => {
       aboutMeAdded.push(...texts);
@@ -251,6 +251,14 @@ describe("the upkeep loop", () => {
   });
 
   const memory = () => readFileSync(join(workspaceDir(BOT.id), "MEMORY.md"), "utf8");
+
+  it("uses the triggering conversation engine and never falls back to another account for capture", async () => {
+    const resolve = vi.fn((_botId: string, threadId?: string) => threadId === "codex-conversation" ? {} : engine);
+    const report = await upkeep(resolve).capture({ botId: BOT.id, threadId: "codex-conversation", turns: [{ person: "Synthetic preference", bot: "Acknowledged" }] });
+    expect(resolve).toHaveBeenCalledExactlyOnceWith(BOT.id, "codex-conversation");
+    expect(report).toMatchObject({ added: 0, topics: 0, note: NO_TEXT_ENGINE });
+    expect(prompts).toHaveLength(0);
+  });
 
   it("captures new facts as dated, sourced entries, journaled as upkeep, and adds About me lines", async () => {
     ensureWorkspace(BOT.id);

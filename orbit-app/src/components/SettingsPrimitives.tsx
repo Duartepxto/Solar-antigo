@@ -13,6 +13,7 @@ export function Switch({
       type="button"
       role="switch"
       aria-checked={checked}
+      data-slot="switch-track"
       className={cn(
         "relative h-6 w-11 shrink-0 rounded-full transition-colors enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none",
         checked ? "bg-ink" : "bg-ink/[0.05]",
@@ -20,6 +21,7 @@ export function Switch({
       )}
     >
       <span
+        data-slot="switch-thumb"
         className={cn(
           "absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-[left] motion-reduce:transition-none",
           checked ? "left-[21px]" : "left-[3px]",
