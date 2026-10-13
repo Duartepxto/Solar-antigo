@@ -20,3 +20,5 @@ Estudado o painel e os contratos da aplicação de referência, com HEAD confirm
 Validação: build Vite, testes existentes e novos de delimitação por turno, falha não recuperada, recuperação comprovada, uma ação ativa e cobertura/limites dos controlos em três larguras desktop. Inspeção no navegador do mapa, menus, execução expandida e intro. Duas observações confirmaram mudança nas coordenadas do Sol da intro. Consola sem erros novos. Este entregável é o HTML de demonstração para PC; não altera o programa instalado ou o backend real.
 
 Depois de a direção visual estar aprovada, continuar a análise funcional de diferenças entre as aplicações e implementar os gaps no Solar V0, conforme pedido anterior do utilizador.
+
+Refinamento pedido no mesmo dia: ligações com 32–90 fragmentos principais por percurso (mais fragmentos secundários), opacidade de repouso aumentada, fragmentos maiores e ondulação de 18–27 px animada. Percursos destacados mais luminosos; sem alterações ao mapa, menus ou transferências entre agentes.
