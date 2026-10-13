@@ -43,6 +43,8 @@ conn.on("error", dead);
 conn.on("close", dead);
 
 let connBuf = "";
+// Socket frames can split a Portuguese accent or emoji between byte chunks.
+conn.setEncoding("utf8");
 conn.on("data", (chunk) => {
   connBuf += chunk;
   let nl;
@@ -229,6 +231,7 @@ async function handle(msg: any) {
 }
 
 let inBuf = "";
+process.stdin.setEncoding("utf8");
 process.stdin.on("data", (chunk) => {
   inBuf += chunk;
   let nl;

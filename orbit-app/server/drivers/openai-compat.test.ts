@@ -78,6 +78,37 @@ describe("OpenAICompatDriver", () => {
       expect(request.mock.calls.some(call => String(call[0]).includes("chat/completions"))).toBe(false);
     } finally { await inst.dispose(); }
   });
+  it("seeds Groq with current GPT OSS models and their own prices, keeping an explicit enterprise selection", async () => {
+    const input = { instanceId: "groq-seed", displayName: "Groq", enabled: true, environment: {},
+      config: { url: "https://api.groq.com/openai/v1", apiKeyEnv: "UNSET_FIXTURE_KEY" } };
+    const instance = await OpenAICompatDriver.create(input);
+    const enterprise = await OpenAICompatDriver.create({ ...input, config: { ...input.config, model: "llama-3.3-70b-versatile" } });
+    try {
+      expect(instance.models.default).toBe("openai/gpt-oss-120b");
+      expect(instance.models.options[0]).toMatchObject({ pricing: { inputPerMillion: 0.15, outputPerMillion: 0.6 } });
+      expect(instance.models.options.some(model => model.id === "llama-3.3-70b-versatile")).toBe(false);
+      expect(enterprise.models.default).toBe("llama-3.3-70b-versatile");
+    } finally { await instance.dispose(); await enterprise.dispose(); }
+  });
+  it("reads OpenRouter's per-token live rates without pricing an arbitrary compatible host in USD", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ data: [{ id: "vendor/new", pricing: {
+      prompt: "0.000002", completion: "0.00001", input_cache_read: "0.0000001", input_cache_write: "0.0000025",
+    } }] })));
+    for (const url of ["https://openrouter.ai/api/v1", "https://example.test/v1"]) {
+      const instance = await OpenAICompatDriver.create({ instanceId: "pricing-fixture", displayName: "Fixture", enabled: true,
+        config: { url, apiKeyEnv: "FIXTURE_KEY" }, environment: { FIXTURE_KEY: "synthetic" } });
+      try {
+        await instance.refreshModels?.();
+        const model = instance.models.options[0];
+        if (url.includes("openrouter.ai")) {
+          expect(model.pricing).toMatchObject({ inputPerMillion: 2, outputPerMillion: 10, cacheWritePerMillion: 2.5 });
+          expect(model.pricing?.cachedInputPerMillion).toBeCloseTo(0.1, 12);
+        }
+        else expect(model).not.toHaveProperty("pricing");
+      } finally { await instance.dispose(); }
+    }
+  });
+
   it("smoke: offers ask_user and returns the person's reply verbatim", async () => {
     const askBody = 'data: {"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"ask1","type":"function","function":{"name":"ask_user","arguments":'
       + JSON.stringify(JSON.stringify({ questions: [{ question: "Ship the fixture?", options: [{ label: "Yes" }, { label: "No" }] }] }))
@@ -146,6 +177,31 @@ describe("OpenAICompatDriver", () => {
       ],
     });
     await inst.dispose();
+  });
+
+  it("keeps live context windows and skips malformed or non-text models without losing later rows", async () => {
+    let fail = false;
+    vi.stubGlobal("fetch", vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      expect(init?.redirect).toBe("error");
+      return fail ? new Response("offline", { status: 503 }) : new Response(JSON.stringify({ data: [
+        null, { id: " " }, { id: "vendor/latest", name: "Latest", context_length: 1_048_576 },
+        { id: "vendor/latest" }, { id: "vendor/image", architecture: { output_modalities: ["image"] } },
+        { id: "vendor/text", context_length: -1, architecture: { output_modalities: ["text"] } },
+      ] }));
+    }));
+    const instance = await OpenAICompatDriver.create({ instanceId: "live-context", displayName: "Fixture", enabled: true,
+      config: { url: "https://example.test/v1", apiKeyEnv: "FIXTURE_KEY" }, environment: { FIXTURE_KEY: "synthetic" } });
+    try {
+      await instance.refreshModels?.();
+      expect(instance.models).toEqual({ default: "vendor/latest", options: [
+        { id: "vendor/latest", label: "Latest", custom: true, contextWindow: 1_048_576 },
+        { id: "vendor/text", label: "vendor/text", custom: true },
+      ] });
+      const before = instance.models;
+      fail = true;
+      await instance.refreshModels?.();
+      expect(instance.models).toBe(before);
+    } finally { await instance.dispose(); }
   });
 
   it("includes streamed token totals and bounds the cancellable stream", async () => {
@@ -746,6 +802,31 @@ describe("OpenAICompatDriver", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it.each(["https://openrouter.ai/api/v1", "https://api.example.test/v1"])("keeps an opaque cache session per conversation only on OpenRouter (%s)", async url => {
+    const bodies: Array<Record<string, unknown>> = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).endsWith("/models")) return new Response('{"data":[]}');
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response('data: {"choices":[{"delta":{"content":"done"},"finish_reason":"stop"}]}\ndata: [DONE]\n');
+    }));
+    const instance = await OpenAICompatDriver.create({ instanceId: "cache-fixture", displayName: "Fixture", enabled: true,
+      config: { url, apiKeyEnv: "FIXTURE_KEY" }, environment: { FIXTURE_KEY: "synthetic" } });
+    try {
+      for (const [index, threadId] of ["private-thread", "private-thread", "other-thread"].entries()) {
+        const recorder = recordEvents(instance.adapter);
+        try {
+          await instance.adapter.sendTurn({ threadId, text: `turn ${index}`, system: `changed opening ${index}` });
+          expect(await recorder.until(event => event.type === "turn.completed")).toMatchObject({ ok: true });
+        } finally { recorder.stop(); }
+      }
+      if (url.includes("openrouter.ai")) {
+        expect(bodies[0].session_id).toMatch(/^solar-[a-f0-9]{64}$/);
+        expect(bodies[0].session_id).toBe(bodies[1].session_id);
+        expect(bodies[2].session_id).not.toBe(bodies[0].session_id);
+      } else expect(bodies.every(body => !("session_id" in body))).toBe(true);
+    } finally { await instance.dispose(); }
   });
 
   it("omits provider routing when none is configured", async () => {

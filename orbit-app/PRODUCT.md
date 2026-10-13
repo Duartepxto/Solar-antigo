@@ -217,6 +217,40 @@ fixes come across; its interface doesn't.
 
 ## Keeping this file
 
+- App-icon direction (owner, 2026-10-10): the V2 wordmark/letter-led concepts
+  were rejected. Solar needs a standalone app symbol representing its existing
+  central Sun, including clear black/white reproduction. Start from that Sun's
+  recognizable form, not company-style lettering, an S monogram, or an unrelated
+  abstract metaphor. Study official app-icon guidance and real app-icon cases
+  before drawing the next proposal. The previous boards are rejected history.
+- Agent cost preference (owner, 2026-10-10): use medium reasoning for newly
+  spawned subagents. Pass a focused task context instead of the entire history
+  when possible. Do not resume old high-effort agents for this work.
+- Model cost presentation (owner, 2026-10-10): show token costs in euros,
+  with a dated ECB conversion and separate fresh input, cache reads, cache
+  writes and output. Compare every configured model using current provider
+  rates where available; unknown rates must remain unknown. Assess agent
+  productivity and architecture as well as tests; passing tests alone does
+  not establish that Solar is ready for everyday use.
+
+- Design correction (owner, 2026-10-10): the first new welcome composition and
+  the "Sol aberto" logo were explicitly rejected. Study primary online brand,
+  logo and product-design references before applying another visual direction.
+  Preserve the approved Solar map. Treat the rejected proposal as historical
+  material, not as the brand to propagate across Windows or Android. Research
+  and application-wide functional review continue together; see
+  [`PESQUISA-DESIGN-SOLAR-10-10-2026.md`](../docs/inventario-solar/PESQUISA-DESIGN-SOLAR-10-10-2026.md).
+
+- Professionalization direction (owner, 2026-10-10): prepare Solar as a public
+  product with Windows and Android as priorities. Preserve the approved solar
+  map and graphite/gold identity; replace the inherited welcome composition
+  with Solar's own responsive setup flow and product branding. Review real
+  functionality, context delivery, usage accounting, data integrity and code
+  quality alongside the design. Plan the landing page and presentation video
+  now; their construction is a later phase. The owner authorized parallel agent
+  work. The release criteria and ongoing scope are recorded in
+  `../docs/inventario-solar/PLANO-PROFISSIONALIZACAO-SOLAR.md`.
+
 - Composer dictation is manual and continuous (owner, 2026-10-08): show the
   cumulative transcript while the person speaks, keep recording across pauses
   and past 29 seconds by recognizing bounded clips. Stop finalizes text in

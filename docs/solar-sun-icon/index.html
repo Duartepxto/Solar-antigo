@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Estudo do Sol — uma forma</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e9e9e7;color:#202020;font:14px/1.5 system-ui,sans-serif}main{max-width:900px;margin:48px auto;padding:0 24px}h1{margin:0 0 8px;font-size:20px;font-weight:600}p{margin:0 0 24px;color:#555}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel{padding:32px;background:#fff}.panel.dark{background:#111;color:#eee}.large{height:200px;display:grid;place-items:center}.large img{width:128px;height:128px}.sizes{display:flex;align-items:start;justify-content:space-around;gap:12px;margin-top:24px}.sample{display:flex;flex-direction:column;align-items:center;gap:14px}.frame{height:64px;display:flex;align-items:center;justify-content:center}.sample span{font-size:12px;font-variant-numeric:tabular-nums;color:#737373}.dark .sample span{color:#a9a9a9}footer{margin-top:22px;font-size:12px;color:#666}@media(max-width:560px){main{margin:24px auto}.comparison{grid-template-columns:1fr}.panel{padding:20px}}
+</style>
+<main><h1>Estudo do Sol</h1><p>Uma única forma, em positivo e negativo. Tamanhos em píxeis CSS.</p>
+<div class="comparison">
+<section class="panel" aria-label="Forma preta sobre branco"><div class="large"><img src="sun-black.svg" alt="Sol em preto, a 128 píxeis"></div><div class="sizes">
+<div class="sample"><div class="frame"><img src="sun-black.svg" width="16" height="16" alt="Sol a 16 píxeis"></div><span>16</span></div>
+<div class="sample"><div class="frame"><img src="sun-black.svg" width="24" height="24" alt="Sol a 24 píxeis"></div><span>24</span></div>
+<div class="sample"><div class="frame"><img src="sun-black.svg" width="32" height="32" alt="Sol a 32 píxeis"></div><span>32</span></div>
+<div class="sample"><div class="frame"><img src="sun-black.svg" width="64" height="64" alt="Sol a 64 píxeis"></div><span>64</span></div>
+</div></section>
+<section class="panel dark" aria-label="Forma branca sobre preto"><div class="large"><img src="sun-white.svg" alt="Sol em branco, a 128 píxeis"></div><div class="sizes">
+<div class="sample"><div class="frame"><img src="sun-white.svg" width="16" height="16" alt="Sol a 16 píxeis"></div><span>16</span></div>
+<div class="sample"><div class="frame"><img src="sun-white.svg" width="24" height="24" alt="Sol a 24 píxeis"></div><span>24</span></div>
+<div class="sample"><div class="frame"><img src="sun-white.svg" width="32" height="32" alt="Sol a 32 píxeis"></div><span>32</span></div>
+<div class="sample"><div class="frame"><img src="sun-white.svg" width="64" height="64" alt="Sol a 64 píxeis"></div><span>64</span></div>
+</div></section>
+</div><footer>Mesmo disco e corona em ambas as cores. A amostra de 16 px alarga opticamente a separação entre as duas massas. Estudo sem aplicação aos ícones instalados.</footer></main>
+</html>

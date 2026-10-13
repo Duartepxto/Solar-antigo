@@ -37,6 +37,7 @@ function fromUrl() {
     skin: skin && SKINS.some((s) => s.id === skin) ? skin : ("midnight" as SkinId),
     reduced: params.get("reduced") === "1",
     all: params.get("all") === "1",
+    windowPreview: params.get("window") === "1",
     entrance: (params.get("entrance") ?? "arrive") as Exclude<MausMotion, "none">,
   };
 }
@@ -92,6 +93,12 @@ function Preview() {
     }, 3500);
     return () => clearTimeout(timer);
   }, []);
+
+  // A clean window-sized route for visual QA and reviewing the Solar intro.
+  // It still uses this gallery's disposable preview bot and never a live tour.
+  if (initial.windowPreview) return <div data-skin={skin}>
+    <WelcomeFlow dictation initialBeat={beat} bot={PREVIEW_BOT} entrance={initial.entrance} onDone={() => {}} />
+  </div>;
 
   const control =
     "rounded-lg border border-ink/[0.1] bg-ink/[0.04] px-2 py-1.5 text-[13px] text-ink focus:outline-none";

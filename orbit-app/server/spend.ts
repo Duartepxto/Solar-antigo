@@ -52,17 +52,23 @@ export function monthToDateSpend(dataDir: string, now = new Date()): number {
     cache.set(dataDir, read);
   }
   let pending = 0;
-  for (const [key, entry] of unwritten.get(dataDir) ?? []) {
+  const entries = unwritten.get(dataDir);
+  for (const [key, entry] of entries ?? []) {
+    // Failed appends retain this process's known spend, not an unbounded
+    // history. A new month no longer charges or retains older failed rows.
+    if (entry.month < month) { entries?.delete(key); continue; }
     if (entry.month === month && !read.keys.has(key)) pending += entry.costUsd;
   }
+  if (entries?.size === 0 && unwritten.get(dataDir) === entries) unwritten.delete(dataDir);
   return read.fileUsd + pending;
 }
 
 /** Called as a turn is booked, with the ledger's write for its row
  * (appendUsage's promise). The cost counts from memory at once; when the
  * row lands it moves into the cached read, and a re-read that already sees
- * the row never counts it twice. A write that failed stops counting, as
- * the ledger has no row for it. */
+ * the row never counts it twice. A failed write must not erase known spend:
+ * retain it in memory for this month, reconciling against later ledger reads.
+ * A restart cannot recover a row that never reached durable storage. */
 export function noteSpend(
   dataDir: string,
   row: { at: string; threadId: string; botId: string; costUsd: number | null | undefined },
@@ -76,6 +82,7 @@ export function noteSpend(
   unwritten.set(dataDir, entries);
   entries.set(key, { month, costUsd });
   void written.then((landed) => {
+    if (!landed) return;
     entries.delete(key);
     if (entries.size === 0 && unwritten.get(dataDir) === entries) unwritten.delete(dataDir);
     const read = cache.get(dataDir);
@@ -83,7 +90,7 @@ export function noteSpend(
       read.fileUsd += costUsd;
       read.keys.add(key);
     }
-  });
+  }, () => { /* a failed writer leaves known spend in memory */ });
 }
 
 export function resetSpendCacheForTests(): void {

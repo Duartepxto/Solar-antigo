@@ -106,6 +106,13 @@ scope on both routes.
   unavailable prices blank. Tiny nonzero prices retain precision.
 - Unknown cache counts remain absent in summaries and blank in CSV instead
   of labelling all input as fresh. Reported cache shares cannot exceed input.
+- Generated conversation titles are off by default. When enabled, their
+  helper calls now check the budget and report usage independently in the
+  ledger, under the helper's actual model and captured requester. A helper
+  without measured tokens or reported cost remains unpriced. Ledger-only
+  helper thread keys do not represent an additional visible conversation;
+  spend notifications use the real conversation. See the isolated
+  [usage audit and title accounting fixture](usage-audit.md).
 - Historical read-time price recovery is a display/export derivation. It does
   not retroactively rewrite or enforce the optional monthly spend cap against
   past unpriced activity. Future measured costs feed both the ledger and cap.
@@ -126,6 +133,18 @@ scope on both routes.
   every model call in this turn once. Cached input is included in input and
   priced at the cache rate; reasoning output is already part of output.
   Native helper notifications cannot settle or overwrite the parent turn.
+- OpenAI-compatible conversation turns retain measured cache as part of
+  input, sum separate tool-round requests once, and preserve usage already
+  received before a failed stream or Stop. Repeated usage snapshots within
+  one request replace measured fields rather than adding another charge.
+  A newer prompt total without a new cache measurement invalidates the older
+  cache count; changed token totals without a new price invalidate an older
+  price. Empty late usage does not erase known measurements. Reported
+  `usage.cost` is accepted as USD only for OpenRouter's documented contract;
+  generic cost extensions from other endpoints remain unpriced or estimated.
+  `server/openai-usage-accounting.e2e.test.ts` proves ledger/cache/cap behavior
+  through an isolated loopback provider, including billed failed output and
+  absent measurements. It makes no real API calls.
 - Estimates are Standard short-context API equivalents, not subscription
   invoices. The stream does not identify every service tier, cache write or
   auxiliary tool fee, so Solar cannot infer an exact provider bill from

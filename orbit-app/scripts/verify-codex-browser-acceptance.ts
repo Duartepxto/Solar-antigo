@@ -65,7 +65,7 @@ async function observe(botId: string, prefix: string) {
 }
 
 try {
-  const codexHome = join(fixture.info.dataDir, ".codex");
+  const codexHome = join(fixture.info.dataDir, "codex-home");
   mkdirSync(codexHome, { recursive: true, mode: 0o700 });
   copyFileSync(auth, join(codexHome, "auth.json"));
   await api("PUT", "/api/config", { features: { browser: true, showToolCalls: true } });
@@ -121,7 +121,7 @@ try {
   try {
     save();
   } finally {
-    try { unlinkSync(join(fixture.info.dataDir, ".codex", "auth.json")); } catch { /* fixture cleanup remains authoritative */ }
+    try { unlinkSync(join(fixture.info.dataDir, "codex-home", "auth.json")); } catch { /* fixture cleanup remains authoritative */ }
     await fixture.close();
   }
 }

@@ -452,6 +452,8 @@ export interface ModelCatalog {
      * the model-facing rebuild (server/context-rebuild.ts). Unknown falls
      * back to a pattern table over the model id, then a conservative default. */
     contextWindow?: number;
+    /** Vendor-supplied token rates in USD; no account secrets. */
+    pricing?: import("../shared/model-cost.ts").ModelTokenPrice;
     /** Discovery hints; the native session revalidates these before each turn. */
     variants?: ModelVariantOption[];
   }>;

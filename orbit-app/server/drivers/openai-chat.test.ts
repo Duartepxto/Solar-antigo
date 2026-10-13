@@ -41,6 +41,7 @@ describe("createOpenAIChatRuntime one-shot usage", () => {
   const fixture = async (body: unknown) => {
     vi.stubGlobal("fetch", vi.fn(async (_url: unknown, init?: RequestInit) => {
       init?.signal?.throwIfAborted();
+      if (String(_url).endsWith("/language-models")) return new Response('{"models":[]}');
       return new Response(typeof body === "string" ? body : JSON.stringify(body), { headers: { "content-type": "application/json" } });
     }));
     return GrokDriver.create({
@@ -57,9 +58,11 @@ describe("createOpenAIChatRuntime one-shot usage", () => {
     });
     const onUsage = vi.fn();
     await expect(instance.generateText!("summarize", { onUsage })).resolves.toBe("helper result");
-    expect(JSON.parse(vi.mocked(fetch).mock.calls[0]![1]!.body as string).model).toBe("grok-3-mini");
+    const completion = vi.mocked(fetch).mock.calls.find(call => String(call[0]).endsWith("/chat/completions"));
+    expect(JSON.parse(completion![1]!.body as string).model).toBe("grok-4.7");
     expect(instance.models.default).toBe("grok-4.7");
-    expect(onUsage.mock.calls).toEqual([[{ model: "grok-3-mini-actual", input: 120, output: 20, cachedInput: 100, costUsd: 0.004 }]]);
+    // A generic cost extension has no established USD contract on xAI.
+    expect(onUsage.mock.calls).toEqual([[{ model: "grok-3-mini-actual", input: 120, output: 20, cachedInput: 100, costUsd: undefined }]]);
     await expect(instance.generateText!("plain summary")).resolves.toBe("helper result");
     await instance.dispose();
   });
@@ -72,7 +75,7 @@ describe("createOpenAIChatRuntime one-shot usage", () => {
     const instance = await fixture({ choices, usage });
     const onUsage = vi.fn();
     await instance.generateText!("summarize", { onUsage });
-    expect(onUsage.mock.calls).toEqual([[{ model: "grok-3-mini", input: expected, output: expected, cachedInput: expected, costUsd: expected }]]);
+    expect(onUsage.mock.calls).toEqual([[{ model: "grok-4.7", input: expected, output: expected, cachedInput: expected, costUsd: undefined }]]);
     await instance.dispose();
   });
 
@@ -84,7 +87,7 @@ describe("createOpenAIChatRuntime one-shot usage", () => {
     const instance = await fixture({ ...body, usage: { prompt_tokens: 10, completion_tokens: 5 } });
     const onUsage = vi.fn();
     await expect(instance.generateText!("summarize", { onUsage })).rejects.toThrow();
-    expect(onUsage.mock.calls).toEqual([[{ model: "grok-3-mini", input: 10, output: 5, cachedInput: undefined, costUsd: undefined }]]);
+    expect(onUsage.mock.calls).toEqual([[{ model: "grok-4.7", input: 10, output: 5, cachedInput: undefined, costUsd: undefined }]]);
     await instance.dispose();
   });
 

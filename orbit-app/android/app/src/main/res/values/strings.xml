@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Solar</string>
+    <string name="solar_pairing_local_network_permission">Allow local network access to reach this computer, then confirm again. If access is denied, enable Nearby devices in Android Settings or choose another address.</string>
     <string name="solar_start_call">Start call</string>
     <string name="solar_end_call">End call</string>
     <string name="solar_send_voice">Send voice turn</string>

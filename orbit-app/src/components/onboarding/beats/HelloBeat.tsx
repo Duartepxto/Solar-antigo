@@ -12,7 +12,7 @@ import { inputClass, PrimaryButton, QuietButton, staggerIndex, type BeatProps } 
 
 export function HelloBeat({ onNext, onSkip, hosted = false }: BeatProps & { hosted?: boolean }) {
   const { state, dispatch } = useStore();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(state.config?.profile?.name ?? '');
   const pending = useRef(false);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -58,19 +58,22 @@ export function HelloBeat({ onNext, onSkip, hosted = false }: BeatProps & { host
   return (
     <div className="stagger flex flex-col items-center">
       <p className="animate-rise mt-3 text-center text-[14px] leading-[1.6] text-ink/55" style={staggerIndex(0)}>
-        {t(import.meta.env.VITE_JARVIS_SOLAR === 'true'?'jarvis.welcome.intro':'onboarding.intro')}
+        {t(import.meta.env.VITE_JARVIS_SOLAR === 'true'?'jarvis.welcome.v3.intro':'onboarding.intro')}
       </p>
       <label className="animate-rise mt-3.5 flex w-full flex-col gap-1.5 text-[12px] leading-normal text-ink/60" style={staggerIndex(1)}>
         {t("onboarding.name")}
         <input
           autoFocus
           type="text"
+          aria-label={t('onboarding.name')}
+          autoComplete="given-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && void saveProfile()}
           className={inputClass}
         />
       </label>
+      {import.meta.env.VITE_JARVIS_SOLAR === "true" && <p className="solar-welcome-helper">{t("jarvis.welcome.v3.nameHint")}</p>}
       {failed && <p role="alert" className="mt-3 text-[13px] text-[#ff8a96]">{t("onboarding.profile.error")}</p>}
       <PrimaryButton onClick={() => void saveProfile()} disabled={saving} className="animate-rise mt-3" style={staggerIndex(2)}>
         {t("onboarding.continue")}

@@ -28,7 +28,9 @@ export function sumUsage(items: Array<TaskUsage | undefined>): TaskUsage {
     if (unpriced > 0) out.unpriced = (out.unpriced ?? 0) + unpriced;
     if (u.costSource) out.costSource = !out.costSource || out.costSource === u.costSource ? u.costSource : 'mixed';
   }
-  if (items.some((u) => u && u.input > 0 && !cachedKnown(u))) delete out.cachedInput;
+  // A settled zero-input record can mean missing provider telemetry. Only an
+  // unused task is safe to ignore when deciding whether the split is complete.
+  if (items.some((u) => u && (u.turns > 0 || u.input > 0 || u.output > 0) && !cachedKnown(u))) delete out.cachedInput;
   return out;
 }
 
@@ -108,6 +110,12 @@ export function cachedKnown(u: Pick<TaskUsage, "cachedInput">): boolean {
  * split is known and the figure leaves cache re-reads out, else "Tokens". */
 export function tokensColumnLabel(total: TaskUsage): string {
   return t(cachedKnown(total) ? "usage.colNewTokens" : "usage.colTokens");
+}
+
+/** A column uses one unit for every row. A partially known cache split means
+ * input + output everywhere, so the visible rows still reconcile to the total. */
+export function tokensColumnValue(row: TaskUsage, total: TaskUsage): number {
+  return cachedKnown(total) ? headlineTokens(row) : row.input + row.output;
 }
 
 /** The line under a fresh-token total: what it leaves out, and everything

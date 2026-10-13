@@ -1,0 +1,30 @@
+{
+  "desktop": {
+    "content": 1280,
+    "font": true,
+    "images": true,
+    "width": 1280
+  },
+  "light": {
+    "selected": "Claro",
+    "tone": "light"
+  },
+  "mobile": {
+    "buttons": [
+      {
+        "height": 44,
+        "text": "Grafite"
+      },
+      {
+        "height": 44,
+        "text": "Preto"
+      },
+      {
+        "height": 44,
+        "text": "Claro"
+      }
+    ],
+    "content": 390,
+    "width": 390
+  }
+}

@@ -35,6 +35,7 @@ import { PermissionsBeat } from "./beats/PermissionsBeat";
 import { PhoneBeat } from "./beats/PhoneBeat";
 import { QuietButton, WelcomeFooterContext } from "./beats/shared";
 import { withViewTransition } from "./view-transition";
+import { SolarWelcomeFrame } from "./SolarWelcomeFrame";
 import { ProgressDots } from "./ProgressDots";
 import { FeatureReel } from "./reel/FeatureReel";
 import { useSolarSpeechReady } from '@/lib/solar-voice';
@@ -219,10 +220,38 @@ export function WelcomeFlow({
   }, [beat]);
 
   const hello = beat === "hello";
-  const title = beatTitle(beat);
+  const solar = import.meta.env.VITE_JARVIS_SOLAR === "true";
+  const title = solar ? t({
+    hello: "jarvis.welcome.v3.hello", reel: "jarvis.welcome.v3.reel",
+    engines: "jarvis.welcome.v3.engines", permissions: "jarvis.welcome.v3.permissions",
+    phone: "jarvis.welcome.v3.phone", bot: "jarvis.welcome.v3.bot",
+  }[beat] as import("@/locales").LocaleKey) : beatTitle(beat);
   const logo = hello ? brand().logo : undefined;
   const beatProps = { onNext: advance, onSkip: advance, setMascot, bump };
   const current = beats.indexOf(beat) + 1;
+
+  if (solar) return <SolarWelcomeFrame cardRef={cardRef} nativeWindow={nativeWindow} embedded={embedded}
+    title={title} current={current} total={beats.length} previous={Boolean(previous)}
+    onBack={() => { if (previous) go(previous); }} onSkip={() => void finish("skipped")}
+    onKeyDown={onKeyDown} setFooter={setFooter}>
+        <WelcomeFooterContext.Provider value={footer}>
+        <div key={beat} className="solar-welcome-step flex shrink-0 flex-col">
+          {beat === "hello" && <HelloBeat {...beatProps} hosted={hosted} />}
+          {beat === "reel" && (import.meta.env.VITE_JARVIS_SOLAR === 'true' ? <SolarFeatureReel {...beatProps} /> : <FeatureReel {...beatProps} />)}
+          {beat === "engines" && <EnginesBeat {...beatProps} hosted={hosted} onOpenOrganisation={onOpenOrganisation} />}
+          {beat === "permissions" && <PermissionsBeat {...beatProps} />}
+          {beat === "phone" && <PhoneBeat {...beatProps} />}
+          {beat === "bot" && (
+            <MeetYourBotBeat
+              bot={bot}
+              onFinish={() => void finish("completed")}
+              setMascot={setMascot}
+              bump={bump}
+            />
+          )}
+        </div>
+        </WelcomeFooterContext.Provider>
+  </SolarWelcomeFrame>;
 
   return (
     <div

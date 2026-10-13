@@ -51,6 +51,7 @@ describe("GrokDriver turns (fake fetch)", () => {
     // SAFETY: the stub only returns real Response objects, the sole member
     // of fetch's return type this driver consumes.
     globalThis.fetch = (async (_url, init) => {
+      if (String(_url).endsWith("/language-models")) return new Response('{"models":[]}');
       requestedModels.push((JSON.parse(String(init?.body)) as { model: string }).model);
       const step = script.shift();
       calls++;
@@ -101,6 +102,23 @@ describe("GrokDriver turns (fake fetch)", () => {
     expect(requestedModels).toEqual(["grok-4.7"]);
     expect(instance.models.options).toContainEqual({ id: "grok-4.7", label: "Grok 4.7", contextWindow: 500_000 });
   });
+  it("requests streamed usage and preserves it on the terminal event for a text-only turn", async () => {
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).endsWith("/language-models")) return new Response('{"models":[]}');
+      expect(JSON.parse(String(init?.body)).stream_options).toEqual({ include_usage: true });
+      return sseResponse([
+        'data: {"choices":[{"delta":{"content":"done"},"finish_reason":"stop"}]}',
+        'data: {"choices":[],"usage":{"prompt_tokens":120,"completion_tokens":30,"prompt_tokens_details":{"cached_tokens":80},"cost_in_usd_ticks":37756000}}',
+        "data: [DONE]", "",
+      ].join("\n"));
+    }) as typeof fetch;
+    await create();
+    expect(await instance.snapshot()).toMatchObject({ billing: "metered" });
+    await instance.adapter.sendTurn({ threadId: "usage-text", text: "hi" });
+    expect(await recorder.until(event => event.type === "turn.completed")).toMatchObject({
+      ok: true, cost: 0.0037756, usage: { input: 120, output: 30, cachedInput: 80 },
+    });
+  });
 
   it("smoke: offers ask_user and returns the person's reply verbatim", async () => {
     const askBody = 'data: {"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"ask1","type":"function","function":{"name":"ask_user","arguments":'
@@ -111,7 +129,7 @@ describe("GrokDriver turns (fake fetch)", () => {
     // SAFETY: the stub only returns real Response objects, the sole member
     // of fetch's return type this driver consumes.
     globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
-      if (String(input).endsWith("/models")) return new Response(JSON.stringify({ data: [] }), { status: 200 });
+      if (String(input).endsWith("/language-models")) return new Response('{"models":[]}');
       calls++;
       bodies.push(String(init?.body));
       return sseResponse(bodies.length === 1 ? askBody : SSE_BODY("done from fake grok"));
@@ -182,7 +200,8 @@ describe("GrokDriver turns (fake fetch)", () => {
       },
     });
     // SAFETY: a real Response built from a live stream, same as above.
-    globalThis.fetch = (async () => {
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      if (String(input).endsWith("/language-models")) return new Response('{"models":[]}');
       calls++;
       return new Response(failingStream, { status: 200, headers: { "content-type": "text/event-stream" } });
     }) as typeof fetch;
@@ -217,6 +236,34 @@ describe("GrokDriver turns (fake fetch)", () => {
     script = [];
     await create();
     await expect(instance.adapter.respondToRequest("t-x", "r", { behavior: "allow" })).resolves.toBe("unavailable");
+  });
+  it("discovers new language models and aliases, excludes generators and keeps its catalog on refresh failure", async () => {
+    let denied = false;
+    const urls: string[] = [];
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      urls.push(String(input));
+      if (String(input).endsWith("/language-models")) {
+        expect(init?.redirect).toBe("error");
+        return denied ? new Response("denied", { status: 401 }) : new Response(JSON.stringify({ models: [
+          null, { id: "" }, { id: "grok-next", aliases: ["grok-next-fast", "grok-next", null], output_modalities: ["text"] },
+          { id: "grok-image", output_modalities: ["image"] },
+        ] }));
+      }
+      requestedModels.push(JSON.parse(String(init?.body)).model);
+      return new Response(JSON.stringify({ choices: [{ message: { content: "helper title" }, finish_reason: "stop" }] }), { headers: { "content-type": "application/json" } });
+    }) as typeof fetch;
+    await create();
+    await Promise.all([instance.refreshModels?.(), instance.refreshModels?.()]);
+    expect(urls).toHaveLength(1);
+    expect(instance.models).toEqual({ default: "grok-next", options: [
+      { id: "grok-next", label: "grok-next" }, { id: "grok-next-fast", label: "grok-next-fast" },
+    ] });
+    const current = instance.models;
+    denied = true;
+    await instance.refreshModels?.();
+    expect(instance.models).toBe(current);
+    await instance.generateText?.("Make a title");
+    expect(requestedModels).toEqual(["grok-next"]);
   });
 });
 

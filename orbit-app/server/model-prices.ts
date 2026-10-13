@@ -1,8 +1,8 @@
 // Built-in list prices (USD per million tokens) for the models the drivers
 // ship, used only to ESTIMATE a settled turn's cost when its engine reports
 // tokens but no price: Codex, the OpenAI-compatible and OpenRouter
-// endpoints, Grok, MiniMax and the ACP engines. Only Claude reports a cost
-// of its own (the first turn of a resumed Claude session this app never
+// endpoints, Grok, MiniMax and the ACP engines. Reported costs take priority
+// over estimates (the first turn of a resumed Claude session this app never
 // recorded is priced here too; see drivers/claude.ts). Without an estimate
 // those turns cost nothing as far as the ledger, Usage and the monthly
 // spend limit could tell.
@@ -21,6 +21,8 @@ import type { ModelPrice, PriceList, PricedTurn } from "./prices.ts";
 import { billableFor } from "./prices.ts";
 
 export interface ListPrice extends ModelPrice {
+  cacheWritePerMillion?: number;
+  longContext?: import("../shared/model-cost.ts").TokenRates & { above: number };
   /** YYYY-MM-DD the source page was read. */
   asOf: string;
   /** The vendor's own pricing page this entry was read from. */
@@ -47,16 +49,20 @@ const price = (source: string, input: number, cached: number, output: number, ex
   outputPerMillion: output,
   asOf: AS_OF,
   source,
+  ...(source === ANTHROPIC ? { cacheWritePerMillion: input * 1.25 } : {}),
   ...extra,
 });
 
 /** Keyed by the model id as a bot's selection names it, lower-cased. */
 export const LIST_PRICES: Readonly<Record<string, ListPrice>> = {
   // OpenAI, Standard tier, short context (<272K input tokens).
-  "gpt-6-astra": price(OPENAI, 10, 1, 50),
-  "gpt-6.1-sol": price(`${OPENAI.replace(/pricing$/, "models/gpt-6.1-sol")}`, 2, 0.1, 10, { asOf: "2026-10-08" }),
+  "gpt-6-astra": price(OPENAI, 10, 1, 50, { asOf: "2026-10-10", cacheWritePerMillion: 12.5,
+    longContext: { above: 272_000, inputPerMillion: 20, cachedInputPerMillion: 2, cacheWritePerMillion: 25, outputPerMillion: 75 } }),
+  "gpt-6.1-sol": price(OPENAI, 2, 0.1, 10, { asOf: "2026-10-10", cacheWritePerMillion: 2.5,
+    longContext: { above: 272_000, inputPerMillion: 4, cachedInputPerMillion: 0.2, cacheWritePerMillion: 5, outputPerMillion: 15 } }),
   "gpt-6-sol": price(`${OPENAI.replace(/pricing$/, "models/gpt-6-sol")}`, 2, 0.2, 10, { asOf: "2026-10-08" }),
-  "gpt-6-luna": price(`${OPENAI.replace(/pricing$/, "models/gpt-6-luna")}`, 0.1, 0.01, 0.5, { asOf: "2026-10-08" }),
+  "gpt-6-luna": price(OPENAI, 0.1, 0.01, 0.5, { asOf: "2026-10-10", cacheWritePerMillion: 0.125,
+    longContext: { above: 272_000, inputPerMillion: 0.2, cachedInputPerMillion: 0.02, cacheWritePerMillion: 0.25, outputPerMillion: 0.75 } }),
   // Labelled promotional pricing on the source page, with no end date given.
   "gpt-5.6-sol": price(OPENAI, 4, 0.4, 20),
   "gpt-5.6-terra": price(OPENAI, 2, 0.2, 12),
@@ -67,12 +73,14 @@ export const LIST_PRICES: Readonly<Record<string, ListPrice>> = {
   "gpt-5.3-codex": price(OPENAI, 1.75, 0.175, 14),
   // gpt-5.3-codex-spark has no published API price: unpriced.
 
-  // Anthropic: base input, cache hit, output. No long-context tier.
+  // Anthropic: base input, cache hit, output, with known long-context tiers.
   "claude-fable-5-1": price(ANTHROPIC, 10, 0.25, 50),
   "claude-fable-5": price(ANTHROPIC, 10, 1, 50),
   "claude-opus-5-5": price(ANTHROPIC, 4, 0.2, 20, { asOf: "2026-09-30" }),
   "claude-opus-5": price(ANTHROPIC, 5, 0.5, 25),
-  "claude-sonnet-5-5": price(ANTHROPIC, 2, 0.2, 10, { asOf: "2026-09-30" }),
+  "claude-sonnet-5-5": price(ANTHROPIC, 2, 0.1, 10, { asOf: "2026-10-10", cacheWritePerMillion: 2.5 }),
+  "claude-haiku-5-5": price(ANTHROPIC, 0.1, 0.01, 0.5, { asOf: "2026-10-10", cacheWritePerMillion: 0.125,
+    longContext: { above: 100_000, inputPerMillion: 0.5, cachedInputPerMillion: 0.05, cacheWritePerMillion: 0.625, outputPerMillion: 2.5 } }),
   "claude-sonnet-5": price(ANTHROPIC, 2, 0.2, 10),
   "claude-haiku-4-5": price(ANTHROPIC, 1, 0.1, 5),
   "claude-haiku-4-5-20251001": price(ANTHROPIC, 1, 0.1, 5),
@@ -120,6 +128,9 @@ export const LIST_PRICES: Readonly<Record<string, ListPrice>> = {
   "google/gemini-3.8-flash": price(OPENROUTER, 0.75, 0.075, 3.75),
   "minimax/minimax-m3": price(OPENROUTER, 0.3, 0.06, 1.2),
   "minimax/minimax-m2.7": price(OPENROUTER, 0.3, 0.06, 1.2),
+  // Mistral's documented promotional Standard rate. Aliases are priced only
+  // when its live catalog explicitly associates them with this concrete model.
+  "mistral-large-4": price("https://docs.mistral.ai/models/mistral-large-4-0", 0.68, 0.07, 2.09, { asOf: "2026-10-10" }),
 };
 
 /** Catalog ids that name a listed model with a setting attached: the
@@ -131,9 +142,13 @@ const ALIASES: Readonly<Record<string, string>> = {
 };
 
 /** The list price for a model at a moment, or null when it is not listed. */
-export function listPriceFor(model: string, at: Date = new Date()): ModelPrice | null {
+export function listPriceDetailsFor(model: string): ListPrice | null {
   const key = model.trim().toLowerCase();
-  const entry = LIST_PRICES[ALIASES[key] ?? key];
+  return LIST_PRICES[ALIASES[key] ?? key] ?? null;
+}
+
+export function listPriceFor(model: string, at: Date = new Date()): ModelPrice | null {
+  const entry = listPriceDetailsFor(model);
   if (!entry) return null;
   const day = at.toISOString().slice(0, 10);
   const change = entry.changes?.filter((candidate) => candidate.from <= day).at(-1);
@@ -149,10 +164,10 @@ export type CostSource = "reported" | "estimated";
 
 /** The price an estimate uses: the operator's own price for this exact
  * model (Settings → Usage → prices, `driver/model` or model id), then the
- * built-in list, then the operator's `default` row. */
-export function estimatePriceFor(turn: Pick<PricedTurn, "driverKind" | "model">, operatorPrices: PriceList | null, at: Date = new Date()): ModelPrice | null {
+ * discovered vendor rate, then the built-in list and the operator's `default`. */
+export function estimatePriceFor(turn: Pick<PricedTurn, "driverKind" | "model">, operatorPrices: PriceList | null, at: Date = new Date(), livePrice?: ModelPrice): ModelPrice | null {
   return operatorPrices?.[`${turn.driverKind}/${turn.model}`] ?? operatorPrices?.[turn.model] ??
-    listPriceFor(turn.model, at) ?? operatorPrices?.default ?? null;
+    livePrice ?? listPriceFor(turn.model, at) ?? operatorPrices?.default ?? null;
 }
 
 /** What the ledger books for a settled turn: the engine's own cost when it
@@ -161,11 +176,13 @@ export function ledgerCost(
   turn: PricedTurn & { costUsd: number | null | undefined },
   operatorPrices: PriceList | null,
   at: Date = new Date(),
+  livePrice?: ModelPrice,
 ): { costUsd: number | null; costSource?: CostSource } {
   if (typeof turn.costUsd === "number" && Number.isFinite(turn.costUsd) && turn.costUsd >= 0) {
     return { costUsd: turn.costUsd, costSource: "reported" };
   }
-  const unit = estimatePriceFor(turn, operatorPrices, at);
-  if (!unit) return { costUsd: null };
+  const unit = estimatePriceFor(turn, operatorPrices, at, livePrice);
+  if (!unit || [unit.inputPerMillion, unit.outputPerMillion].some(value => !Number.isFinite(value) || value < 0)
+    || (unit.cachedInputPerMillion !== undefined && (!Number.isFinite(unit.cachedInputPerMillion) || unit.cachedInputPerMillion < 0))) return { costUsd: null };
   return { costUsd: billableFor(turn, { [turn.model]: unit }), costSource: "estimated" };
 }

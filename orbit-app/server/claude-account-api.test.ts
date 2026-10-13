@@ -6,7 +6,7 @@ import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { SessionRegistry } from "./sessions.ts";
-import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
+import { removeTempDir, requestedWindowsTreeStop, waitForExit } from "./testing/cleanup.ts";
 import { freePortBlock } from "./testing/ports.ts";
 import { openSse } from "./testing/sse.ts";
 
@@ -126,7 +126,9 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
 afterAll(async () => {
   await waitForExit(child, { signal: "SIGTERM" });
   if (home) await removeTempDir(home);
-  if (child) expect(child.exitCode === 0 || (process.platform === "win32" && child.signalCode === "SIGTERM"), stderr).toBe(true);
+  if (child) expect(child.exitCode === 0 || (process.platform === "win32" &&
+    (child.signalCode === "SIGTERM" || (child.exitCode === 1 && child.signalCode === null && requestedWindowsTreeStop(child) === "SIGTERM"))),
+    `${stderr}\nstop code=${child?.exitCode} signal=${child?.signalCode}`).toBe(true);
 });
 
 describe("Claude account HTTP API", () => {

@@ -19,7 +19,7 @@ export interface BrandStatus {
   notice?: string;
 }
 
-export const DEFAULT_BRAND: Brand = { name: import.meta.env.VITE_JARVIS_SOLAR === 'true' ? "Solar" : "Orbit" };
+export const DEFAULT_BRAND: Brand = { name: import.meta.env.VITE_JARVIS_SOLAR === 'true' ? "Solar" : "Orbit", ...(import.meta.env.VITE_JARVIS_SOLAR === 'true' ? { favicon: "/solar-icon.png" } : {}) };
 
 let current: BrandStatus = { brand: DEFAULT_BRAND, source: "default", file: "" };
 

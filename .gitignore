@@ -14,6 +14,9 @@
 **/.DS_Store
 .impeccable/
 .source-history/
+# Novo repositório independente e investigação local de fontes privadas
+/Solar V0/
+/docs/solar-v0-research/
 # Credentials and machine-specific configuration
 **/.env
 **/.env.*

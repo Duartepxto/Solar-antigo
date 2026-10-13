@@ -31,6 +31,7 @@ export interface OpenAIChatMessage {
 interface Usage {
   input: number;
   output: number;
+  cachedInput?: number;
 }
 
 interface Completion {
@@ -53,7 +54,7 @@ interface CompletionJson {
   }>;
   error?: unknown;
   base_resp?: { status_code?: unknown; status_msg?: unknown };
-  usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number }; cost?: number };
+  usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number }; cost?: number; cost_in_usd_ticks?: number };
 }
 
 /** The message of a JSON error body a provider returned with HTTP 200.
@@ -82,7 +83,7 @@ interface RuntimeOptions<Config> {
   apiKey: string;
   apiUrl: string;
   models: () => ModelCatalog;
-  requestBody(model: string, messages: OpenAIChatMessage[], stream: boolean): Record<string, unknown>;
+  requestBody(model: string, messages: OpenAIChatMessage[], stream: boolean, threadId?: string): Record<string, unknown>;
   httpErrorLabel: string;
   missingKeyError: string;
   unavailableReason: string;
@@ -94,6 +95,10 @@ interface RuntimeOptions<Config> {
   contentText?: (content: unknown) => string;
   billing?: "metered";
   includeUsageInCompleted?: boolean;
+  /** Only providers with a documented USD `usage.cost` contract qualify. */
+  usageCostInUsd?: boolean;
+  /** xAI reports USD in integer ticks (10^10 ticks = $1). */
+  usageCostInUsdTicks?: boolean;
   noBodyError?: string;
   retryScale?: number;
   /** Explicit text-only mode for endpoints/models that cannot accept tools. */
@@ -102,10 +107,17 @@ interface RuntimeOptions<Config> {
   computerUse?: boolean;
 }
 
-const usageFrom = (usage: CompletionJson["usage"]): Usage | null =>
-  usage
-    ? { input: usage.prompt_tokens ?? 0, output: usage.completion_tokens ?? 0 }
-    : null;
+const measuredCount = (value: unknown): number | undefined =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
+
+const usageFrom = (usage: CompletionJson["usage"]): Usage | null => {
+  const input = measuredCount(usage?.prompt_tokens);
+  const output = measuredCount(usage?.completion_tokens);
+  if (input === undefined && output === undefined) return null;
+  const cached = measuredCount(usage?.prompt_tokens_details?.cached_tokens);
+  return { input: input ?? 0, output: output ?? 0,
+    ...(input !== undefined && cached !== undefined ? { cachedInput: Math.min(input, cached) } : {}) };
+};
 
 const asError = (value: unknown): Error =>
   value instanceof Error ? value : new Error(String(value));
@@ -162,6 +174,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
     onDelta?: (delta: string, kind: "assistant_text" | "reasoning_text") => void,
     tools: ChatToolDefinition[] = [],
     onUsage?: TextGenerationOptions["onUsage"],
+    threadId?: string,
   ): Promise<Completion> => {
     // Idle timer that is renewed on every received chunk during streaming
     const timeoutController = new AbortController();
@@ -185,10 +198,22 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
         ...(messages.some(message => Array.isArray(message.content) && message.content.some(part => part.type === "image_url")) ? { redirect: "error" as const } : {}),
         headers: { authorization: `Bearer ${options.apiKey}`, "content-type": "application/json" },
         body: JSON.stringify({
-          ...options.requestBody(model, messages, stream),
+          ...options.requestBody(model, messages, stream, threadId),
           ...(tools.length ? { tools } : {}),
         }),
         signal: activeSignal,
+      });
+      const reportUsage = (json: CompletionJson) => onUsage?.({
+        model: typeof json.model === "string" && json.model.trim() ? json.model : model,
+        input: measuredCount(json.usage?.prompt_tokens),
+        output: measuredCount(json.usage?.completion_tokens),
+        cachedInput: measuredCount(json.usage?.prompt_tokens_details?.cached_tokens),
+        costUsd: options.usageCostInUsdTicks
+          ? (() => {
+              const ticks = measuredCount(json.usage?.cost_in_usd_ticks);
+              return ticks !== undefined && Number.isSafeInteger(ticks) ? ticks / 10_000_000_000 : undefined;
+            })()
+          : options.usageCostInUsd ? measuredCount(json.usage?.cost) : undefined,
       });
       if (!response.ok) {
         const body = await response.text().catch(() => "");
@@ -201,14 +226,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
         const json = await response.json() as CompletionJson;
         if (onUsage) {
           activeSignal.throwIfAborted();
-          const count = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
-          onUsage({
-            model: typeof json.model === "string" && json.model.trim() ? json.model : model,
-            input: count(json.usage?.prompt_tokens),
-            output: count(json.usage?.completion_tokens),
-            cachedInput: count(json.usage?.prompt_tokens_details?.cached_tokens),
-            costUsd: count(json.usage?.cost),
-          });
+          reportUsage(json);
         }
         const bodyError = providerError(json);
         if (bodyError) throw new ChatProtocolError(`provider returned a completion error: ${bodyError.slice(0, 200)}`);
@@ -269,6 +287,9 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
           if (!atEof) malformedFrame = true;
           return false;
         }
+        // Each usage frame is the latest snapshot of this one request, not
+        // another billable round. Keep it even if a later frame fails/aborts.
+        if (chunk.usage) { usage = usageFrom(chunk.usage); reportUsage(chunk); }
         const chunkError = providerError(chunk);
         if (chunkError) throw new ChatProtocolError(`provider returned a streaming completion error: ${chunkError.slice(0, 200)}`);
         const choice = chunk.choices?.find((row) => row.index === undefined || row.index === 0);
@@ -292,7 +313,6 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
           text += contentDelta;
           onDelta?.(contentDelta, "assistant_text");
         }
-        if (chunk.usage) usage = usageFrom(chunk.usage);
         return false;
       };
       try {
@@ -422,8 +442,11 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
 
     void (async () => {
       let tools: ChatToolSession | undefined;
-      const usage: Usage = { input: 0, output: 0 };
+      const usage: Usage = { input: 0, output: 0, cachedInput: 0 };
       let hasUsage = false;
+      let costUsd = 0;
+      let completeCost = true;
+      let hasReportedCost = false;
       let ok = false;
       let stopReason: string | null = null;
       let failure: string | undefined;
@@ -453,6 +476,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
           let attempt = 0;
           let completion: Completion;
           for (;;) {
+            let reported: Parameters<NonNullable<TextGenerationOptions["onUsage"]>>[0] | undefined;
             let streamed = false;
             const pending = { assistant_text: "", reasoning_text: "" };
             const delta = (text: string, streamKind: keyof typeof pending, flush = false) => {
@@ -476,7 +500,25 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
               completion = await complete(messages, model, true, abort.signal, (text, streamKind) => {
                 streamed = true;
                 delta(text, streamKind);
-              }, tools.definitions);
+              }, tools.definitions, value => {
+                // A usage:{} or partial late frame does not erase fields
+                // already measured for this request. Zero is still explicit.
+                if (value.input === undefined && value.output === undefined && value.cachedInput === undefined && value.costUsd === undefined) return;
+                const inputChanged = value.input !== undefined && value.input !== reported?.input;
+                const outputChanged = value.output !== undefined && value.output !== reported?.output;
+                reported = { ...reported, model: value.model,
+                  ...(value.input !== undefined ? { input: value.input } : {}),
+                  ...(value.output !== undefined ? { output: value.output } : {}),
+                  ...(value.cachedInput !== undefined ? { cachedInput: value.cachedInput } : {}),
+                  ...(value.costUsd !== undefined ? { costUsd: value.costUsd } : {}),
+                };
+                // Cache belongs to the corresponding prompt snapshot, and
+                // price to the corresponding input/output snapshot. A newer
+                // total without its dependent measurement is unknown, rather
+                // than the old snapshot's price/cache being presented as full.
+                if (inputChanged && value.cachedInput === undefined) delete reported.cachedInput;
+                if ((inputChanged || outputChanged) && value.costUsd === undefined) delete reported.costUsd;
+              }, turn.threadId);
               delta("", "assistant_text", true);
               delta("", "reasoning_text", true);
               break;
@@ -499,15 +541,26 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
               emit({ ...base(turn.threadId, turnId), type: "turn.retrying", attempt, delayMs, reason: verdict.reason });
               await interruptibleDelay(delayMs * options.retryScale, abort.signal).promise;
               abort.signal.throwIfAborted();
+            } finally {
+              // Bank one latest snapshot per attempt, including billed failed
+              // responses. Never add successive snapshots of the same request.
+              if (reported?.input !== undefined || reported?.output !== undefined) {
+                const input = reported.input ?? 0;
+                usage.input += input;
+                usage.output += reported.output ?? 0;
+                if (reported.input === undefined) delete usage.cachedInput;
+                else if (reported.cachedInput !== undefined && usage.cachedInput !== undefined) usage.cachedInput += Math.min(input, reported.cachedInput);
+                else if (input > 0) delete usage.cachedInput;
+                hasUsage = true;
+                emit({ ...base(turn.threadId, turnId), type: "thread.token-usage.updated", ...usage });
+              }
+              // A missing price from any request prevents a partial reported
+              // sum being presented as the entire turn's authoritative price.
+              if (reported?.costUsd !== undefined) { costUsd += reported.costUsd; hasReportedCost = true; }
+              else completeCost = false;
             }
           }
           native("in", options.nativeLog.incoming(completion));
-          if (completion.usage) {
-            usage.input += completion.usage.input;
-            usage.output += completion.usage.output;
-            hasUsage = true;
-            emit({ ...base(turn.threadId, turnId), type: "thread.token-usage.updated", ...usage });
-          }
           // Reasoning on a tool-call round belongs to the protocol, not a final reply.
           const reply = completion.text.trim() ? completion.text : completion.toolCalls.length ? "" : completion.reasoning;
           if (reply.trim()) emit({ ...base(turn.threadId, turnId), type: "item.completed", itemType: "assistant_text", text: safeText(reply) });
@@ -639,7 +692,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
           emit({ ...base(turn.threadId, turnId), type: "runtime.error", message: failure, terminal: !abort.signal.aborted });
         }
         active.delete(turn.threadId);
-        emit({ ...base(turn.threadId, turnId), type: "turn.completed", ok, stopReason, cost: null,
+        emit({ ...base(turn.threadId, turnId), type: "turn.completed", ok, stopReason, cost: completeCost && hasReportedCost ? costUsd : null,
           ...(hasUsage && (options.includeUsageInCompleted || seenCalls.size) ? { usage } : {}),
           ...(denials.length ? { denials } : {}),
         });

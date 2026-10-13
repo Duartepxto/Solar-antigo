@@ -84,6 +84,45 @@ class PairingDiscoveryTimingTest {
     }
 
     @Test
+    fun `a LAN QR on API 37 requests network permission before redeeming and waits for another confirmation`() {
+        val scene = scene()
+        mount(scene)
+        scene.session.receivePairingURL("orbit://pair?address=192.168.1.42:8810&code=123456")
+        compose.waitForIdle()
+        compose.onNodeWithText("Pair with this computer").performClick()
+        compose.waitForIdle()
+        assertEquals(listOf(CompanionPermissions.PERMISSION_ACCESS_LOCAL_NETWORK), scene.asked())
+        assertEquals(emptyList(), scene.pairingCalls, "unpermitted LAN pairing reached the transport")
+        assertEquals(0, scene.discovery.starts.value, "confirming QR started an unrelated browse")
+
+        // A denied grant leaves the same unsubmitted invitation available.
+        compose.onNodeWithText("Pair with this computer").assertIsEnabled()
+        compose.runOnIdle {
+            scene.granted += CompanionPermissions.PERMISSION_ACCESS_LOCAL_NETWORK
+            scene.permissions.refresh()
+        }
+        compose.waitForIdle()
+        assertEquals(emptyList(), scene.pairingCalls, "grant silently redeemed the invitation")
+        compose.onNodeWithText("Pair with this computer").performClick()
+        compose.waitForIdle()
+        assertEquals(1, scene.pairingCalls.size)
+        assertEquals("123456", scene.pairingCalls.single().second)
+        kotlin.test.assertTrue(scene.pairingCalls.single().third.isNotBlank())
+    }
+
+    @Test
+    fun `a tailnet QR does not request local network permission`() {
+        val scene = scene()
+        mount(scene)
+        scene.session.receivePairingURL("orbit://pair?address=pc.tail1234.ts.net:8810&code=123456")
+        compose.waitForIdle()
+        compose.onNodeWithText("Pair with this computer").performClick()
+        compose.waitForIdle()
+        assertEquals(emptyList(), scene.asked())
+        assertEquals(1, scene.pairingCalls.size)
+    }
+
+    @Test
     fun `opening other ways is what starts the search and asks for what it needs`() {
         val scene = scene()
         mount(scene)

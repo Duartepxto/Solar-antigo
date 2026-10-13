@@ -9,6 +9,7 @@ const OFFICIAL = [
   "https://ai.google.dev/",
   "https://platform.minimax.io/",
   "https://openrouter.ai/",
+  "https://docs.mistral.ai/",
 ];
 
 describe("built-in list prices", () => {
@@ -87,5 +88,12 @@ describe("what the ledger books for a settled turn", () => {
   it("books an unpriced model as unpriced, not as free", () => {
     expect(ledgerCost({ driverKind: "grokAgent", model: "fake-model", input: 5000, output: 100, costUsd: null }, null)).toEqual({ costUsd: null });
     expect(ledgerCost({ driverKind: "codex", model: "gpt-5.3-codex-spark", input: 5000, output: 100, costUsd: undefined }, { "claude-sonnet-5": { inputPerMillion: 1, outputPerMillion: 1 } })).toEqual({ costUsd: null });
+  });
+  it("uses newly discovered provider rates without losing exact overrides or reported cost", () => {
+    const turn = { driverKind: "openai-compat", model: "vendor/new", input: 100_000, cachedInput: 60_000, output: 10_000, costUsd: null };
+    const live = { inputPerMillion: 2, cachedInputPerMillion: 0.1, outputPerMillion: 10 };
+    expect(ledgerCost(turn, null, new Date(), live).costUsd).toBeCloseTo(0.186);
+    expect(ledgerCost(turn, { "vendor/new": { inputPerMillion: 1, outputPerMillion: 2 } }, new Date(), live).costUsd).toBeCloseTo(0.12);
+    expect(ledgerCost({ ...turn, costUsd: 0.09 }, null, new Date(), live)).toEqual({ costUsd: 0.09, costSource: "reported" });
   });
 });

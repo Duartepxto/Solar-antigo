@@ -1,3 +1,9 @@
+# Continuidade Solar V0 — 10/10/2026
+
+O utilizador iniciou um novo Solar de raiz. A pasta `Solar V0/` tem apenas Git e aponta para o novo `Duartepxto/Solar` privado e vazio. Este checkout anterior aponta agora para `Duartepxto/Solar-antigo` (descrição “Solar (antigo)”). Não importar código anterior nem iniciar a aplicação sem o próximo briefing.
+
+A investigação local e privada de OpenMausBot e DragonQLF/orbit está em `docs/solar-v0-research/README.md`; ler também `MEMORIA.md` dessa pasta antes de retomar. Fontes e relatórios estão ignorados pelo Git anterior e não foram publicados. Os apontamentos abaixo são históricos do Jarvis anterior.
+
 # Continuar o Jarvis noutro computador
 
 ## Abrir o projeto

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <title>Solar — símbolo reduzido</title>
+  <g stroke="#ddbd89" stroke-width="1" stroke-linecap="round">
+    <circle cx="7.5" cy="8.5" r="2.5"/>
+    <path d="M7.5 3.5v1M7.5 12.5v1M2.5 8.5h1M11.5 8.5h1M2.5 12.5A6.4 6.4 0 0 1 12.5 3.5"/>
+  </g>
+  <circle cx="12.5" cy="3.5" r="1.25" fill="#ddbd89"/>
+</svg>

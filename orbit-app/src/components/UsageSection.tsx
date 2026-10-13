@@ -6,9 +6,10 @@ import { useStore } from "@/state/store";
 import { BotFace } from "@/orbit/OrbitFace";
 import { Card } from "./SettingsPrimitives";
 import { t } from "@/lib/i18n";
-import { botUsage, cachedUsageNote, formatTokens, hasFiniteCost, headlineTokens, sumUsage, tokensColumnLabel, usageDetail, usageCostLabel, usageCostNote } from "@/lib/usage";
+import { botUsage, cachedUsageNote, formatTokens, hasFiniteCost, headlineTokens, sumUsage, tokensColumnLabel, tokensColumnValue, usageDetail, usageCostLabel, usageCostNote } from "@/lib/usage";
 import { useUsageCurrency } from '@/lib/usage-currency';
 import { UsageHistory } from "./UsageHistory";
+import { ModelCostCalculator } from "./ModelCostCalculator";
 
 export function UsageSection() {
   useUsageCurrency();
@@ -33,6 +34,7 @@ export function UsageSection() {
   return (
     <>
     <UsageHistory />
+    <ModelCostCalculator />
     <Card title={t("usage.title")} subtitle={t("usage.subtitle")}>
       {rows.length === 0 ? (
         <div className="text-[13px] text-ink/55">{t("usage.empty")}</div>
@@ -52,7 +54,7 @@ export function UsageSection() {
               </span>
               <span className="text-right tabular-nums text-ink/55">{usage.turns}</span>
               <span className="text-right tabular-nums text-ink" title={usageDetail(usage)}>
-                {formatTokens(headlineTokens(usage))}
+                {formatTokens(tokensColumnValue(usage, total))}
               </span>
               <span className="text-right tabular-nums text-ink" title={usageCostNote(usage)}>{usageCostLabel(usage)}</span>
             </div>

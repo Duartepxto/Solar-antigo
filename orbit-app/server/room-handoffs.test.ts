@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { RoomHandoffs, ROOM_HANDOFF_LIMITS, type RoomHandoffHooks } from "./room-handoffs.ts";
+import { handoffResultExcerpt, RoomHandoffs, ROOM_HANDOFF_LIMITS, type RoomHandoffHooks } from "./room-handoffs.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 
 const addr = (id: string) => ({ groupId: id, threadId: `${id}-thread`, botId: `${id}-bot` });
@@ -16,6 +16,16 @@ async function fixture(test: (engine: RoomHandoffs, hooks: RoomHandoffHooks, fil
   finally { await removeTempDir(dir); }
 }
 const flush = () => new Promise<void>(resolve => setImmediate(resolve));
+
+it("keeps a long teammate result's evidence and final decision within the same storage budget", () => {
+  const text = `EVIDENCE_START\n${"detail ".repeat(4000)}\nDECISION_END: verified, with one remaining limitation 🪐`;
+  const excerpt = handoffResultExcerpt(text);
+  expect(excerpt.length).toBeLessThanOrEqual(12_000);
+  expect(excerpt).toContain("EVIDENCE_START");
+  expect(excerpt).toContain("DECISION_END: verified, with one remaining limitation 🪐");
+  expect(excerpt).toContain("Middle of this handoff result omitted");
+  expect(handoffResultExcerpt("complete result")).toBe("complete result");
+});
 
 describe("addressed room request tree", () => {
   it("starts independent work before its author settles, but resumes only after settlement", () => fixture(async (engine, hooks) => {
@@ -273,6 +283,32 @@ describe("addressed room request tree", () => {
     expect(JSON.parse(readFileSync(file, "utf8")).every((n: { status: string }) => n.status === "failed")).toBe(true);
     writeFileSync(file, "{corrupt");
     expect(() => new RoomHandoffs(file, hooks).enqueue(addr("A"), "new", undefined, addr("B"), "work", "build")).toThrow("storage");
+  }));
+  it.each(["cycle", "wrong-root"])("fails closed on persisted %s ancestry without rewriting the evidence", corruption => fixture((engine, hooks, file) => {
+    const child = engine.enqueue(addr("A"), "turn", undefined, addr("B"), "work", "build").node;
+    child.status = "running";
+    const grandchild = engine.enqueue(addr("B"), "unused", child.id, addr("C"), "next", "review").node;
+    if (corruption === "cycle") child.parentId = grandchild.id;
+    else {
+      engine.enqueue(addr("X"), "other-root", undefined, addr("Y"), "other", "build");
+      engine.nodes.get("turn")!.rootId = "other-root";
+      child.rootId = "other-root";
+      grandchild.rootId = "other-root";
+    }
+    const damaged = JSON.stringify([...engine.nodes.values()]);
+    writeFileSync(file, damaged);
+    const restarted = new RoomHandoffs(file, hooks);
+    expect(() => restarted.tick()).not.toThrow();
+    expect(hooks.run).not.toHaveBeenCalled();
+    expect(() => restarted.enqueue(addr("A"), "new", undefined, addr("B"), "work", "build")).toThrow("storage");
+    expect(readFileSync(file, "utf8")).toBe(damaged);
+  }));
+  it.each(["completed", "failed", "cancelled"] as const)("refuses new work from a %s source while retaining its idempotent receipt", status => fixture(engine => {
+    const original = engine.enqueue(addr("A"), "turn", undefined, addr("B"), "work", "build");
+    engine.nodes.get("turn")!.status = status;
+    expect(engine.enqueue(addr("A"), "turn", undefined, addr("B"), "work", "build")).toMatchObject({ duplicate: true, node: { id: original.node.id } });
+    expect(() => engine.enqueue(addr("A"), "turn", undefined, addr("C"), "late", "review", false, true)).toThrow("has ended");
+    expect(engine.nodes.size).toBe(2);
   }));
 });
 describe("room handoff lifetime budget", () => {

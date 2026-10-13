@@ -2156,9 +2156,12 @@ export class Store {
     // providers occasionally report NaN or a negative on a partial turn —
     // never let that poison a running tally
     const clean = (n: number | undefined) => (typeof n === "number" && Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : 0);
-    // the cached share exists on a record only once a driver has reported
-    // it — a driver that never does leaves the record shaped as before
-    const cachedKnown = typeof prev.cachedInput === "number" || typeof turn.cachedInput === "number";
+    // A partial cache sum must never become a complete measured breakdown.
+    // Even input=0 can be a driver's normalized placeholder for absent input;
+    // an explicit cache measurement (including zero) establishes coverage.
+    const finiteCache = (n: number | undefined) => typeof n === "number" && Number.isFinite(n) && n >= 0;
+    const turnCacheKnown = finiteCache(turn.cachedInput);
+    const cachedKnown = (prev.turns === 0 || finiteCache(prev.cachedInput)) && turnCacheKnown;
     const prevInput = clean(prev.input);
     const turnInput = clean(turn.input);
     const nextCachedInput = Math.min(clean(prev.cachedInput), prevInput)
@@ -2179,7 +2182,7 @@ export class Store {
       turns: prev.turns + 1,
       lastTurn: {
         input: turnInput, output: clean(turn.output),
-        ...(typeof turn.cachedInput === "number" ? { cachedInput: Math.min(clean(turn.cachedInput), turnInput) } : {}),
+        ...(turnCacheKnown ? { cachedInput: Math.min(clean(turn.cachedInput), turnInput) } : {}),
         costUsd: cost,
         ...(costSource ? { costSource } : {}),
       },

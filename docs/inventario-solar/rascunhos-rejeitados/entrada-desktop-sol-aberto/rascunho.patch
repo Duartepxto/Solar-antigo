@@ -1,0 +1,216 @@
+diff --git a/orbit-app/electron/main.mjs b/orbit-app/electron/main.mjs
+index a038bd4..1a08ca5 100644
+--- a/orbit-app/electron/main.mjs
++++ b/orbit-app/electron/main.mjs
+@@ -2412,10 +2412,9 @@ for (const [channel, act] of [
+     return true;
+   });
+ }
+-// The welcome flow is the app window itself at 460 × 560, centred on its
+-// display (the design's onboarding window); finishing it grows the window
+-// back to where it was.
+-const WELCOME_SIZE = { width: 460, height: 560 };
++// Solar's setup has room for its team overview and the current task. Bounds
++// still fit the display, and finishing restores the original app window.
++const WELCOME_SIZE = solarApplication ? { width: 920, height: 680 } : { width: 460, height: 560 };
+ const welcomeWindow = new Map();
+ ipcMain.handle("window:welcome", (event, on) => {
+   const win = BrowserWindow.fromWebContents(event.sender) ?? mainWindow;
+diff --git a/orbit-app/src/components/onboarding/WelcomeFlow.tsx b/orbit-app/src/components/onboarding/WelcomeFlow.tsx
+index 5a86624..1bf5211 100644
+--- a/orbit-app/src/components/onboarding/WelcomeFlow.tsx
++++ b/orbit-app/src/components/onboarding/WelcomeFlow.tsx
+@@ -39,6 +39,9 @@ import { ProgressDots } from "./ProgressDots";
+ import { FeatureReel } from "./reel/FeatureReel";
+ import { useSolarSpeechReady } from '@/lib/solar-voice';
+ import { SolarFeatureReel } from './reel/SolarFeatureReel';
++import { SolarWelcomeFrame } from './SolarWelcomeFrame';
++
++const SOLAR = import.meta.env.VITE_JARVIS_SOLAR === 'true';
+ 
+ /** The guide's resting face per beat; beats may override it as they learn
+  * more (the engines beat looks proud or curious once the harness answers). */
+@@ -52,6 +55,7 @@ const MASCOT_FOR_BEAT: Record<BeatId, MausState> = {
+ };
+ 
+ function beatTitle(beat: BeatId): string | null {
++  if (SOLAR) return t(`solar.welcome.title.${beat}`);
+   switch (beat) {
+     case "hello":
+       return t("onboarding.welcome", { app: brand().name });
+@@ -73,7 +77,6 @@ type Motion = Exclude<MausMotion, "none">;
+ export function WelcomeFlow({
+   bot,
+   onDone,
+-  replay = false,
+   initialBeat,
+   embedded = false,
+   reel = true,
+@@ -85,7 +88,7 @@ export function WelcomeFlow({
+   /** The seeded bot the exit beat names; null when the roster is empty. */
+   bot: Bot | null;
+   onDone: () => void;
+-  /** Replays skip nothing but are tracked separately. */
++  /** The caller may reopen this flow from Settings. */
+   replay?: boolean;
+   /** Open on a given beat: the preview, and resuming after the engines beat
+    * sent the person to Settings → Organisation. */
+@@ -116,9 +119,8 @@ export function WelcomeFlow({
+ 
+   const bump = useCallback((kind: Motion) => setMotion((m) => ({ kind, key: m.key + 1 })), []);
+ 
+-  // In the desktop app the window itself is the welcome window: it shrinks
+-  // to 460 × 560 while the flow is open and grows back when it ends. A
+-  // browser tab can't resize itself, so there the card stands in for it.
++  // Desktop supplies the setup window's bounds; browser and compact layouts
++  // adapt to their actual viewport without drawing fake window chrome.
+   const [nativeWindow] = useState(() => !embedded && typeof window !== "undefined" && Boolean(window.ogb?.windowControls?.welcome));
+   useEffect(() => {
+     if (!nativeWindow) return;
+@@ -136,9 +138,6 @@ export function WelcomeFlow({
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, []);
+ 
+-  useEffect(() => {
+-  }, [beat, replay]);
+-
+   /** Move to another beat. The View Transitions API snapshots the old card,
+    * applies the state change synchronously, then animates named elements to
+    * their new place; without it (or under reduced motion) the swap is instant. */
+@@ -169,7 +168,7 @@ export function WelcomeFlow({
+         // closes the tour; it comes back next launch, which is the honest state
+       }
+     },
+-    [beat, dispatch, onDone, replay],
++    [dispatch, onDone],
+   );
+ 
+   const next = nextBeat(beats, beat);
+@@ -224,6 +223,24 @@ export function WelcomeFlow({
+   const beatProps = { onNext: advance, onSkip: advance, setMascot, bump };
+   const current = beats.indexOf(beat) + 1;
+ 
++  const content = <WelcomeFooterContext.Provider value={footer}>
++    <div key={beat} className="flex shrink-0 flex-col">
++      {beat === 'hello' && <HelloBeat {...beatProps} hosted={hosted} />}
++      {beat === 'reel' && (SOLAR ? <SolarFeatureReel {...beatProps} /> : <FeatureReel {...beatProps} />)}
++      {beat === 'engines' && <EnginesBeat {...beatProps} hosted={hosted} onOpenOrganisation={onOpenOrganisation} />}
++      {beat === 'permissions' && <PermissionsBeat {...beatProps} />}
++      {beat === 'phone' && <PhoneBeat {...beatProps} />}
++      {beat === 'bot' && <MeetYourBotBeat bot={bot} onFinish={() => void finish('completed')} setMascot={setMascot} bump={bump} />}
++    </div>
++  </WelcomeFooterContext.Provider>;
++
++  if (SOLAR) return <SolarWelcomeFrame
++    beats={beats} beat={beat} title={title} previous={previous}
++    onBack={() => { if (previous) go(previous); }} onSkip={() => void finish('skipped')}
++    cardRef={cardRef} onKeyDown={onKeyDown} setFooter={setFooter}
++    embedded={embedded} nativeWindow={nativeWindow}
++  >{content}</SolarWelcomeFrame>;
++
+   return (
+     <div
+       className={cn(
+@@ -273,23 +290,7 @@ export function WelcomeFlow({
+         </div>
+ 
+         {/* keyed so a beat's rise-in plays once per visit, never on re-render */}
+-        <WelcomeFooterContext.Provider value={footer}>
+-        <div key={beat} className="flex shrink-0 flex-col">
+-          {beat === "hello" && <HelloBeat {...beatProps} hosted={hosted} />}
+-          {beat === "reel" && (import.meta.env.VITE_JARVIS_SOLAR === 'true' ? <SolarFeatureReel {...beatProps} /> : <FeatureReel {...beatProps} />)}
+-          {beat === "engines" && <EnginesBeat {...beatProps} hosted={hosted} onOpenOrganisation={onOpenOrganisation} />}
+-          {beat === "permissions" && <PermissionsBeat {...beatProps} />}
+-          {beat === "phone" && <PhoneBeat {...beatProps} />}
+-          {beat === "bot" && (
+-            <MeetYourBotBeat
+-              bot={bot}
+-              onFinish={() => void finish("completed")}
+-              setMascot={setMascot}
+-              bump={bump}
+-            />
+-          )}
+-        </div>
+-        </WelcomeFooterContext.Provider>
++        {content}
+ 
+         </div>
+ 
+diff --git a/orbit-app/src/components/onboarding/beats/HelloBeat.tsx b/orbit-app/src/components/onboarding/beats/HelloBeat.tsx
+index d556d52..c451e9a 100644
+--- a/orbit-app/src/components/onboarding/beats/HelloBeat.tsx
++++ b/orbit-app/src/components/onboarding/beats/HelloBeat.tsx
+@@ -12,7 +12,7 @@ import { inputClass, PrimaryButton, QuietButton, staggerIndex, type BeatProps }
+ 
+ export function HelloBeat({ onNext, onSkip, hosted = false }: BeatProps & { hosted?: boolean }) {
+   const { state, dispatch } = useStore();
+-  const [name, setName] = useState("");
++  const [name, setName] = useState(state.config?.profile?.name ?? '');
+   const pending = useRef(false);
+   const [saving, setSaving] = useState(false);
+   const [failed, setFailed] = useState(false);
+@@ -58,18 +58,23 @@ export function HelloBeat({ onNext, onSkip, hosted = false }: BeatProps & { host
+   return (
+     <div className="stagger flex flex-col items-center">
+       <p className="animate-rise mt-3 text-center text-[14px] leading-[1.6] text-ink/55" style={staggerIndex(0)}>
+-        {t(import.meta.env.VITE_JARVIS_SOLAR === 'true'?'jarvis.welcome.intro':'onboarding.intro')}
++        {t(import.meta.env.VITE_JARVIS_SOLAR === 'true'?'solar.welcome.hello':'onboarding.intro')}
+       </p>
+       <label className="animate-rise mt-3.5 flex w-full flex-col gap-1.5 text-[12px] leading-normal text-ink/60" style={staggerIndex(1)}>
+         {t("onboarding.name")}
+         <input
+           autoFocus
+           type="text"
++          aria-label={t('onboarding.name')}
++          aria-describedby={import.meta.env.VITE_JARVIS_SOLAR === 'true' ? 'solar-welcome-name-help' : undefined}
++          autoComplete="given-name"
++          maxLength={100}
+           value={name}
+           onChange={(e) => setName(e.target.value)}
+           onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && void saveProfile()}
+           className={inputClass}
+         />
++        {import.meta.env.VITE_JARVIS_SOLAR === 'true' && <span id="solar-welcome-name-help">{t('solar.welcome.nameHint')}</span>}
+       </label>
+       {failed && <p role="alert" className="mt-3 text-[13px] text-[#ff8a96]">{t("onboarding.profile.error")}</p>}
+       <PrimaryButton onClick={() => void saveProfile()} disabled={saving} className="animate-rise mt-3" style={staggerIndex(2)}>
+diff --git a/orbit-app/src/components/onboarding/reel/SolarFeatureReel.tsx b/orbit-app/src/components/onboarding/reel/SolarFeatureReel.tsx
+index 6f16959..d4b3740 100644
+--- a/orbit-app/src/components/onboarding/reel/SolarFeatureReel.tsx
++++ b/orbit-app/src/components/onboarding/reel/SolarFeatureReel.tsx
+@@ -1,4 +1,3 @@
+-import { useState } from 'react';
+ import { Globe2, Phone, Code2 } from 'lucide-react';
+ import { t } from '@/lib/i18n';
+ import { PrimaryButton, type BeatProps } from '../beats/shared';
+@@ -8,16 +7,19 @@ const icons = [Globe2, Phone, Code2];
+ /** A short introduction to the actual Solar surfaces, without a second map
+  * or a pretend interactive workspace inside the welcome window. */
+ export function SolarFeatureReel({ onNext }: BeatProps) {
+-  const [index, setIndex] = useState(0);
+-  const scene = scenes[index];
+-  return <div className="flex flex-col items-center text-center">
+-    <div className="mt-3 flex gap-2" aria-label={t('onboarding.reel.scenes')}>
+-      {scenes.map((key,i) => { const Icon=icons[i];return <button key={key} type="button" aria-pressed={i===index} aria-label={t(`jarvis.welcome.${key}.title`)} onClick={()=>setIndex(i)} className="flex size-9 items-center justify-center rounded-full border border-ink/20 text-ink/80 transition-colors hover:bg-ink/10" style={i===index?{borderColor:'#ffc27a',color:'#ffc27a'}:undefined}><Icon size={16}/></button>; })}
+-    </div>
+-    <div key={scene} className="animate-rise mt-5">
+-      <h2 className="text-[17px] font-semibold text-ink">{t(`jarvis.welcome.${scene}.title`)}</h2>
+-      <p className="mt-3 max-w-[360px] text-pretty text-[14px] leading-relaxed text-ink/80">{t(`jarvis.welcome.${scene}.body`)}</p>
+-    </div>
+-    <PrimaryButton className="mt-5" onClick={index===scenes.length-1?onNext:()=>setIndex(index+1)}>{t(index===scenes.length-1?'onboarding.continue':'onboarding.reel.next')}</PrimaryButton>
++  return <div className="solar-welcome-overview">
++    <ul>
++      {scenes.map((scene, index) => {
++        const Icon = icons[index];
++        return <li key={scene}>
++          <Icon size={20} aria-hidden="true" />
++          <div>
++            <h2>{t(`jarvis.welcome.${scene}.title`)}</h2>
++            <p>{t(`jarvis.welcome.${scene}.body`)}</p>
++          </div>
++        </li>;
++      })}
++    </ul>
++    <PrimaryButton onClick={onNext}>{t('onboarding.continue')}</PrimaryButton>
+   </div>;
+ }

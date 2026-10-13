@@ -75,6 +75,8 @@ class OnboardingScene(
 
     /** Every permission launch, in order, flattened to the names asked for. */
     val permissionRequests = mutableListOf<List<String>>()
+    /** Synthetic requests only; no real credentials or network are involved. */
+    val pairingCalls = mutableListOf<Triple<Connection, String, String>>()
 
     /** How many times something started a browse. */
     val discovery = FakeDiscovery()
@@ -109,7 +111,8 @@ class OnboardingScene(
         onboardingStore = onboarding,
         deviceNameProvider = { "Pixel" },
         clientFactory = { c, token -> CompanionClient(c, token) },
-        pairFn = { c, _, _, _ ->
+        pairFn = { c, credential, _, attemptId ->
+            pairingCalls += Triple(c, credential, attemptId)
             pairSuspendsUntil?.await()
             PairingOutcome(
                 PairResponse(

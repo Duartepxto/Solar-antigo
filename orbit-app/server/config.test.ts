@@ -497,7 +497,7 @@ describe("configuration boundaries", () => {
     expect(localVmMode({})).toBe("shared");
   });
 
-  it("keeps skill authoring on by default with an explicit opt-out, and the browser off by default", () => {
+  it("keeps skill authoring and the private browser on by default with explicit opt-outs", () => {
     expect(skillAuthoringEnabled({})).toBe(true);
     expect(skillAuthoringEnabled({ features: {} })).toBe(true);
     expect(skillAuthoringEnabled({ features: { skillAuthoring: true } })).toBe(true);
@@ -508,9 +508,9 @@ describe("configuration boundaries", () => {
     // the pre-rename flag is dropped as a no-op rather than rejected, so a
     // stale client's PATCH cannot fail the request or re-enable anything
     expect(parseConfigPatch({ features: { skillRecorder: true } })).toEqual({ features: {} });
-    // the built-in browser is an independent explicit opt-in
-    expect(builtInBrowserEnabled({})).toBe(false);
-    expect(builtInBrowserEnabled({ features: { skillAuthoring: true } })).toBe(false);
+    // the private browser has an independent explicit opt-out
+    expect(builtInBrowserEnabled({})).toBe(true);
+    expect(builtInBrowserEnabled({ features: { skillAuthoring: true } })).toBe(true);
     expect(parseConfigPatch({ features: { browser: false } })).toEqual({ features: { browser: false } });
     expect(builtInBrowserEnabled({ features: { browser: false } })).toBe(false);
     expect(builtInBrowserEnabled({ features: { browser: true } })).toBe(true);

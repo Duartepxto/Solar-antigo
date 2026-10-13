@@ -1,0 +1,55 @@
+.solar-prototype-base{display:flex;flex:1;min-width:0;height:100%;position:relative}
+.solar-prototype-base.is-suspended{visibility:hidden;pointer-events:none}
+.solar-spatial{position:absolute;inset:0;z-index:25;display:flex;flex-direction:column;color:#edf0f3;background:#050607;font-family:'Jarvis Manrope',sans-serif}
+.solar-spatial[data-solar-theme=deep-blue]{background:#070e16}.solar-spatial[data-solar-theme=graphite]{background:#101214}
+.solar-spatial-header{height:68px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 30px}
+.solar-spatial-header button{display:flex;align-items:center;gap:9px;background:none;border:0;color:#b3bac5;font-size:12px;cursor:pointer}
+.solar-spatial-header button:hover{color:#f4d9a4}
+.solar-spatial-header .solar-spatial-home{font-size:15px;color:#edf0f3;font-weight:550}
+.solar-spatial-home img{height:27px;width:27px;object-fit:contain}
+.solar-spatial-header h1{font-size:12px;letter-spacing:.025em;font-weight:450;color:#abb3bf;margin:0}
+.solar-spatial-header>button:last-child span{font-size:10px;color:#a0a8b4}
+.solar-spatial-stage{position:relative;min-height:0;flex:1;overflow:hidden}
+.solar-spatial-nav{position:absolute;top:14px;left:30px;z-index:8}
+.solar-spatial-nav button{display:flex;gap:7px;align-items:center;border:0;background:none;font-size:12px;color:#b6bdc7;cursor:pointer}
+.solar-spatial-nav button:hover{color:#e6c993}
+.solar-spatial-links{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:visible}
+.solar-spatial-links path{fill:none;stroke:#e3c68b21;stroke-width:.75}
+.solar-spatial-links path.is-selected{stroke:#e3c68b80;stroke-width:1}
+.solar-spatial-links .solar-spatial-branch{stroke:#e3c68b40;stroke-dasharray:2 5}
+.solar-spatial-domain{position:absolute;z-index:4;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:7px;width:160px;padding:12px 8px;border:0;background:none;color:#bdc5d0;cursor:pointer;text-align:center}
+.solar-spatial-domain>svg{color:#c5bdac;transition:color 160ms,scale 180ms}
+.solar-spatial-domain strong{font-size:13px;font-weight:500;line-height:1.3}
+.solar-spatial-domain>span{font-size:11px;color:#a0a9b6;line-height:1.4}
+.solar-spatial-domain:hover>svg,.solar-spatial-domain[aria-pressed=true]>svg{color:#f4d397;scale:1.12}
+.solar-spatial-domain:hover strong,.solar-spatial-domain[aria-pressed=true] strong{color:#f4d397}
+.solar-spatial-domain[disabled]{cursor:default}
+.solar-spatial-sun-label{position:absolute;z-index:4;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;text-align:center;pointer-events:none;white-space:nowrap}
+.solar-spatial-sun-label strong{font-size:20px;font-weight:500;letter-spacing:-.025em}
+.solar-spatial-sun-label span{font-size:11px;color:#a7afba}
+.solar-spatial-field{position:absolute;z-index:5;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:11px;width:246px;min-height:48px}
+.solar-spatial-field>label{font-size:12px;line-height:1.5;font-weight:500;color:#e2d3b6}
+.solar-spatial-caption{font-size:12px;line-height:1.5;font-weight:500;color:#e2d3b6}
+.solar-map{background:var(--solar-background)}
+.solar-spatial-field>input{width:100%;padding:6px 0;border:0;border-bottom:1px solid #ffffff20;background:none;color:#edf0f3;outline:0;font:13px 'Jarvis Manrope',sans-serif;caret-color:#edcf95}
+.solar-spatial-field>input::placeholder{color:#a5adba;font-size:12px}
+.solar-spatial-field>input:focus{border-bottom-color:#edcf95}
+.solar-spatial-field [role=radiogroup]{display:flex;flex-wrap:wrap;column-gap:15px;row-gap:10px}
+.solar-spatial-field [role=radio]{font-size:12px;color:#aab2bf;border:0;padding:4px 0 5px;background:none;border-bottom:1px solid transparent;cursor:pointer}
+.solar-spatial-field [role=radio][aria-checked=true]{color:#f0d4a1;border-bottom-color:#f0d4a1}
+.solar-spatial-field [role=radio]:hover{color:#f0d4a1}
+.solar-spatial-field [role=switch]{display:flex;align-items:center;align-self:flex-start;gap:9px;border:0;padding:3px 0;background:none;font-size:12px;color:#bdc5d0;cursor:pointer}
+.solar-spatial-toggle-dot{height:17px;width:17px;border:1px solid #acb5c555;border-radius:50%;display:grid;place-items:center;color:#e5c994}
+.solar-spatial-field [role=switch][aria-checked=true] .solar-spatial-toggle-dot{border-color:#e5c994}
+.solar-spatial-range{display:flex;align-items:center;gap:14px}
+.solar-spatial-range input{accent-color:#e7c993;width:174px;height:2px;cursor:pointer}
+.solar-spatial-range output{font-size:11px;color:#b5bdc9;font-variant-numeric:tabular-nums}
+.solar-spatial-action{display:flex;align-items:center;gap:9px;align-self:flex-start;background:none;border:0;padding:5px 0;font-size:12px;color:#f0d4a1;cursor:pointer}
+.solar-spatial-action:hover svg{translate:2px -2px}
+.solar-spatial :is(button,input):focus-visible{outline:1px solid #ebcf98;outline-offset:5px}
+.solar-spatial footer{position:absolute;bottom:22px;left:30px;right:30px;z-index:8;display:flex;justify-content:space-between;gap:20px;font-size:11px;color:#a4aebc}
+.solar-spatial footer button{display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;font-size:11px;color:#c8b697;cursor:pointer}
+.solar-spatial-notice{position:absolute;bottom:62px;right:30px;width:290px;margin:0;color:#bcc4cf;font-size:12px;line-height:1.65;z-index:8}
+.solar-spatial-fallback{position:absolute;width:190px;height:190px;transform:translate(-50%,-50%);z-index:1}
+.solar-spatial[data-motion=off] :is(button,svg){transition:none!important}
+@media(prefers-reduced-motion:reduce){.solar-spatial :is(button,svg){transition:none!important}}

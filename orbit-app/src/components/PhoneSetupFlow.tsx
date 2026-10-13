@@ -936,6 +936,17 @@ export function PhoneSetupFlowView({
   const canSubmitEmail = /^\S+@\S+\.\S+$/.test(c.email.trim());
   const manualCodeMode = phonePairingManualCodeMode(Boolean(c.state?.pairing), c.pairingLink);
 
+  if (c.phase === "intro" && compactHeader && import.meta.env.VITE_JARVIS_SOLAR === "true") {
+    const skip = () => { c.skip(); onSkip?.(); };
+    return <div className="solar-welcome-phone">
+      <p className="text-[14px] leading-relaxed text-ink/80">{t("jarvis.welcome.v3.phoneIntro")}</p>
+      <div className="solar-welcome-device" aria-hidden="true"><Smartphone size={68} strokeWidth={1.1} /></div>
+      {c.error && <p role="alert" className="mt-3 text-[13px] text-[#ff8a96]">{c.error}</p>}
+      <button type="button" className="solar-welcome-phone-later" onClick={skip}>{t("phone.intro.later")}</button>
+      <PrimaryButton onClick={c.start} disabled={!c.state || c.busy || c.accountBusy}>{t("phone.intro.setUp")}</PrimaryButton>
+    </div>;
+  }
+
   if (c.phase === "intro" && compactHeader) {
     // design: the phone beat — one line, the pairing square, and a way on.
     // Pairing needs a quick sign-in first, so the square starts it.

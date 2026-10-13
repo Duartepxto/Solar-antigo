@@ -1,8 +1,10 @@
 import { mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, posix } from "node:path";
+import { once } from "node:events";
+import { request } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { startFleetAgent } from "./fleet-agent.ts";
+import { createFleetAgent, startFleetAgent } from "./fleet-agent.ts";
 import { fleetAvailable, fleetRequest } from "./fleet-client.ts";
 import type { FleetDeps } from "./fleet-cli.ts";
 import { emptyRegistry, fleetLayout, MANAGED_OPENROUTER } from "./fleet.ts";
@@ -38,6 +40,46 @@ function machine(root: string, options: { failing?: string[]; beforeRun?: (argv:
   };
   return { deps, files, calls, root };
 }
+
+// Exercise its real HTTP parser on every OS without starting fleet services.
+it("preserves split Unicode and enforces a byte bound before planning fleet mutations", async () => {
+  const root = mkdtempSync(join(tmpdir(), "orbit-fleet-http-"));
+  const m = machine(root);
+  m.files.set(fleetLayout(root).registryFile, JSON.stringify(emptyRegistry("example.test")));
+  const server = createFleetAgent({ socketPath: "unused", node: "/usr/bin/node", script: "/orbit/cli.js", root, deps: m.deps, auditFile: join(root, "audit.jsonl") });
+  try {
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("No fixture port");
+    const brand = JSON.stringify({ name: "Olá, ação ☀️ 🪐 日本語" });
+    const encoded = Buffer.from(JSON.stringify({ slug: "fixture", admins: ["owner@example.test"], brandJson: brand }));
+    const split = encoded.indexOf(Buffer.from("á")) + 1;
+    let firstChunk!: () => void;
+    const firstReceived = new Promise<void>(resolve => { firstChunk = resolve; });
+    server.once("request", req => req.once("data", firstChunk));
+    const client = request({ host: "127.0.0.1", port: address.port, path: "/workspaces", method: "POST" });
+    const ready = once(client, "response");
+    client.write(encoded.subarray(0, split));
+    await firstReceived;
+    client.end(encoded.subarray(split));
+    const [response] = await ready;
+    for await (const _chunk of response) { /* drain */ }
+    expect(response.statusCode).toBe(200);
+    expect(m.files.get(posix.join(fleetLayout(root).homesDir, "fixture/.orbit/brand.json"))).toBe(brand);
+    const calls = m.calls.length;
+    const tooLarge = await fetch(`http://127.0.0.1:${address.port}/workspaces`, {
+      method: "POST", body: JSON.stringify({ slug: "oversize", brandJson: "á".repeat(140_000) }),
+    });
+    expect(tooLarge.status).toBe(413);
+    expect(await tooLarge.json()).toMatchObject({ error: "body too large" });
+    expect(m.calls).toHaveLength(calls);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+    await removeTempDir(root);
+  }
+});
 
 // The agent is a Linux service; Windows cannot bind a Unix socket in a temp folder.
 describe.skipIf(process.platform === "win32")("fleet agent over its socket", () => {

@@ -26,6 +26,7 @@ describe("workspace backup data boundary", () => {
   });
 
   it.each([
+    "codex-home", "codex-home/sessions", "codex-home/archived_sessions", "codex-home/auth.json",
     "providers/account/.credentials.json", "providers/antigravity/profile/antigravity-acp/acp_token.json",
     "workspace-credentials.json", "browser-engine-key", "caddy/data/certificates/private.key",
     "external-runtimes.json", "external-runtimes.json.123.tmp",

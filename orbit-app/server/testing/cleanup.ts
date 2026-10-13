@@ -17,6 +17,11 @@ export interface WaitForExitOptions {
   graceMs?: number;
 }
 
+// Evidence of a successful taskkill against this exact owned fixture. Windows
+// reports that external stop as exit code 1, not child.kill's signalCode.
+const windowsTreeStops = new WeakMap<ChildProcess, NodeJS.Signals>();
+export const requestedWindowsTreeStop = (child: ChildProcess): NodeJS.Signals | undefined => windowsTreeStops.get(child);
+
 /**
  * End a child process and wait for it to actually be gone.
  *
@@ -50,7 +55,11 @@ export function waitForExit(
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
+    let treeStopPending = false;
+    let closed = false;
     const done = () => {
+      closed = true;
+      if (treeStopPending) return;
       if (settled) return;
       settled = true;
       if (timer) clearTimeout(timer);
@@ -68,8 +77,18 @@ export function waitForExit(
         && child.pid && child.exitCode === null && child.signalCode === null) {
         // Windows kill(SIGTERM) terminates only the parent and leaves its
         // fake engines alive. End the exact tree owned by this fixture.
+        treeStopPending = true;
         execFile(join(process.env.SystemRoot || "C:\\Windows", "System32", "taskkill.exe"),
-          ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, timeout: 5_000 }, () => {});
+          ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, timeout: 5_000 }, (error, stdout) => {
+            // A child can exit during tree enumeration: taskkill then returns
+            // nonzero despite confirming the root was terminated. Successes
+            // are on stdout, failures on stderr; the first PID on each success
+            // line is the process killed (later PIDs describe its ancestry).
+            const rootConfirmed = stdout.split(/\r?\n/).some(line => line.match(/\bPID\s+(\d+)/i)?.[1] === String(child.pid));
+            if (!error || rootConfirmed) windowsTreeStops.set(child, requested);
+            treeStopPending = false;
+            if (closed) done();
+          });
       } else {
         try { child.kill(requested); } catch { /* already exited */ }
       }

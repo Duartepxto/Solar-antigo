@@ -1,0 +1,15 @@
+import { readFile,writeFile } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
+import { resolve } from 'node:path';
+const spatial=process.env.SOLAR_DESIGN_VARIANT==='canvas';
+const live=process.env.SOLAR_DESIGN_VARIANT==='live';
+const desktop=process.env.SOLAR_DESIGN_VARIANT==='desktop';
+const file=resolve(process.cwd(),'../docs/exports/solar-antigo',live?'Solar.html':spatial?'Solar Canvas PC.html':desktop?'Solar Design PC.html':'Solar antigo.html');
+const html=await readFile(file,'utf8');
+if(html.includes('id="solar-design-payload"'))throw new Error('Already packed');
+await writeFile(resolve(process.cwd(),'.orbit-scratch/design-export',live?'unpacked-live.html':spatial?'unpacked-canvas.html':desktop?'unpacked-desktop.html':'unpacked.html'),html);
+const assets=[],ids=new Map();
+const template=html.replace(/data:[A-Za-z0-9.+-]+\/[A-Za-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g,resource=>{if(resource.length<1024)return resource;let id=ids.get(resource);if(id===undefined){id=assets.length;ids.set(resource,id);assets.push(resource);}return '__SOLAR_RESOURCE_'+id+'__';});
+const data=gzipSync(JSON.stringify({html:template,assets}),{level:9}).toString('base64');
+const page='<!DOCTYPE html><html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Solar antigo — design</title><style>html,body{margin:0;min-height:100%;background:#050607;color:#f2f3f5;font:14px system-ui}#loading{position:fixed;inset:0;display:grid;place-items:center}</style></head><body><div id="loading">A abrir o Solar antigo…</div><script id="solar-design-payload" type="application/octet-stream">'+data+'</script><script>(async()=>{try{const raw=atob(document.getElementById("solar-design-payload").textContent);const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));const bundle=JSON.parse(await new Response(stream).text());const html=bundle.html.replace(/__SOLAR_RESOURCE_(\\d+)__/g,(_,id)=>bundle.assets[Number(id)]);document.open();document.write(html);document.close();}catch(e){document.getElementById("loading").textContent="Não foi possível abrir a demonstração. Usa uma versão recente do Chrome, Edge, Firefox ou Safari.";console.error(e);}})();</script></body></html>';
+await writeFile(file,live?page.replaceAll('Solar antigo — design','Solar').replaceAll('A abrir o Solar antigo…','A abrir o Solar…'):spatial?page.replaceAll('Solar antigo — design','Solar — Canvas PC').replaceAll('A abrir o Solar antigo…','A abrir o Solar…'):desktop?page.replaceAll('Solar antigo — design','Solar — Design PC').replaceAll('A abrir o Solar antigo…','A abrir o Solar…'):page);console.log('Self-contained compressed HTML: '+Buffer.byteLength(page)+' bytes.');

@@ -1,0 +1,10 @@
+{
+  "name": "Solar",
+  "decisions": [
+    "Approved professional intro and vivid-gold icon, 10 October 2026.",
+    "Preserve native solar renderer and all onboarding state contracts.",
+    "Reuse local primitives; external 21st CLI was blocked by automatic approval review.",
+    "Use the exact original three-quarter-view Sun from the approved image, split into vector-clipped body, eyes and particles; animate gaze and gentle particle drift without regenerating its appearance.",
+    "Keep the approved original Sun artwork; match Solar gaze and blinking, add localized surface-block lift/flow and visibly circulating outer fragments, with reduced-motion and hidden-document pauses."
+  ]
+}

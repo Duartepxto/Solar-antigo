@@ -18,7 +18,7 @@ export interface BeatProps {
 }
 
 export const inputClass =
-  "h-10 w-full rounded-[10px] border border-ink/[0.16] bg-ink/[0.04] px-3 text-[14px] text-ink placeholder:text-ink/55 focus:border-ink/30 focus:outline-none";
+  "welcome-form-input h-10 w-full rounded-[10px] border border-ink/[0.16] bg-ink/[0.04] px-3 text-[14px] text-ink placeholder:text-ink/55 focus:border-ink/30 focus:outline-none";
 
 /** Index for the `.stagger` utility; each sibling arrives 40ms after the last. */
 export function staggerIndex(i: number): CSSProperties {
@@ -43,7 +43,7 @@ export function PrimaryButton({
       {...rest}
       style={footer ? undefined : style}
       className={cn(
-        "h-[34px] shrink-0 rounded-full bg-ink px-4 text-[13px] font-semibold text-app transition-[transform,opacity] duration-150 active:scale-[0.98] disabled:opacity-40",
+        "welcome-primary h-[34px] shrink-0 rounded-full bg-ink px-4 text-[13px] font-semibold text-app transition-[transform,opacity] duration-150 active:scale-[0.98] disabled:opacity-40",
         footer ? "whitespace-nowrap" : cn("w-full", className),
       )}
     >
@@ -61,7 +61,7 @@ export function QuietButton({
   return (
     <button
       {...rest}
-      className={cn("h-7 rounded-[14px] px-2.5 text-[12.5px] font-medium text-ink/55 transition-colors hover:text-ink", className)}
+      className={cn("welcome-quiet h-7 rounded-[14px] px-2.5 text-[12.5px] font-medium text-ink/55 transition-colors hover:text-ink", className)}
     >
       {children}
     </button>

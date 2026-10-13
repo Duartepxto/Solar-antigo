@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { availableTools, catalogProfileFromEnv } from "./drivers/agents-catalog.ts";
 import { canReachPeer } from "./peer-roster.ts";
 import { orbitAgentModelSelection, orbitAgentSystemPrompt } from "./orbit-agent.ts";
@@ -51,6 +51,16 @@ describe("the Orbit agent's prompt", () => {
     expect(prompt).not.toMatch(/\b(Opus|Sonnet|Haiku|GPT|Gemini)\b/);
     expect(prompt).not.toMatch(/\b(MUST|NEVER|ALWAYS|CRITICAL|IMPORTANT)\b/);
   });
+  it("keeps private work on the assigned surface and shares the sign-in policy", () => {
+    expect(prompt).toContain("prefer your own built-in browser");
+    expect(prompt).toContain('select surface "browser"');
+    expect(prompt).toContain("Browser panel beside the conversation");
+    expect(prompt).toContain("do not silently switch to host control");
+    expect(prompt).toContain("A private browser is not a separate Windows desktop");
+    expect(prompt).toContain("For sign-ins explicitly authorized by the user");
+    expect(prompt).toContain("unless the person already authorized the concrete action");
+    expect(prompt).not.toContain("Stop and hand back to them before anything final");
+  });
 });
 
 describe("who can reach the Orbit agent", () => {
@@ -67,6 +77,16 @@ describe("who can reach the Orbit agent", () => {
 });
 
 describe("the Orbit agent's prompt per computer", () => {
+  it("describes the Solar Windows voice dock and spoken replies", () => {
+    vi.stubEnv("SOLAR_APP", "1");
+    try {
+      const prompt = orbitAgentSystemPrompt({ teams: [], looseBots: 0, platform: "win32" });
+      expect(prompt).toContain("Jarvis, the assistant built into Solar");
+      expect(prompt).toContain("three ways");
+      expect(prompt).toContain("right edge summoned with Alt+T");
+      expect(prompt).toContain("Talk replies are spoken");
+    } finally { vi.unstubAllEnvs(); }
+  });
   it("names Alt+O and leaves out talk mode on Windows", () => {
     const base = { teams: [], looseBots: 0 };
     const mac = orbitAgentSystemPrompt({ ...base, platform: "darwin" });

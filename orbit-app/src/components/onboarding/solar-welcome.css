@@ -1,0 +1,101 @@
+@font-face { font-family:'Jarvis Manrope'; src:url('/solar/fonts/Manrope-Variable.ttf') format('truetype'); font-weight:200 800; font-style:normal; font-display:swap; }
+/* Scoped to the Solar first-use window. Other skins and settings keep their primitives. */
+.solar-welcome-shell {
+  --welcome-gold:#e4bc78; --welcome-gold-light:#f0cd91; --welcome-muted:#aeb4bd;
+  --welcome-border:#ffffff19; --welcome-surface:#101216;
+  display:flex; align-items:center; justify-content:center; position:fixed; inset:0; z-index:50;
+  padding:18px; color:#f2f3f5; background:#080b0f;
+  font-family:'Jarvis Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+.solar-welcome-shell.is-embedded { position:relative; width:100%; height:100%; }
+.solar-welcome-shell.is-native { padding:0; }
+.solar-welcome-frame {
+  position:relative; display:flex; flex-direction:column; width:460px; max-width:100%;
+  height:min(560px,100%); overflow:hidden; border:1px solid var(--welcome-border);
+  border-radius:16px; background:radial-gradient(ellipse at 92% 17%,#e4bc7808,transparent 38%),linear-gradient(145deg,#12181d,#101418 52%,#0e1216); box-shadow:0 24px 70px #0005; outline:none;
+}
+.is-native .solar-welcome-frame { width:100%; height:100%; border:0; border-radius:0; }
+.solar-welcome-header { display:flex; align-items:center; justify-content:space-between; min-height:58px; padding:12px 28px; -webkit-app-region:drag; }
+.solar-welcome-brand { font-size:18px; font-weight:650; letter-spacing:-.025em; }
+.solar-welcome-skip { min-height:32px; padding:4px 0 4px 12px; font-size:12px; color:var(--welcome-muted); -webkit-app-region:no-drag; cursor:pointer; }
+.solar-welcome-skip:hover { color:#fff; }
+.solar-welcome-intro { position:relative; flex-shrink:0; padding:8px 28px 0; min-height:172px; }
+.solar-welcome-progress { display:flex; gap:5px; width:57%; max-width:250px; }
+.solar-welcome-progress span { flex:1; height:4px; border-radius:3px; background:#535a64; transition:background-color 180ms; }
+.solar-welcome-progress span[data-done] { background:#b2966f; }
+.solar-welcome-progress span[data-active] { background:var(--welcome-gold-light); box-shadow:0 0 5px #e4bc7822; }
+.solar-welcome-count { margin:10px 0 0; font-size:12px; color:var(--welcome-muted); font-variant-numeric:tabular-nums; }
+.solar-welcome-guide { position:absolute; right:0; top:-8px; width:190px; height:190px; pointer-events:none; }
+.solar-welcome-title { margin:98px 0 12px; max-width:calc(100% - 138px); font-size:23px; line-height:1.25; font-weight:650; letter-spacing:-.035em; text-wrap:balance; }
+.solar-welcome-body { min-height:0; flex:1; overflow-y:auto; overflow-x:hidden; padding:0 28px 20px; scrollbar-width:thin; }
+.solar-welcome-step { animation:solar-welcome-enter 240ms cubic-bezier(.22,1,.36,1); }
+.solar-welcome-step > .stagger,.solar-welcome-step > div.items-center { align-items:stretch; text-align:left; }
+.solar-welcome-step > div > p:first-child { margin-top:0; text-align:left; color:#bac0c8; font-size:14px; line-height:1.65; }
+.solar-welcome-step .text-ink\/55,.solar-welcome-step .text-ink\/60 { color:var(--welcome-muted); }
+.solar-welcome-step .welcome-form-input { height:44px; border:1px solid #ffffff2c; border-radius:10px; background:#ffffff04; font-size:14px; }
+.solar-welcome-step .welcome-form-input:focus { border-color:var(--welcome-gold); box-shadow:0 0 0 2px #e4bc7819; }
+.solar-welcome-step button:not([data-primary]):not([role=radio]) { min-height:32px; }
+.solar-welcome-helper { margin:8px 0 0; font-size:12px; line-height:1.5; color:var(--welcome-muted); }
+.solar-welcome-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-shrink:0; min-height:74px; padding:14px 28px; border-top:1px solid var(--welcome-border); }
+.solar-welcome-footer-action { display:flex; justify-content:flex-end; min-width:0; }
+.solar-welcome-frame .welcome-primary,
+.solar-welcome-frame .solar-welcome-step button.bg-ink.text-app {
+  min-height:44px; height:auto; padding:11px 20px; border-radius:10px;
+  border:1px solid #f2d5a0; color:#211b12; background:linear-gradient(180deg,#f8d18a,#f1bf6d);
+  box-shadow:inset 0 1px 0 #fff2,0 0 12px #daa25d20; font-size:13px; font-weight:650;
+  transition:box-shadow 160ms,filter 160ms,transform 100ms; cursor:pointer;
+}
+.solar-welcome-frame .welcome-primary:hover:not(:disabled),
+.solar-welcome-frame .solar-welcome-step button.bg-ink.text-app:hover:not(:disabled) { filter:brightness(1.035); box-shadow:inset 0 1px 0 #fff3,0 0 18px #daa25d38; }
+.solar-welcome-frame .welcome-primary:active:not(:disabled),
+.solar-welcome-frame .solar-welcome-step button.bg-ink.text-app:active:not(:disabled) { transform:scale(.99); }
+.solar-welcome-frame .welcome-primary:disabled,
+.solar-welcome-frame .solar-welcome-step button.bg-ink.text-app:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+.solar-welcome-frame .welcome-quiet { min-height:36px; height:auto; padding:8px 0; border-radius:6px; color:var(--welcome-muted); font-size:13px; }
+.solar-welcome-frame .welcome-quiet:hover { color:#f2f3f5; }
+.solar-welcome-frame :where(button,input,a):focus-visible { outline:2px solid var(--welcome-gold-light); outline-offset:3px; }
+.solar-welcome-device { display:grid; place-items:center; padding:20px 0 12px; color:#aeb4bd; }
+.solar-welcome-phone { text-align:left; }
+.solar-welcome-phone-later { display:block; margin:10px 0 0; padding:8px 0; color:var(--welcome-muted); font-size:13px; }
+.solar-welcome-frame .animate-rise { animation:none; }
+@keyframes solar-welcome-enter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+@media(max-width:420px) {
+  .solar-welcome-shell { padding:8px; }
+  .solar-welcome-header,.solar-welcome-footer { padding-left:22px; padding-right:22px; }
+  .solar-welcome-intro { padding-left:22px; padding-right:22px; }
+  .solar-welcome-body { padding-left:22px; padding-right:22px; }
+  .solar-welcome-title { font-size:22px; margin-top:118px; max-width:100%; }
+  .solar-welcome-guide { width:168px; height:168px; right:-4px; top:1px; }
+  .solar-welcome-footer-action .welcome-primary { white-space:normal; max-width:230px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .solar-welcome-step { animation:none; }
+  .solar-welcome-frame * { transition:none!important; }
+  .solar-welcome-frame .welcome-primary:active, .solar-welcome-frame .solar-welcome-step button.bg-ink.text-app:active { transform:none; }
+}
+:root[data-reduced-motion=true] .solar-welcome-step { animation:none; }
+:root[data-reduced-motion=true] .solar-welcome-frame * { transition:none!important; }
+:root[data-reduced-motion=true] .solar-welcome-frame .welcome-primary:active,
+:root[data-reduced-motion=true] .solar-welcome-frame .solar-welcome-step button.bg-ink.text-app:active { transform:none; }
+
+.solar-welcome-frame .solar-welcome-engine-row { display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:12px; row-gap:4px; padding:12px 0; }
+.solar-welcome-frame .solar-welcome-engine-row > span:first-child { grid-column:1; grid-row:1; white-space:normal; overflow:visible; overflow-wrap:anywhere; font-size:14px; }
+.solar-welcome-frame .solar-welcome-engine-row > span:nth-child(2) { grid-column:1; grid-row:2; font-size:12px; }
+.solar-welcome-frame .solar-welcome-engine-row > button { grid-column:2; grid-row:1 / span 2; border-radius:8px; color:var(--welcome-gold-light); font-size:12px; }
+
+.solar-welcome-guide.is-compact { position:relative; right:auto; top:auto; width:44px; height:44px; }
+.solar-welcome-tour [data-tour-card] > [role=dialog] { background:#15191f; border-color:#e4bc782b; border-radius:12px; }
+.solar-welcome-tour .solar-tour-primary { min-height:36px; border-radius:8px; background:#e4bc78; color:#211b12; box-shadow:inset 0 1px 0 #fff2; }
+.solar-welcome-tour button:focus-visible { outline:2px solid #f0cd91; outline-offset:3px; }
+
+/* Animate the selected artwork itself; its three-quarter view remains fixed. */
+.solar-approved-art { display:block; width:100%; height:100%; overflow:visible; }
+.solar-art-body { animation:solar-art-float 6s ease-in-out infinite; }
+.solar-art-eyes { transform:translate(var(--solar-gaze-x,0px),var(--solar-gaze-y,0px)); }
+.solar-art-fragment,.solar-art-surface-fragment,.solar-art-eye-lid { transform-box:view-box; }
+.solar-art-eye-lid { transform:scaleY(var(--solar-eye-open,1)); }
+.solar-art-surface-fragment { filter:drop-shadow(.3px .6px .4px #77350045); }
+@keyframes solar-art-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-2px); } }
+@media(prefers-reduced-motion:reduce) { .solar-art-body,.solar-art-fragment { animation:none; } }
+:root[data-reduced-motion=true] .solar-art-body,:root[data-reduced-motion=true] .solar-art-fragment { animation:none; }

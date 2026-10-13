@@ -26,10 +26,11 @@ export function skillAuthoringEnabled(config: FeatureFlagConfig | null | undefin
   return config?.features?.skillAuthoring !== false;
 }
 
-/** The experimental built-in browser is unavailable until the person using
- * the app explicitly opts in. Each bot also has its own switch. */
+/** Mirror the server's default for the private built-in browser. Wait for
+ * configuration before offering it; engine availability and bot access are
+ * checked separately. An explicit workspace opt-out remains authoritative. */
 export function builtInBrowserEnabled(config: FeatureFlagConfig | null | undefined): boolean {
-  return config?.features?.browser === true;
+  return config != null && config.features?.browser !== false;
 }
 
 /** Tool-run chips in the transcript. Off by default — the mascot already

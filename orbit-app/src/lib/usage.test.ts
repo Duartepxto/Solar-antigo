@@ -21,7 +21,10 @@ describe("usage formatting", () => {
   it("sums complete cache reports without losing an explicit zero", () => {
     const usage = { input: 100, output: 8, costUsd: null, turns: 1, cachedInput: 0 };
     expect(sumUsage([usage, { ...usage, cachedInput: 50 }]).cachedInput).toBe(50);
-    expect(sumUsage([usage, { ...usage, input: 0, cachedInput: undefined }]).cachedInput).toBe(0);
+    // A settled record with zero input but no cache count may lack telemetry.
+    expect(sumUsage([usage, { ...usage, input: 0, cachedInput: undefined }]).cachedInput).toBeUndefined();
+    // An unused task has not introduced a missing provider report.
+    expect(sumUsage([usage, { input: 0, output: 0, costUsd: null, turns: 0 }]).cachedInput).toBe(0);
     expect(sumUsage([usage, { ...usage, cachedInput: Number.NaN }]).cachedInput).toBeUndefined();
   });
   it("formats token counts compactly", () => {

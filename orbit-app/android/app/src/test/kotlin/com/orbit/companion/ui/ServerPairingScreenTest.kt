@@ -83,6 +83,17 @@ class ServerPairingScreenTest {
     }
 
     @Test
+    fun systemBackDiscardsAnUnsubmittedScanAndReturnsToTheForm() {
+        acceptScan()
+        compose.onNodeWithText("Pair with this computer").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        assertFalse(compose.activity.isFinishing, "Back escaped the confirmation")
+        compose.onNodeWithText("Scan QR Code").assertIsDisplayed()
+        assertTrue(requests.isEmpty(), "Back redeemed or probed an unsubmitted scan")
+    }
+
+    @Test
     fun manualEntryAcceptsServerCodesAndRetainsSixDigitCompanionCodes() {
         compose.onNodeWithText("Other ways to connect").performClick()
         compose.onAllNodes(hasSetTextAction())[0].performTextInput(server.url("/").toString().trimEnd('/'))

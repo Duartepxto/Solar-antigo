@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { ECB_USAGE_CURRENCY_SEED, isUsageCurrencyReference, usdToEur } from "../shared/usage-currency.ts";
-import { ECB_USAGE_CURRENCY_URL, getUsageCurrency, parseEcbUsageCurrency, usageCurrencyFile, usagePricesInUsd } from "./usage-currency.ts";
+import { cachedUsageCurrency, ECB_USAGE_CURRENCY_URL, getUsageCurrency, parseEcbUsageCurrency, usageCurrencyFile, usagePricesInUsd } from "./usage-currency.ts";
 
 const NOW = new Date("2026-10-08T18:00:00.000Z");
 it('normalizes legacy EUR sell prices once and refuses unsupported conversions', () => {
@@ -103,6 +103,9 @@ describe("workspace currency cache", () => {
     const tomorrow = new Date("2026-10-09T18:00:00Z");
     const newer = fetchXml(xml("2026-10-09", "1.125"));
     expect(await getUsageCurrency(first, { fetch: newer, now: () => tomorrow })).toMatchObject({ date: "2026-10-09", usdPerEur: 1.125, cached: false, stale: false });
+    expect(cachedUsageCurrency(first)).toMatchObject({ date: "2026-10-09", usdPerEur: 1.125 });
+    expect(usagePricesInUsd({ fixture: { inputPerMillion: 2, outputPerMillion: 4 } }, "EUR", cachedUsageCurrency(first)))
+      .toEqual({ fixture: { inputPerMillion: 2.25, outputPerMillion: 4.5 } });
   });
 
   it("bounds even an unresponsive transport and avoids inventing a rate without a cache", async () => {

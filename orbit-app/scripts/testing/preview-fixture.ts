@@ -56,6 +56,9 @@ export async function mountPreview(
   const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="${escapeHtml(viewport)}"><title>${escapeHtml(title)}</title></head><body><div id="root"></div><script type="module" src="${escapeHtml(entry)}"></script></body></html>`;
   const ui = await createServer({
     root: REPO_ROOT,
+    // Scan only the selected UI entry, not every historical HTML prototype,
+    // packaged release and unrelated fixture in this large checkout.
+    optimizeDeps: { entries: [entry.replace(/^\//, "")] },
     ...(logLevel ? { logLevel } : {}),
     server: { host: "127.0.0.1", port: 0, proxy: {
       "/api": { target: fixture.info.url },

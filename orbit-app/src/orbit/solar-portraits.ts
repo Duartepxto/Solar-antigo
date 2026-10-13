@@ -1,3 +1,4 @@
+import { reducedMotion } from "@/lib/onboarding";
 import type { SolarRenderBody, SolarRenderSettings, SolarWorldEngine } from './solar-renderer';
 
 const CELL = 128, COLUMNS = 4;
@@ -22,11 +23,12 @@ function update() {
   if (!engine || !targets.size) return;
   const unique = new Map([...targets].map(target => [target.body.id, model.get(target.body.id) ?? target.body]));
   const bodies = layoutSolarPortraits([...unique.values()]);
-  const next = JSON.stringify([bodies, preferences, paused]);
+  const motionPaused = paused || reducedMotion();
+  const next = JSON.stringify([bodies, preferences, motionPaused]);
   if (next === signature) return;
   signature = next;
   cells = new Map(bodies.map(body => [body.id, { x: body.x - CELL / 2, y: body.y - CELL / 2 }]));
-  engine.update(bodies, COLUMNS * CELL, Math.max(CELL, Math.ceil(bodies.length / COLUMNS) * CELL), paused, preferences);
+  engine.update(bodies, COLUMNS * CELL, Math.max(CELL, Math.ceil(bodies.length / COLUMNS) * CELL), motionPaused, preferences);
 }
 async function start() {
   if (engine || creating || !targets.size) return;

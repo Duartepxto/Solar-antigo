@@ -1,5 +1,5 @@
 import { solarSpeechStatus, transcribeSolarVoice } from "./solar-speech.ts";
-import { getUsageCurrency, usagePricesInUsd } from './usage-currency.ts';
+import { cachedUsageCurrency, getUsageCurrency, usagePricesInUsd } from './usage-currency.ts';
 import { SolarWorkspace } from "./solar-workspace.ts";
 // Orbit server — the harness host. Clients hold no transports
 // (upstream rule): the React app dispatches typed commands over HTTP and
@@ -555,6 +555,7 @@ import { ROUTES, dispatchRoutes } from "./routes/table.ts";
 import { createHostedSlackRoutes } from "./routes/hosted-slack.ts";
 import { createBotMemoryRoutes } from "./routes/bot-memory.ts";
 import { createAgentArchiveRoutes } from "./routes/agent-archive.ts";
+import { createModelCostRoutes } from "./routes/model-costs.ts";
 
 const PORT = Number(process.env.ORBIT_PORT || process.env.OGB_PORT || 8799);
 // Remote MCP servers signed in with OAuth. The browser returns to this
@@ -1320,8 +1321,13 @@ function operatorPrices(): PriceList | null {
  * the cap, notifies admins (once per month each; server/spend.ts). */
 function bookTurnUsage(row: Omit<UsageRow, "at" | "costSource">, tokensReported = true, notificationThreadId = row.threadId): UsageRow {
   // Missing helper usage is unpriced, not an estimated zero-dollar call.
-  const cost = tokensReported || row.costUsd !== null ? ledgerCost(row, operatorPrices()) : { costUsd: null };
-  const booked = { ...row, ...cost, at: new Date().toISOString() };
+  const prices = usagePricesInUsd(operatorPrices(), cfg.billing?.currency ?? "USD", cachedUsageCurrency(DATA_DIR));
+  const live = registry.get(row.instanceId)?.models.options.find(model => model.id === row.model)?.pricing;
+  const cost = tokensReported || row.costUsd !== null ? ledgerCost(row, prices, new Date(), live) : { costUsd: null };
+  const usingLivePrice = cost.costSource === "estimated" && live && !prices?.[`${row.driverKind}/${row.model}`] && !prices?.[row.model];
+  const booked = { ...row, ...cost, at: new Date().toISOString(),
+    ...(usingLivePrice ? { priceSource: live.source, priceAsOf: live.asOf } : {}),
+  };
   // The append lands asynchronously; the cap counts the row from memory
   // until it does, so the check below (and the next turn start) sees it.
   noteSpend(DATA_DIR, booked, appendUsage(DATA_DIR, booked));
@@ -7900,8 +7906,9 @@ async function finalScreenFrame(_botId: string, threadId: string): Promise<Frame
  * runs long, or answers with something that is not a plain short title;
  * the caller keeps the snippet it already applied. */
 async function generateThreadTitle(
-  provider: { generateText?: (prompt: string, options?: { signal?: AbortSignal }) => Promise<string> },
+  provider: ProviderInstance,
   text: string,
+  attribution: { bot: Pick<BotRecord, "id" | "name">; threadId: string; trigger: UsageTrigger },
 ): Promise<string | null> {
   const prompt = [
     "Name the conversation that begins with the message below.",
@@ -7912,10 +7919,17 @@ async function generateThreadTitle(
   const expiry = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
+    assertWithinBudget(cfg, DATA_DIR);
     // the race caps the wait; the signal aborts the provider call itself,
     // which every generateText driver that can honor it does
     const reply = await Promise.race([
-      provider.generateText!(prompt, { signal: expiry.signal }),
+      provider.generateText!(prompt, { signal: expiry.signal, onUsage: usage => bookTurnUsage({
+        botId: attribution.bot.id, botName: attribution.bot.name,
+        threadId: `title-${randomUUID()}`, instanceId: provider.instanceId, driverKind: provider.driverKind,
+        model: usage.model, input: usage.input ?? 0, output: usage.output ?? 0,
+        ...(usage.cachedInput !== undefined ? { cachedInput: usage.cachedInput } : {}),
+        costUsd: usage.costUsd ?? null, trigger: attribution.trigger,
+      }, usage.input !== undefined && usage.output !== undefined, attribution.threadId) }),
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
           expiry.abort();
@@ -8123,7 +8137,9 @@ async function startTurn(
     // by adoption has already broken that equality by then.
     const snippet = titled?.title;
     if (titled && snippet && !titled.openedBy?.botId && llmThreadTitlesEnabled(cfg) && instance.generateText) {
-      void generateThreadTitle(instance, resolvedImages.text)
+      void generateThreadTitle(instance, resolvedImages.text, {
+        bot, threadId, trigger: opts?.trigger ?? turnTriggers.get(threadId) ?? { kind: "owner" },
+      })
         .then((title) => {
           if (title) store.retitleTask(bot.id, threadId, snippet, title);
         })
@@ -12140,7 +12156,9 @@ function startGroupTurn(
   const titleText = extractTurnImages(text).text;
   // An engine the organisation disallows never receives the text, even for a title.
   if (titled && snippet && titleText.trim() && llmThreadTitlesEnabled(cfg) && titleInstance?.generateText && !policyModelRefusal(titleInstance)) {
-    void generateThreadTitle(titleInstance, titleText)
+    void generateThreadTitle(titleInstance, titleText, {
+      bot: titleBot, threadId, trigger: options.trigger ?? turnTriggers.get(threadId) ?? { kind: "owner" },
+    })
       .then((title) => {
         if (title) store.retitleGroupTask(group.id, threadId, snippet, title);
       })
@@ -13635,6 +13653,13 @@ const workspaceBackupRoutes = createWorkspaceBackupRoutes({
 // Route modules (server/routes/README.md). `workspaceAccess` is assigned at
 // boot, after this line, so the dependency reads it per request.
 ROUTES.push(createHostedSlackRoutes({ bot: (id) => store.bot(id), hostedReady: () => Boolean(workspaceAccess) && entitled("admin") }));
+ROUTES.push(createModelCostRoutes({
+  quote: () => getUsageCurrency(DATA_DIR),
+  instances: async () => (await registry.describe()).map(instance => ({
+    instanceId: instance.instanceId, displayName: instance.displayName, models: instance.models,
+    available: instance.snapshot.state === "available",
+  })),
+}));
 // The bot-memory panel's routes (MEMORY.md, memory/ topics, journal); the
 // store lookups — the 404 precheck and journal thread titles — stay explicit.
 ROUTES.push(createBotMemoryRoutes({
@@ -17906,11 +17931,6 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       }
       const threadId = body.threadId ?? group.threadId;
       const trigger = usageTriggerFor(auth);
-      try {
-        assertWithinBudget(cfg, DATA_DIR);
-      } catch (error) {
-        return json(res, 409, { error: error instanceof Error ? error.message : String(error), code: "spend_cap" });
-      }
       const ownsThread = group.dm
         ? group.threadId === threadId
         : Boolean(store.groupTaskByThread(group.id, threadId));
@@ -17960,6 +17980,9 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
               return { ok: true as const, queued: true as const, queueId: queued.id, threadId };
             }
           }
+          // Re-acknowledging accepted/queued work consumes no model call.
+          // Check the cap only after matching its canonical receipt.
+          assertWithinBudget(cfg, DATA_DIR);
           const current = store.group(group.id);
           if (!current) throw Object.assign(new Error("no such group"), { status: 404 });
           if (current.threadId !== threadId) {
@@ -19618,13 +19641,6 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       const trigger: UsageTrigger = onBehalfOf
         ? { kind: "user", ...(onBehalfOf.email ? { email: onBehalfOf.email } : {}), ...(onBehalfOf.name ? { label: onBehalfOf.name } : {}) }
         : usageTriggerFor(auth);
-      // The send is acknowledged before the turn starts, so a workspace at its
-      // spend limit is refused here, where the person can see it.
-      try {
-        assertWithinBudget(cfg, DATA_DIR);
-      } catch (error) {
-        return json(res, 409, { error: error instanceof Error ? error.message : String(error), code: "spend_cap" });
-      }
       if (!store.taskByThread(bot.id, threadId)) {
         return json(res, 409, { error: "the bot switched tasks before it could receive the message" });
       }
@@ -19662,6 +19678,9 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
             }
           }
 
+          // A retry retrieves its receipt even if the original turn exhausted
+          // the budget. New work is still refused before queueing or steering.
+          assertWithinBudget(cfg, DATA_DIR);
           const currentAtStart = store.projectBotForTask(bot.id, threadId);
           if (!currentAtStart) throw Object.assign(new Error("no such bot"), { status: 404 });
           if (!store.taskByThread(currentAtStart.id, threadId)) {
@@ -22284,7 +22303,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
   } catch (e) {
     const status = (e as any)?.status ?? 500;
     const candidateCode = (e as { code?: unknown })?.code;
-    const code = typeof candidateCode === "string" && ["guarded_busy", "guarded_branch", "guarded_permissions", "guarded_request_changed", "guarded_request_untracked"].includes(candidateCode)
+    const code = typeof candidateCode === "string" && ["spend_cap", "guarded_busy", "guarded_branch", "guarded_permissions", "guarded_request_changed", "guarded_request_untracked"].includes(candidateCode)
       ? candidateCode : undefined;
     return json(res, status, { error: e instanceof Error ? e.message : String(e), ...(code ? { code } : {}) });
   } finally {

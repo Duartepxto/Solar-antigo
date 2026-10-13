@@ -23,6 +23,8 @@ beforeAll(async () => {
   expect((await runControlOrbit(["doctor"], { env }) as any).ok).toBe(true);
   const created = await runControlOrbit(["new-bot", "--name", "Browser profile fixture"], { env }) as any;
   botId = created.bot.id;
+  // Keep the opt-out explicit now that private browsers are available by default.
+  expect((await call("PATCH", "/api/config", { features: { browser: false } })).status).toBe(200);
 
   const clientPairing = await call("POST", "/api/auth/pairing", { scopes: ["client"] });
   expect(clientPairing.status).toBe(200);

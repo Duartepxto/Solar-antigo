@@ -1,3 +1,4 @@
+import { SolarWelcomeGuide } from "./SolarWelcomeFrame";
 // A spotlight on a live element: the window dims except for a cutout around
 // the anchor, and a small card with the guide sits beside it. The anchor is
 // found by its `data-tour` id, never by a class name, so refactors cannot
@@ -23,6 +24,7 @@ const RADIUS = 14;
 const CARD_W = 300;
 const GAP = 12;
 // the card's primary action: Orbit's green, Solar's gold
+const SOLAR = import.meta.env.VITE_JARVIS_SOLAR === "true";
 const PRIMARY = import.meta.env.VITE_JARVIS_SOLAR === "true" ? "bg-[#ddbd89] text-[#191b20]" : "bg-[#3ee09a] text-[#06140d]";
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -186,7 +188,7 @@ export function Spotlight({
 
   return createPortal(
     <div
-      className="pointer-events-none fixed inset-0 z-[60]"
+      className={cn("pointer-events-none fixed inset-0 z-[60]", SOLAR && "solar-welcome-tour")}
       aria-live="polite"
     >
       <div
@@ -205,7 +207,8 @@ export function Spotlight({
             opacity: settled ? 1 : 0,
             borderRadius: RADIUS,
             // a soft halo so the control reads as lit, not merely outlined
-            boxShadow: "0 0 24px 2px rgba(62,224,154,0.25)",
+            borderColor: SOLAR ? "#e4bc78" : undefined,
+            boxShadow: SOLAR ? "0 0 10px 1px rgba(228,188,120,.18)" : "0 0 24px 2px rgba(62,224,154,0.25)",
           }}
           aria-hidden="true"
         />
@@ -233,7 +236,7 @@ export function Spotlight({
           )}
         >
           <div className="-m-1.5 shrink-0">
-            <GuideCharacter mood={mascot} size={46} />
+            {SOLAR ? <SolarWelcomeGuide compact /> : <GuideCharacter mood={mascot} size={46} />}
           </div>
           <div
             key={anchor ?? "centre"}
@@ -264,7 +267,7 @@ export function Spotlight({
                   type="button"
                   autoFocus
                   onClick={primary.onClick}
-                  className={cn("h-7 rounded-full px-3.5 text-[12.5px] font-semibold transition-transform duration-150 active:scale-[0.98]", PRIMARY)}
+                  className={cn("solar-tour-primary h-7 rounded-full px-3.5 text-[12.5px] font-semibold transition-transform duration-150 active:scale-[0.98]", PRIMARY)}
                 >
                   {primary.label}
                 </button>

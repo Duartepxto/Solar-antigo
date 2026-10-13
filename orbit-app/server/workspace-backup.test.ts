@@ -394,14 +394,15 @@ describe("encrypted full workspace backups", () => {
   it("refuses external and arbitrary internal symlinks while reporting omitted managed discovery links", async () => {
     const root = directory();
     const outside = directory();
-    writeFileSync(join(outside, "secret"), "must never be read");
-    symlinkSync(join(outside, "secret"), join(root, "external"));
+    mkdirSync(join(outside, "secret"));
+    writeFileSync(join(outside, "secret", "private.txt"), "must never be read");
+    symlinkSync(join(outside, "secret"), join(root, "external"), process.platform === "win32" ? "junction" : "dir");
     await expect(createWorkspaceBackup(root, { password: PASSWORD })).rejects.toThrow(/outside the workspace/);
-    rmSync(join(root, "external"));
-    writeFileSync(join(root, "regular"), "data");
-    symlinkSync(join(root, "regular"), join(root, "internal"));
+    rmSync(join(root, "external"), { recursive: true });
+    mkdirSync(join(root, "regular"));
+    symlinkSync(join(root, "regular"), join(root, "internal"), process.platform === "win32" ? "junction" : "dir");
     await expect(createWorkspaceBackup(root, { password: PASSWORD })).rejects.toThrow(/user-created symbolic link/);
-    rmSync(join(root, "internal"));
+    rmSync(join(root, "internal"), { recursive: true });
     const skill = join(root, "workspaces", "bot", "skills", "example");
     mkdirSync(skill, { recursive: true });
     writeFileSync(join(skill, "SKILL.md"), "# Example");
@@ -410,6 +411,25 @@ describe("encrypted full workspace backups", () => {
     symlinkSync(skill, join(native, "example"), process.platform === "win32" ? "junction" : "dir");
     const exported = await createWorkspaceBackup(root, { password: PASSWORD });
     expect(exported.summary.warnings.some((warning) => warning.includes("1 managed skill"))).toBe(true);
+  });
+
+  it("exports workspace data while retaining managed Codex session links on the destination", async () => {
+    const source = directory();
+    const outside = directory();
+    writeFileSync(join(outside, "private-session.json"), "external session");
+    mkdirSync(join(source, "codex-home"));
+    symlinkSync(outside, join(source, "codex-home", "sessions"), process.platform === "win32" ? "junction" : "dir");
+    json(join(source, "bots.json"), [{ id: "portable-agent" }]);
+    const exported = await createWorkspaceBackup(source, { password: PASSWORD });
+    const target = directory();
+    mkdirSync(join(target, "codex-home"));
+    writeFileSync(join(target, "codex-home", "local-marker"), "destination session");
+    const staged = await stageWorkspaceBackup(target, exported.path, { password: PASSWORD });
+    commitPendingWorkspaceRestore(target, staged.id);
+    await applyPendingWorkspaceRestore(target);
+    expect(readJson(join(target, "bots.json"))).toEqual([{ id: "portable-agent" }]);
+    expect(readFileSync(join(target, "codex-home", "local-marker"), "utf8")).toBe("destination session");
+    expect(existsSync(join(target, "codex-home", "sessions"))).toBe(false);
   });
 
   it("recovers an interrupted top-level swap before any application state is loaded", async () => {

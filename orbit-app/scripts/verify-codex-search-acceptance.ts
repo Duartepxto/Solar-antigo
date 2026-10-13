@@ -18,7 +18,7 @@ const api = fixtureApi(fixture.info.url);
 const report: any = { fixture: fixture.info, cases: [] };
 const save = () => writeFileSync(join(output, "acceptance.json"), JSON.stringify(report, null, 2));
 try {
-  const codexHome = join(fixture.info.dataDir, ".codex");
+  const codexHome = join(fixture.info.dataDir, "codex-home");
   mkdirSync(codexHome, { recursive: true });
   copyFileSync(auth, join(codexHome, "auth.json"));
   // No search-mode override: exercise Codex's normal default too.

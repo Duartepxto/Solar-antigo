@@ -58,7 +58,7 @@ export function MeetYourBotBeat({
   return (
     <div className="stagger flex flex-col">
       <p className="animate-rise mt-3 text-pretty text-[14px] leading-[1.6] text-ink/80" style={staggerIndex(0)}>
-        {t("onboarding.bot.intro")}
+        {t(SOLAR ? "jarvis.welcome.v3.botIntro" : "onboarding.bot.intro")}
       </p>
 
       <div className="animate-rise mt-3" style={staggerIndex(1)}>

@@ -22,6 +22,14 @@ const FETCH_TIMEOUT_MS = 5_000;
 const MAX_XML_BYTES = 64 * 1024;
 const states = new Map<string, { quote: UsageCurrencyReference | null; refreshAt: number; failed: boolean; pending?: Promise<UsageCurrencyQuote | null> }>();
 
+/** Synchronous booking uses the latest verified rate already loaded, or the
+ * dated offline reference. It never assumes EUR == USD or blocks a turn on FX. */
+export function cachedUsageCurrency(dataDir: string): UsageCurrencyReference | null {
+  const state = states.get(resolve(dataDir));
+  const quote = state ? state.quote : ECB_USAGE_CURRENCY_SEED;
+  return isUsageCurrencyReference(quote) ? quote : null;
+}
+
 /** Small constrained parser for the ECB's daily XML, without DTD/entity expansion. */
 export function parseEcbUsageCurrency(xml: string, now = new Date()): UsageCurrencyReference | null {
   if (Buffer.byteLength(xml, "utf8") > MAX_XML_BYTES || /<!DOCTYPE|<!ENTITY/i.test(xml) || !xml.includes("http://www.ecb.int/vocabulary/2002-08-01/eurofxref")) return null;

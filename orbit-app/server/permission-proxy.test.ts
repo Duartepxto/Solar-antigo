@@ -79,6 +79,7 @@ describe("permission proxy", () => {
     const socketPath = brokerSocketPath(scratch, "test");
     broker = createServer((conn: Socket) => {
       conns.push(conn);
+      conn.setEncoding("utf8");
       let buf = "";
       conn.on("error", () => {});
       conn.on("data", (chunk) => {
@@ -102,6 +103,7 @@ describe("permission proxy", () => {
       stdio: ["pipe", "pipe", "pipe"],
     });
     let out = "";
+    proxy.stdout!.setEncoding("utf8");
     proxy.stdout!.on("data", (chunk) => {
       out += chunk;
       let nl;
@@ -340,6 +342,35 @@ describe("permission proxy", () => {
     expect(asks[0]).toMatchObject({ kind: "question", tool: "ask_user", input: { question: "Ready?" } });
     // a question's answer is text, never a permission envelope
     expect(res.result.content[0].text).toBe("ship it");
+  });
+
+  it.each(["stdin", "broker"])("preserves accented question/answer text split across %s chunks", async direction => {
+    const question = "Já está pronto? 🪐";
+    const answer = "Está aprovado. ação ☀️";
+    const frame = {
+      jsonrpc: "2.0", id: 2, method: "tools/call",
+      params: { name: "ask_user", arguments: { question } },
+    };
+    const splitWrite = async (stream: NodeJS.WritableStream, value: unknown, character: string) => {
+      const encoded = Buffer.from(JSON.stringify(value) + "\n");
+      const split = encoded.indexOf(Buffer.from(character)) + 1;
+      stream.write(encoded.subarray(0, split));
+      // Keep the incomplete frame separate from the remainder on a real
+      // child pipe/named pipe, instead of allowing writes to coalesce.
+      await new Promise(resolve => setTimeout(resolve, 50));
+      stream.write(encoded.subarray(split));
+    };
+    if (direction === "stdin") {
+      answerWith = () => ({ behavior: "answer", message: answer, source: "user" });
+      await splitWrite(proxy.stdin!, frame, "á");
+    } else {
+      rpc(frame);
+      await waitForAsks(1);
+      await splitWrite(conns[0], { t: "answer", id: asks[0].id, behavior: "answer", message: answer, source: "user" }, "á");
+    }
+    const result = await waitFor(2);
+    expect(asks[0].input.question).toBe(question);
+    expect(result.result.content[0].text).toBe(answer);
   });
 
   it("denies every waiting ask when the broker dies", async () => {

@@ -1,7 +1,9 @@
 // Transcript-replay driver for OpenRouter, Groq, Together, llama.cpp, and
 // other endpoints that speak the OpenAI chat-completions contract.
+import { createHash } from "node:crypto";
 import type { ModelCatalog, ProviderDriver } from "../contracts.ts";
 import { createOpenAIChatRuntime } from "./openai-chat.ts";
+import { object } from "./openai-chat-protocol.ts";
 
 const DRIVER_KIND = "openai-compat";
 const DEFAULT_IDLE_TIMEOUT_MS = 180_000;
@@ -15,9 +17,22 @@ const DEFAULT_MODELS: ModelCatalog = {
   default: "meta-llama/llama-3.3-70b-instruct",
   options: [
     { id: "meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B (OpenRouter)", custom: true },
-    { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)", custom: true },
   ],
 };
+const GROQ_MODELS: ModelCatalog = {
+  default: "openai/gpt-oss-120b",
+  options: [
+    { id: "openai/gpt-oss-120b", label: "GPT OSS 120B (Groq)", custom: true, contextWindow: 131_072,
+      pricing: { inputPerMillion: 0.15, outputPerMillion: 0.6, source: "https://console.groq.com/docs/models", asOf: "2026-10-10" } },
+    { id: "openai/gpt-oss-20b", label: "GPT OSS 20B (Groq)", custom: true, contextWindow: 131_072,
+      pricing: { inputPerMillion: 0.075, outputPerMillion: 0.3, source: "https://console.groq.com/docs/models", asOf: "2026-10-10" } },
+  ],
+};
+
+function seedModels(url: string): ModelCatalog {
+  try { return new URL(url).hostname.toLowerCase() === "api.groq.com" ? GROQ_MODELS : DEFAULT_MODELS; }
+  catch { return DEFAULT_MODELS; }
+}
 
 export interface OpenAICompatConfig {
   tools?: boolean;
@@ -96,16 +111,17 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       process.env[config.apiKeyEnv] ??
       process.env.OPENAI_COMPAT_API_KEY ??
       "";
+    const seed = seedModels(config.url);
     let catalog: ModelCatalog = config.managedModels
       ? { default: config.managedModels[0], options: config.managedModels.map(id => ({ id, label: id })) }
       : config.model
       ? {
           default: config.model,
-          options: DEFAULT_MODELS.options.some((model) => model.id === config.model)
-            ? DEFAULT_MODELS.options
-            : [{ id: config.model, label: config.model, custom: true }, ...DEFAULT_MODELS.options],
+          options: seed.options.some((model) => model.id === config.model)
+            ? seed.options
+            : [{ id: config.model, label: config.model, custom: true }, ...seed.options],
         }
-      : DEFAULT_MODELS;
+      : seed;
 
     const fetchModels = async () => {
       if (config.managedModels) return;
@@ -113,6 +129,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       try {
         const response = await fetch(`${config.url}/models`, {
           headers: { authorization: `Bearer ${apiKey}` },
+          redirect: "error",
           signal: AbortSignal.timeout(8_000),
         });
         if (!response.ok) return;
@@ -120,14 +137,34 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
         const rows = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
         const seen = new Set<string>();
         const options: ModelCatalog["options"] = [];
-        for (const row of rows) {
-          const id = typeof row.id === "string" ? row.id : "";
-          if (!id || seen.has(id)) continue;
+        for (const raw of rows) {
+          const row = object(raw);
+          if (!row) continue;
+          const id = typeof row.id === "string" ? row.id.trim() : "";
+          const architecture = object(row.architecture);
+          if (!id || seen.has(id) || (Array.isArray(architecture?.output_modalities) && !architecture.output_modalities.includes("text"))) continue;
           seen.add(id);
+          const context = row.context_length;
+          const price = object(row.pricing);
+          const perMillion = (value: unknown) => {
+            if (typeof value !== "string" && typeof value !== "number") return undefined;
+            if (typeof value === "string" && !value.trim()) return undefined;
+            const rate = Number(value) * 1_000_000;
+            return Number.isFinite(rate) && rate >= 0 ? rate : undefined;
+          };
+          const inputRate = perMillion(price?.prompt);
+          const outputRate = perMillion(price?.completion);
           options.push({
+            ...seed.options.find(option => option.id === id),
             id,
             label: typeof row.name === "string" && row.name.trim() ? row.name : id,
             custom: true,
+            ...(typeof context === "number" && Number.isSafeInteger(context) && context > 0 ? { contextWindow: context } : {}),
+            ...(isOpenRouterUrl(config.url) && inputRate !== undefined && outputRate !== undefined ? {
+              pricing: { inputPerMillion: inputRate, outputPerMillion: outputRate,
+                cachedInputPerMillion: perMillion(price?.input_cache_read), cacheWritePerMillion: perMillion(price?.input_cache_write),
+                source: "https://openrouter.ai/api/v1/models", asOf: new Date().toISOString().slice(0, 10) },
+            } : {}),
           });
         }
         if (!options.length) return;
@@ -150,11 +187,16 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       computerUse: true,
       models: () => catalog,
       refreshModels: fetchModels,
-      requestBody: (model, messages, stream) => ({
+      requestBody: (model, messages, stream, threadId) => ({
         model,
         messages,
         stream,
         stream_options: stream ? { include_usage: true } : undefined,
+        // Stable across turns/tool rounds, even when replay drops the opening
+        // messages. Opaque and bounded; custom endpoints receive no extra field.
+        ...(threadId && isOpenRouterUrl(config.url) ? {
+          session_id: `solar-${createHash("sha256").update(JSON.stringify([input.instanceId, threadId])).digest("hex")}`,
+        } : {}),
         ...(config.provider && isOpenRouterUrl(config.url)
           ? { provider: { order: [config.provider], allow_fallbacks: false } }
           : {}),
@@ -166,6 +208,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       reasoning: true,
       billing: "metered",
       includeUsageInCompleted: true,
+        usageCostInUsd: isOpenRouterUrl(config.url),
       nativeLog: {
         source: "openai-compat.chat.completions",
         outgoing: (_turn, messages, model) => ({ model, messageCount: messages.length }),

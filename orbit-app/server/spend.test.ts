@@ -86,7 +86,7 @@ describe("spend against a monthly cap", () => {
     expect(monthToDateSpend(dataDir, new Date(end.getTime() + 60_000))).toBeCloseTo(1.2, 9);
   });
 
-  it("never counts a booked turn twice when a re-read already sees its row, and drops one whose write failed", async () => {
+  it("never counts a booked turn twice when a re-read already sees its row, and retains known spend whose write failed", async () => {
     const onDisk = row("2026-09-15T11:00:00.000Z", 0.5);
     await appendUsage(dataDir, onDisk);
     // the write landed but its promise has not been observed yet
@@ -97,10 +97,10 @@ describe("spend against a monthly cap", () => {
     expect(monthToDateSpend(dataDir, now)).toBeCloseTo(0.8, 9);
     await Promise.resolve();
     await Promise.resolve();
-    expect(monthToDateSpend(dataDir, now)).toBeCloseTo(0.5, 9);
+    expect(monthToDateSpend(dataDir, now)).toBeCloseTo(0.8, 9);
     // an unpriced turn books nothing
     noteSpend(dataDir, row("2026-09-15T11:06:00.000Z", null), new Promise<boolean>(() => {}));
-    expect(monthToDateSpend(dataDir, now)).toBeCloseTo(0.5, 9);
+    expect(monthToDateSpend(dataDir, now)).toBeCloseTo(0.8, 9);
   });
 
   it("counts estimated costs against the cap exactly like reported ones", async () => {
@@ -109,6 +109,32 @@ describe("spend against a monthly cap", () => {
     await flushUsageLedger(dataDir);
     expect(spendState({ budgets: { monthlyUsd: 10 } }, dataDir, now, yes)).toMatchObject({ spentUsd: 9, percent: 90, warn: true, exceeded: false });
     expect(() => assertWithinBudget({ budgets: { monthlyUsd: 9 } }, dataDir, now, yes)).toThrow(expect.objectContaining({ code: "spend_cap" }));
+  });
+
+  it("retains failed concurrent writes at the cap and reconciles a recovered ledger without double counting", async () => {
+    const first = row("2026-09-15T11:10:00.000Z", 0.7);
+    const second = row("2026-09-15T11:11:00.000Z", 0.5);
+    noteSpend(dataDir, first, Promise.resolve(false));
+    noteSpend(dataDir, second, Promise.reject(new Error("synthetic write failure")));
+    noteSpend(dataDir, first, Promise.resolve(false));
+    await Promise.resolve();
+    expect(monthToDateSpend(dataDir, now)).toBeCloseTo(1.2, 9);
+    expect(() => assertWithinBudget({ budgets: { monthlyUsd: 1 } }, dataDir, now, yes)).toThrow(expect.objectContaining({ code: "spend_cap" }));
+    await appendUsage(dataDir, first);
+    const later = new Date(now.getTime() + 60_000);
+    expect(monthToDateSpend(dataDir, later)).toBeCloseTo(1.2, 9);
+    noteSpend(dataDir, first, Promise.resolve(true));
+    await Promise.resolve();
+    expect(monthToDateSpend(dataDir, later)).toBeCloseTo(1.2, 9);
+    expect(monthToDateSpend(dataDir, new Date("2026-10-01T00:00:01Z"))).toBe(0);
+  });
+
+  it("cannot recover failed non-durable usage after a process restart", async () => {
+    noteSpend(dataDir, row("2026-09-15T11:10:00.000Z", 0.7), Promise.resolve(false));
+    await Promise.resolve();
+    expect(monthToDateSpend(dataDir, now)).toBe(0.7);
+    resetSpendCacheForTests();
+    expect(monthToDateSpend(dataDir, now)).toBe(0);
   });
 
   it("is inert without the entitlement or a cap, warns at the threshold, and refuses at the cap", async () => {

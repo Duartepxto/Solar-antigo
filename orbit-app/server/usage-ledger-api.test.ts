@@ -55,7 +55,10 @@ describe("usage ledger through real turns", () => {
     const bots = await (await api("/api/bots")).json() as any;
     const bot = bots.bots.find((item: any) => item.id === botId);
     const task = bot.tasks.find((item: any) => item.id === bot.activeTaskId) ?? bot.tasks[0];
-    expect(task.usage).toMatchObject({ input: 7, output: 3, cachedInput: 4, turns: 2, costSource: "estimated", unpriced: 1, lastTurn: { costUsd: null } });
+    expect(task.usage).toMatchObject({ input: 7, output: 3, turns: 2, costSource: "estimated", unpriced: 1, lastTurn: { costUsd: null } });
+    // The failed request has no cache measurement. The first row's 4 cached
+    // tokens remain in its receipt, but are not full coverage of both turns.
+    expect(task.usage).not.toHaveProperty("cachedInput");
     expect(task.usage.costUsd).toBeCloseTo(turnCost, 12);
     expect(task.usage.estimatedUsd).toBeCloseTo(turnCost, 12);
     const summary = await (await api("/api/usage?groupBy=engine")).json() as any;

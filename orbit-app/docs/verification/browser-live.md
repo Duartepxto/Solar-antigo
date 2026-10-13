@@ -1,5 +1,10 @@
 # Live browser and profiles
 
+Windows acceptance and assistant integration on 2026-10-10 are recorded in
+[`ASSISTENTE-FUNCIONAL-10-10-2026.md`](../../../docs/inventario-solar/ASSISTENTE-FUNCIONAL-10-10-2026.md).
+Private browsers are now available by default; explicit workspace/bot
+opt-outs and Works on Off still apply.
+
 Use installed native engine and Chrome binaries explicitly; the fixture never
 uses the operator's browser profiles, Orbit home, provider logins, or API keys.
 
@@ -126,6 +131,12 @@ ORBIT_VERIFY_CODEX_AUTH=/absolute/path/to/auth.json \
 ORBIT_VERIFY_CODEX_MODEL=your-supported-model \
 node --experimental-strip-types scripts/verify-codex-surface-live.ts
 ```
+
+Add `--acceptance` to run one ordinary local-form request automatically and
+independently inspect its resulting DOM. This still uses real model quota
+and requires the explicit CLI, sign-in and model variables above. The sign-in
+copy belongs to the fixture's app-owned `codex-home`, not its personal config
+source `.codex`. Auto approvals apply only to this disposable bot.
 
 Open the printed preview, select Ziggy, and send ordinary requests without tool
 names: open the printed test page, fill the name, click Say hello and verify

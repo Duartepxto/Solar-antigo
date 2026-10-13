@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { expect, it, vi } from "vitest";
-import { waitForExit } from "./cleanup.ts";
+import { requestedWindowsTreeStop, waitForExit } from "./cleanup.ts";
 
 it("ends a simulated process through its model without addressing an OS pid", async () => {
   const model = Object.assign(new EventEmitter(), {
@@ -11,6 +11,7 @@ it("ends a simulated process through its model without addressing an OS pid", as
   await waitForExit(model as unknown as ChildProcess, { signal: "SIGTERM", graceMs: 1 });
   expect(model.kill).toHaveBeenCalledExactlyOnceWith("SIGTERM");
   expect(model.listenerCount("close")).toBe(0);
+  expect(requestedWindowsTreeStop(model as unknown as ChildProcess)).toBeUndefined();
 });
 
 it("supports the minimal close/kill process models used by fixture tests", async () => {
@@ -37,6 +38,7 @@ it.skipIf(process.platform !== "win32")("closes an owned Windows fixture togethe
     });
     expect(Number.isInteger(engine)).toBe(true);
     await waitForExit(parent, { signal: "SIGTERM", graceMs: 2_000 });
+    expect(requestedWindowsTreeStop(parent)).toBe("SIGTERM");
     expect(parent.exitCode !== null || parent.signalCode !== null).toBe(true);
     for (let retry = 0; retry < 20; retry++) {
       try { process.kill(engine!, 0); } catch { engine = undefined; break; }
@@ -47,4 +49,11 @@ it.skipIf(process.platform !== "win32")("closes an owned Windows fixture togethe
     await waitForExit(parent, { signal: "SIGKILL", graceMs: 500 });
     if (engine) { try { process.kill(engine, "SIGKILL"); } catch { /* already gone */ } }
   }
+});
+
+it("does not credit an already crashed child with a requested Windows stop", async () => {
+  const model = Object.assign(new EventEmitter(), { exitCode: 1, signalCode: null, kill: vi.fn() });
+  await waitForExit(model as unknown as ChildProcess, { signal: "SIGTERM" });
+  expect(model.kill).not.toHaveBeenCalled();
+  expect(requestedWindowsTreeStop(model as unknown as ChildProcess)).toBeUndefined();
 });

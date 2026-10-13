@@ -1,5 +1,6 @@
 package com.orbit.companion.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -43,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbit.companion.core.Connection
+import com.orbit.companion.R
 import com.orbit.companion.core.PairingInvite
 import com.orbit.companion.core.PairingRouteError
 import com.orbit.companion.core.ServerPairingRetryError
@@ -121,6 +124,7 @@ fun PairingScreen(onCancel: () -> Unit) {
     var showingOtherWays by rememberSaveable { mutableStateOf(false) }
 
     val permissionSnapshot by environment.permissions.snapshot.collectAsState()
+    val localNetworkNotice = stringResource(R.string.solar_pairing_local_network_permission)
 
     LaunchedEffect(showingOtherWays) {
         searchedLongEnough = false
@@ -183,6 +187,31 @@ fun PairingScreen(onCancel: () -> Unit) {
         environment.discovery.discover().collect { value = it }
     }
 
+    fun discardPending() {
+        secrets.clear(pending?.handle)
+        pending = null
+        code = ""
+        failure = null
+    }
+
+    fun leavePairing() {
+        if (pairing || secrets.isRedeeming()) return
+        discardPending()
+        onCancel()
+    }
+
+    // Back unwinds this flow in place, like its visible cancel controls.
+    // Do not let the Activity finish while a one-time credential is redeeming.
+    BackHandler {
+        when {
+            pairing || secrets.isRedeeming() -> Unit
+            showingScanner -> showingScanner = false
+            pending != null -> discardPending()
+            showingOtherWays -> showingOtherWays = false
+            else -> leavePairing()
+        }
+    }
+
     if (showingScanner) {
         QrScannerScreen(
             onCancel = { showingScanner = false },
@@ -205,6 +234,14 @@ fun PairingScreen(onCancel: () -> Unit) {
     fun submit(connection: Connection, credential: String, cameFromScanner: Boolean) {
         val selectedHandle = pending?.handle
         val pairRequestId = secrets.pairRequestId(selectedHandle) ?: return
+        val missingNetwork = environment.permissions.localPairingPermissions(connection)
+        if (missingNetwork.isNotEmpty()) {
+            // Preserve the unsubmitted code and request id in memory. A grant
+            // does not authorize redemption: the user confirms again afterwards.
+            failure = localNetworkNotice
+            environment.requestPermissions(missingNetwork)
+            return
+        }
         // Claims the slot for this redemption. It refuses a second submit, and
         // from here the store will not open a slot for an arriving deep link,
         // so the credential being redeemed cannot be replaced under it.
@@ -278,7 +315,7 @@ fun PairingScreen(onCancel: () -> Unit) {
             // the same place. Refused while a redemption is in flight, because a
             // credential that may already have reached the computer must not be
             // abandoned halfway (§6) — the port of `.disabled(!allowsNavigation)`.
-            TextButton(onClick = onCancel, enabled = !pairing) { Text("Not now") }
+            TextButton(onClick = ::leavePairing, enabled = !pairing) { Text("Not now") }
         }
 
         val selected = pending
@@ -299,10 +336,7 @@ fun PairingScreen(onCancel: () -> Unit) {
                 },
                 onCancel = {
                     haptics.play(HapticCue.SELECT)
-                    pending = null
-                    code = ""
-                    secrets.clear(selected.handle)
-                    failure = null
+                    discardPending()
                 },
             )
         } else {
@@ -339,7 +373,8 @@ fun PairingScreen(onCancel: () -> Unit) {
                     Text(
                         text = "Searching this network needs " +
                             "${permissionSnapshot.missingDiscovery.joinToString()}, which is " +
-                            "still off. The QR code and the address below work without it.",
+                            "still off. Scanning a QR code and entering an address do not need " +
+                            "discovery. A local connection may still need local-network access.",
                         fontSize = 13.sp,
                         color = secondaryTint,
                     )

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ModelCatalog, ProviderDriver } from "../contracts.ts";
 import { createOpenAIChatRuntime } from "./openai-chat.ts";
+import { LIST_PRICES, listPriceFor } from "../model-prices.ts";
 
 const DEFAULT_URL = "https://api.mistral.ai/v1";
 const DEFAULT_MODELS: ModelCatalog = {
@@ -8,6 +9,7 @@ const DEFAULT_MODELS: ModelCatalog = {
   options: [
     { id: "mistral-large-latest", label: "Mistral Large (latest)" },
     { id: "mistral-small-latest", label: "Mistral Small (latest)" },
+    { id: "mistral-large-4", label: "Mistral Large 4", contextWindow: 1_000_000 },
   ],
 };
 const configSchema = z.object({
@@ -82,11 +84,16 @@ export const MistralDriver: ProviderDriver<MistralConfig> = {
           const parsed = modelCard.safeParse(row);
           if (!parsed.success || parsed.data.archived || parsed.data.capabilities?.completion_chat === false) continue;
           const card = parsed.data;
+          const priceId = [card.id, ...(card.aliases ?? [])].find(id => LIST_PRICES[id.toLowerCase()]);
+          const listed = priceId && LIST_PRICES[priceId.toLowerCase()];
+          const unit = priceId && listPriceFor(priceId);
           for (const id of [card.id, ...(card.aliases ?? [])]) {
             if (!id.trim() || seen.has(id)) continue;
             seen.add(id);
             options.push({ id, label: id === card.id ? card.name?.trim() || id : id,
-              ...(card.max_context_length ? { contextWindow: card.max_context_length } : {}) });
+              ...(card.max_context_length ? { contextWindow: card.max_context_length } : {}),
+              ...(listed && unit ? { pricing: { ...unit, source: listed.source, asOf: listed.asOf } } : {}),
+            });
           }
         }
         if (options.length) catalog = withConfiguredModel(options);

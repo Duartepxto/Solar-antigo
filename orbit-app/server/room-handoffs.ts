@@ -22,6 +22,23 @@ export const ROOM_HANDOFF_LIMITS = { depth: 4, requests: 24, executions: 48, lif
 const duration = (ms: number) => ms >= 60_000 ? `${Math.floor(ms / 60_000)}m` : `${Math.floor(ms / 1000)}s`;
 const terminal = (n: RoomHandoff) => ["completed", "failed", "cancelled"].includes(n.status);
 
+/** Keep both the evidence at the start and the decision at the end. The full
+ * conversation is stored separately; this bounded coordination excerpt must
+ * not silently remove the conclusion or imply it is the complete output. */
+export function handoffResultExcerpt(text: string): string {
+  const limit = 12_000;
+  if (text.length <= limit) return text;
+  const marker = "\n[Middle of this handoff result omitted; consult the teammate's task conversation for the full output.]\n";
+  const available = limit - marker.length;
+  const headSize = Math.floor(available * 0.6);
+  let head = text.slice(0, headSize);
+  let tail = text.slice(-(available - headSize));
+  // Do not cut an emoji's UTF-16 pair at either excerpt boundary.
+  if (head.charCodeAt(head.length - 1) >= 0xd800 && head.charCodeAt(head.length - 1) <= 0xdbff) head = head.slice(0, -1);
+  if (tail.charCodeAt(0) >= 0xdc00 && tail.charCodeAt(0) <= 0xdfff) tail = tail.slice(1);
+  return head + marker + tail;
+}
+
 export interface RoomHandoffHooks {
   /** Recheck addresses and route permission immediately before every dispatch. */
   validate(node: RoomHandoff, parent?: RoomHandoff): string | undefined;
@@ -55,6 +72,24 @@ export class RoomHandoffs {
       const ids = new Map(saved.map(n => [n.id, n]));
       if (ids.size !== saved.length || saved.some(n => !ids.has(n.rootId) || ids.get(n.rootId)?.parentId ||
         (n.parentId && (!ids.has(n.parentId) || ids.get(n.parentId)?.rootId !== n.rootId)))) throw new Error("Invalid room handoff tree");
+      // Every parent chain must actually reach its declared root. Checking
+      // references alone admits disconnected cycles and roots claiming a
+      // different root, which later recurse indefinitely during settlement.
+      const rooted = new Set<string>();
+      for (const node of saved) {
+        const visiting = new Set<string>();
+        let current = node;
+        while (!rooted.has(current.id)) {
+          if (visiting.has(current.id)) throw new Error("Invalid room handoff ancestry");
+          visiting.add(current.id);
+          if (!current.parentId) {
+            if (current.id !== current.rootId) throw new Error("Invalid room handoff root");
+            break;
+          }
+          current = ids.get(current.parentId)!;
+        }
+        for (const id of visiting) rooted.add(id);
+      }
       for (const n of saved) {
         if (!terminal(n)) { n.status = "failed"; n.result = "Interrupted by server restart; not replayed."; }
         this.nodes.set(n.id, n);
@@ -258,6 +293,7 @@ export class RoomHandoffs {
     if (remaining < this.limits.minRunwayMs) {
       throw new Error(`Room handoff budget exhausted: only ${duration(Math.max(remaining, 0))} of the ${duration(this.limits.lifetimeMs)} tree lifetime remains`);
     }
+    if (terminal(parent)) throw new Error("The originating room task has ended; start a new request");
     // Retain a bounded audit history without evicting active requests.
     if (this.nodes.size >= 1000) {
       const oldRoots = [...this.nodes.values()].filter(n => !n.parentId && terminal(n)).sort((a, b) => a.createdAt - b.createdAt);
@@ -405,7 +441,7 @@ export class RoomHandoffs {
       this.controllers.set(n.id, controller);
       void this.hooks.run(n, resumed, controller.signal).then(result => {
         if (terminal(n)) return;
-        n.result = result.text.slice(0, 12_000);
+        n.result = handoffResultExcerpt(result.text);
         if (this.children(n.id).length > childCount) n.status = "waiting";
         else if (!result.ok) this.cancelTree(n, n.result || "Room agent failed", "failed");
         else { n.status = "completed"; this.stampProgress(root); }

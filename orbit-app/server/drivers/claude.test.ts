@@ -79,6 +79,7 @@ function connectSocket(path: string): Promise<Socket> {
 function answerQueue(conn: ReturnType<typeof connect>) {
   const waiters: Array<(msg: any) => void> = [];
   let buf = "";
+  conn.setEncoding("utf8");
   conn.on("data", (chunk) => {
     buf += chunk;
     let nl;
@@ -326,6 +327,34 @@ describe("ClaudeDriver.decodeConfig", () => {
       expect(candidates).toHaveLength(2);
       expect(candidates[1]).toMatch(/orbit-perm-[0-9a-f]{16}\.sock$/);
       expect(candidates[1]).not.toBe(candidates[0]);
+    }
+  });
+
+  it("preserves a Portuguese question split across permission-broker byte chunks", async () => {
+    const question = "Já está pronto? 🪐";
+    let observed: unknown;
+    const broker = await createPermissionBroker({
+      socketPaths: brokerSocketCandidates("utf8-question"),
+      onAsk: ask => { observed = ask.input; },
+      onResolve: () => {},
+    });
+    const conn = await connectSocket(broker.socketPath);
+    try {
+      const nextAnswer = answerQueue(conn);
+      const encoded = Buffer.from(JSON.stringify({
+        t: "ask", kind: "question", id: "utf8", tool: "ask_user", input: { question },
+      }) + "\n");
+      const split = encoded.indexOf(Buffer.from("á")) + 1;
+      conn.write(encoded.subarray(0, split));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      conn.write(encoded.subarray(split));
+      await expect.poll(() => observed).toEqual({ question });
+      const answered = nextAnswer();
+      expect(broker.answer("utf8", "answer", "Está aprovado.")).toBe(true);
+      expect(await answered).toMatchObject({ behavior: "answer", message: "Está aprovado." });
+    } finally {
+      conn.destroy();
+      broker.close();
     }
   });
 

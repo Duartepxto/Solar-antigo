@@ -75,6 +75,12 @@ the once-a-month notices surviving a restart.
   cost; it is not treated as a known zero-dollar call. Already-started calls
   may finish above the cap, which stops subsequent calls rather than reserving
   an unknown future cost.
+- A failed ledger append no longer removes already-known spend from the
+  current process's monthly cap. It remains in memory and is reconciled
+  against later reads by settlement key, without charging a recovered row
+  twice. A new month retires older retained entries. This protection is not
+  durable: restarting before the failed row reaches disk loses that record;
+  unavailable storage still requires recovery rather than invented history.
 - Rows written before estimates existed keep `costUsd: null` and stay
   unpriced; only turns settled after the upgrade are estimated, so the month
   of the upgrade can undercount Codex/OpenRouter spend.

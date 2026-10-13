@@ -211,7 +211,7 @@ it("withholds a cross-team result if the owner revokes access while it runs", ()
   expect(messages.some((m: any) => m.tool?.name.includes("Result withheld"))).toBe(true);
 }), 45_000);
 
-it.each(["rename", "delete"])("withholds an in-flight result after team %s and recreation", mode => withRooms(async f => {
+it.each(["rename", "delete"])("protects in-flight work during team identity changes (%s)", mode => withRooms(async f => {
   await f.api(`/api/bots/${f.target.id}`, { section: "Engineering" }, "PATCH");
   await f.api(`/api/bots/${f.sender.id}`, { chiefOfStaff: true, managedSections: ["Engineering"], acknowledgePeerScope: true }, "PATCH");
   f.plan[f.target.id] = { delayMs: 5000, reply: "PRIVATE_RESULT_AFTER_TEAM_RECREATION" };
@@ -222,6 +222,16 @@ it.each(["rename", "delete"])("withholds an in-flight result after team %s and r
   const move = (section: string) => request(`/api/bots/${f.target.id}`, { method: "PATCH", headers: { Origin: f.session.info.url },
     body: JSON.stringify({ section }) }, f.session.info.url);
   await move("Parking");
+  if (mode === "rename") {
+    // Renaming now refuses active work instead of mutating the team's
+    // identity beneath it. Keep the permission grant intact on refusal.
+    await expect(f.api("/api/sidebar-sections?section=Engineering", { name: "Renamed" }, "PATCH"))
+      .rejects.toThrow("Stop this team's active work before renaming the team");
+    const chief = (await f.api("/api/bots?messages=0")).bots.find((bot: any) => bot.id === f.sender.id);
+    expect(chief.managedSections).toEqual(["Engineering"]);
+    expect((await f.wait()).status).toBe("settled");
+    return;
+  }
   await f.api("/api/sidebar-sections?section=Engineering", mode === "rename" ? { name: "Renamed" } : {}, mode === "rename" ? "PATCH" : "DELETE");
   await f.api("/api/sidebar-sections", { name: "Engineering" });
   await move("Engineering");

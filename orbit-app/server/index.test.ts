@@ -22,7 +22,7 @@ import {
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
+import { removeTempDir, requestedWindowsTreeStop, waitForExit } from "./testing/cleanup.ts";
 import { startFakeHttpMcp } from "./testing/fake-http-mcp-server.ts";
 import { freePortBlock } from "./testing/ports.ts";
 import { openSse } from "./testing/sse.ts";
@@ -181,13 +181,15 @@ const managedVpsNameForFixture = (botId: string): string => {
 const expectStoppedTestServerCleanly = (serverChild: ChildProcess, capturedStderr: string): void => {
   // POSIX delivers SIGTERM to the server's graceful-shutdown handler, which
   // exits with code 0. Windows cannot deliver that handler signal: Node maps
-  // child.kill("SIGTERM") to TerminateProcess and reports the requested stop
-  // through signalCode instead. Accept only that exact Windows teardown shape
-  // so a non-zero crash or SIGKILL escalation still fails the feature test.
+  // child.kill("SIGTERM") to TerminateProcess. Tree cleanup uses taskkill and
+  // instead reports code 1: require its successful, exact-process receipt.
+  // A crash or a SIGKILL escalation must still fail the feature test.
   const requestedWindowsStop = process.platform === "win32"
-    && serverChild.exitCode === null
-    && serverChild.signalCode === "SIGTERM";
-  expect(serverChild.exitCode === 0 || requestedWindowsStop, capturedStderr).toBe(true);
+    && ((serverChild.exitCode === null && serverChild.signalCode === "SIGTERM")
+      || (serverChild.exitCode === 1 && serverChild.signalCode === null && requestedWindowsTreeStop(serverChild) === "SIGTERM"));
+  expect(serverChild.exitCode === 0 || requestedWindowsStop,
+    `${capturedStderr}\nstop code=${serverChild.exitCode} signal=${serverChild.signalCode} treeStop=${requestedWindowsTreeStop(serverChild)}`,
+  ).toBe(true);
 };
 
 const waitForIsolatedServer = async (
@@ -1737,7 +1739,7 @@ describe("harness HTTP API", () => {
       const seen = JSON.parse(readFileSync(oneShotTextDump, "utf8"));
       const outputAt = seen.argv.indexOf("--output-format");
       expect(outputAt).toBeGreaterThan(-1);
-      expect(seen.argv[outputAt + 1]).toBe("text");
+      expect(seen.argv[outputAt + 1]).toBe("json");
       expect(seen.prompt).toContain("Name the conversation");
       await new Promise((resolve) => setTimeout(resolve, 150));
       const state = (await api("GET", "/api/bots?messages=0")).body.bots.find(

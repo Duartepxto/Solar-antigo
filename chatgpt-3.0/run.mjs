@@ -114,6 +114,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         });
       },
     }],
+    cacheDir: resolve(orbit, '.orbit-scratch/node_modules/.vite'),
     server: { host: '127.0.0.1', port: smoke ? 0 : uiPort, strictPort: true, watch: { ignored: ['**/dist-native/**', '**/release*/**', '**/electron/vendor/**'] } },
   });
   await web.listen();

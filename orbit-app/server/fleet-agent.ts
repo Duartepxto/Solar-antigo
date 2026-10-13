@@ -5,6 +5,7 @@
 // audit log, and nothing arrives as a command string.
 import { appendFileSync, chmodSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { readBody as readJsonBody } from "./harness/http.ts";
 import { dirname } from "node:path";
 import { defaultFleetDeps, executePlan, loadRegistry, markProvisioningFailed, planFleetAction, type FleetDeps, type FleetInput } from "./fleet-cli.ts";
 import { assertSlug, fleetLayout, fleetUser, openRouterModelIds, workspaceDataDir, type FleetLayout, type FleetWorkspace } from "./fleet.ts";
@@ -30,24 +31,9 @@ export interface FleetWorkspaceView extends FleetWorkspace {
 
 const MAX_BODY = 256 * 1024;
 
-function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
-  return new Promise((resolve, reject) => {
-    let text = "";
-    req.on("data", (chunk: Buffer) => {
-      text += chunk.toString("utf8");
-      if (text.length > MAX_BODY) reject(Object.assign(new Error("request too large"), { status: 413 }));
-    });
-    req.on("end", () => {
-      if (!text.trim()) return resolve({});
-      try {
-        const value: unknown = JSON.parse(text);
-        resolve(value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {});
-      } catch {
-        reject(Object.assign(new Error("body must be JSON"), { status: 400 }));
-      }
-    });
-    req.on("error", reject);
-  });
+async function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+  const value: unknown = await readJsonBody(req, MAX_BODY);
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
 const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean) : []);

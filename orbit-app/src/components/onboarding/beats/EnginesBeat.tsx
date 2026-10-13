@@ -140,7 +140,7 @@ export function EnginesBeat({
               const open = expanded === instance.instanceId;
               return (
                 <div key={instance.instanceId} className="animate-rise border-b border-ink/[0.08]" style={staggerIndex(i)}>
-                  <div className="flex items-center gap-2.5 py-2.5" title={v ?? undefined}>
+                  <div className="solar-welcome-engine-row flex items-center gap-2.5 py-2.5" title={v ?? undefined}>
                     <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-ink">{instance.displayName}</span>
                     <StatusPill ready={ok} />
                     {!ok && (

@@ -25,7 +25,9 @@ export function restoredWorkspaceConfig(portable: unknown, destination: unknown)
 export function excludedWorkspaceAuthPath(path: string): boolean {
   // Machine/provider-specific execution grants are not portable template data.
   if (/^command-allowlist\.json(?:$|\.\d+\.[0-9a-f-]+\.tmp$)/.test(path)) return true;
-  return /^(?:(?:providers|caddy|chrome-profile|\.agent-browser)(?:\/|$)|workspace-credentials\.json$|external-runtimes\.json$|browser-engine-key$)/.test(path) ||
+  // The managed Codex home links sessions to this device's external CLI home.
+  // Preserve it locally, like provider login homes, rather than exporting links.
+  return /^(?:(?:providers|codex-home|caddy|chrome-profile|\.agent-browser)(?:\/|$)|workspace-credentials\.json$|external-runtimes\.json$|browser-engine-key$)/.test(path) ||
     /^(?:config\.json|webhooks\.json|workspace-credentials\.json|external-runtimes\.json|browser-engine-key|sessions\.json|tunnel-account\.json)\.\d+(?:\.[0-9a-f-]+)?\.tmp$/.test(path) ||
     /^(?:vm-home|vm-homes\/[^/]+)\/\.browser-profiles(?:\/|$)/.test(path);
 }

@@ -68,11 +68,13 @@ it("bounds a real roster, retrieves its tail, isolates owners and expires stoppe
     expect(preview.length).toBeLessThan(17_000);
     const id = /id "(r-[0-9a-f-]{36})"/.exec(preview)?.[1];
     expect(id).toBeTruthy();
-    const read = await first.tool("tool_result_read", { id, offset: 16_000 });
+    const previewEnd = Number(/and offset (\d+)/.exec(preview)?.[1]);
+    expect(previewEnd).toBeGreaterThan(0);
+    const read = await first.tool("tool_result_read", { id, offset: previewEnd });
     expect(read.isError).toBeFalsy();
     expect(read.content[0].text.length).toBeLessThan(17_000);
     let tail = "";
-    let offset = 16_000;
+    let offset = previewEnd;
     while (true) {
       const page = await api(`/api/internal/tool-result?id=${id}&offset=${offset}`, undefined, first.token);
       expect(page.status).toBe(200);
@@ -83,7 +85,7 @@ it("bounds a real roster, retrieves its tail, isolates owners and expires stoppe
       offset = page.body.nextOffset;
     }
     expect(tail).toMatch(/Roster-\d+/);
-    for (let i = 0; i < 70; i++) expect(preview.slice(0, 16_000) + tail).toContain(`Roster-${String(i).padStart(2, "0")}`);
+    for (let i = 0; i < 70; i++) expect(preview.slice(0, previewEnd) + tail).toContain(`Roster-${String(i).padStart(2, "0")}`);
     evidence.push({ preview, read, tailIncludesLastBot: true });
     expect((await api(`/api/internal/tool-result?id=${id}`)).status).toBe(401);
     const sibling = (await api(`/api/bots/${bot.id}/tasks`, { title: "Sibling scope" })).body.task;

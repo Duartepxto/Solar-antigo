@@ -9,7 +9,7 @@ import { useUsageCurrency, usageCurrencyNote } from '@/lib/usage-currency';
 import { formatEuro } from '@/lib/usage-currency';
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import { cachedUsageNote, formatTokens, formatCost, hasFiniteCost, headlineTokens, tokensColumnLabel } from "@/lib/usage";
+import { cachedUsageNote, formatTokens, formatCost, hasFiniteCost, headlineTokens, tokensColumnLabel, tokensColumnValue } from "@/lib/usage";
 import { Card } from "./SettingsPrimitives";
 import { UsageBudgetCards, type BudgetState } from "./UsageBudget";
 
@@ -116,7 +116,7 @@ export function UsageHistoryTable({ summary }: { summary: UsageSummary }) {
           <span className="truncate text-ink" title={group.label}>{usageGroupLabel(summary.groupBy, group)}</span>
           <span className="text-right tabular-nums text-ink/55">{group.turns}</span>
           <span className="text-right tabular-nums text-ink" title={t("usage.history.tokenSplit", { input: formatTokens(group.input), output: formatTokens(group.output), cached: hasFiniteCost(group.cachedInput) ? formatTokens(group.cachedInput) : t('usage.cacheUnknown') })}>
-            {formatTokens(headlineTokens(group))}
+            {formatTokens(tokensColumnValue(group, summary.total))}
           </span>
           <CostCell group={group} />
           {billable && <span className="text-right tabular-nums text-ink">{money(group.billableUsd)}</span>}

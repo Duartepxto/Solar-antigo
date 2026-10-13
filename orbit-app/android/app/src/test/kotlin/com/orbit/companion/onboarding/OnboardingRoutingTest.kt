@@ -2,6 +2,7 @@ package com.orbit.companion.onboarding
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -27,6 +28,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlinx.coroutines.CompletableDeferred
 
 /**
  * What the first run actually does, read off the mounted composition.
@@ -119,6 +121,71 @@ class OnboardingRoutingTest {
 
         compose.onNodeWithText("Pair with a computer").assertIsDisplayed()
         assertEquals(emptyList(), scene.asked(), "reaching the QR screen asked for something")
+    }
+
+    @Test
+    fun `system Back leaves pairing for the unpaired home instead of finishing the activity`() {
+        val scene = OnboardingScene(welcomeSeen = true)
+        mount(scene)
+        compose.onNodeWithText(OnboardingCopy.UNPAIRED_HOME_CONNECT).performClick()
+        compose.waitForIdle()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        assertFalse(compose.activity.isFinishing, "Back escaped the pairing flow")
+        compose.onNodeWithText(OnboardingCopy.UNPAIRED_HOME_TITLE).assertIsDisplayed()
+        assertEquals(emptyList(), scene.asked())
+    }
+
+    @Test
+    fun `system Back closes the scanner before leaving the pairing form`() {
+        val scene = OnboardingScene(welcomeSeen = true)
+        mount(scene)
+        compose.onNodeWithText(OnboardingCopy.UNPAIRED_HOME_CONNECT).performClick()
+        compose.onNodeWithText("Scan QR Code").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Cancel").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        assertFalse(compose.activity.isFinishing, "Back escaped the scanner")
+        compose.onNodeWithText("Pair with a computer").assertIsDisplayed()
+        assertTrue(scene.session.pairingRequested.value, "scanner Back cancelled the whole pairing")
+    }
+
+    @Test
+    fun `system Back collapses discovery and stops its browse before leaving pairing`() {
+        val scene = OnboardingScene(welcomeSeen = true)
+        mount(scene)
+        compose.onNodeWithText(OnboardingCopy.UNPAIRED_HOME_CONNECT).performClick()
+        compose.onNodeWithText("Other ways to connect").performClick()
+        compose.waitForIdle()
+        assertEquals(1, scene.discovery.active.value)
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        assertEquals(0, scene.discovery.active.value, "Back left discovery running")
+        compose.onNodeWithText("Pair with a computer").assertIsDisplayed()
+        assertFalse(compose.activity.isFinishing)
+    }
+
+    @Test
+    fun `system Back cannot abandon a credential redemption in flight`() {
+        val gate = CompletableDeferred<Unit>()
+        val scene = OnboardingScene(welcomeSeen = true, pairSuspendsUntil = gate)
+        mount(scene)
+        scene.session.receivePairingURL("orbit://pair?address=127.0.0.1:8810&code=123456")
+        compose.waitForIdle()
+        compose.onNodeWithText("Pair with this computer").performClick()
+        compose.waitForIdle()
+        try {
+            compose.onNodeWithText("Not now").assertIsNotEnabled()
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.waitForIdle()
+            assertFalse(compose.activity.isFinishing, "Back abandoned the in-flight credential")
+            assertTrue(scene.session.pairingRequested.value)
+            assertEquals(1, scene.pairingCalls.size)
+        } finally {
+            gate.complete(Unit)
+            compose.waitForIdle()
+        }
     }
 
     @Test

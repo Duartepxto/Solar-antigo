@@ -75,7 +75,9 @@ export function IslandSurface() {
   const root = useRef<HTMLDivElement>(null), input = useRef<HTMLInputElement>(null);
 
   const sun = useMemo(() => islandSun(bots), [bots]);
-  const voice = useSolarDictation(draft, setDraft, sun?.id);
+  // Only a successful completed recording sends a spoken turn. Cancellation,
+  // recipient changes and recognition errors keep the draft without sending.
+  const voice = useSolarDictation(draft, setDraft, sun?.id, (text) => { void send(text, true); });
 
   const refresh = useCallback(async () => {
     try {
@@ -163,13 +165,6 @@ export function IslandSurface() {
       setFailed(t("orbitShell.quick.sendFailed", { error: cause instanceof Error ? cause.message : String(cause) }));
     }
   };
-
-  // Talking ends the moment the person stops: what was heard goes to Jarvis.
-  const wasListening = useRef(false);
-  useEffect(() => {
-    if (wasListening.current && !voice.listening && draft.trim()) void send(draft, true);
-    wasListening.current = voice.listening;
-  }, [voice.listening]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // the settled answer, read aloud once in Jarvis's own voice
   const shown = stripPointTags(reply);

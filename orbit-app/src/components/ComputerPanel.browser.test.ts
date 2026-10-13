@@ -36,8 +36,9 @@ describe("Browser panel installation access", () => {
     expect(browserAvailable(config)).toBe(false);
   });
 
-  it("retains the global and per-bot opt-in gates", () => {
-    expect(render({ browserEngine: missing })).not.toContain("Install the browser engine");
+  it("offers the default browser but retains explicit workspace and bot opt-outs", () => {
+    expect(render({ browserEngine: missing })).toContain("Install the browser engine");
+    expect(render({ features: { browser: false }, browserEngine: missing })).not.toContain("Install the browser engine");
     expect(render({ features: { browser: true }, browserEngine: missing }, false)).not.toContain("Install the browser engine");
   });
 

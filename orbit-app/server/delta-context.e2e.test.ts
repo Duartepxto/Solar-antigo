@@ -534,6 +534,8 @@ it("gives a replacement session the full assignment when a result returns after 
   await f.send("Please have Engineering build the export.");
   await leadRunning(f);
   const original = cursor(f);
+  await expect.poll(async () => (await f.api("/api/bots")).bots.find((bot: any) => bot.id === f.chief.id)?.waitingForTeammates,
+    { timeout: 15_000 }).toBe(true);
   f.setMode("resume=dead-session");
   await f.send("Meanwhile, what is 2+2?");
   await expect.poll(() => f.turns().length, { timeout: 20_000 }).toBe(3);

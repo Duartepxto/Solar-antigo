@@ -761,10 +761,11 @@ export function routinesInConversationEnabled(cfg: AppConfig): boolean {
   return cfg.features?.routinesInConversation === true;
 }
 
-/** Workspace-level gate for the experimental built-in browser. A bot's own
- * switch sits under it, so either can withhold the browser. */
+/** The private built-in browser is available by default. An explicit workspace
+ * opt-out and each bot's own switch still withhold it; this does not grant
+ * access to the host desktop or the person's signed-in browser. */
 export function builtInBrowserEnabled(cfg: AppConfig): boolean {
-  return cfg.features?.browser === true;
+  return cfg.features?.browser !== false;
 }
 
 /** Opt-in computer sharing: the routes, the agent tools, the advertised

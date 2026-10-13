@@ -36,7 +36,11 @@ export async function verifyBrowserRecovery(input: {
     const idle = delay(65_000);
     console.log("Native form filled; waiting across the production idle boundary while testing the real preview.");
 
-    const page = await browser.newPage({ viewport: { width: 1280, height: 850 } });
+    // Accessible names below use the English catalog, regardless of the
+    // Windows installation language. Each context has disposable storage.
+    const page = await browser.newPage({ locale: "en-US", viewport: { width: 1280, height: 850 } });
+    page.on("pageerror", (error: Error) => console.error("Browser preview error:", error.message));
+    page.on("requestfailed", (request: any) => console.error("Browser preview request failed:", request.url(), request.failure()?.errorText));
     await page.addInitScript(() => {
       const Original = window.EventSource;
       (window as any).fixtureSources = [];
@@ -51,8 +55,16 @@ export async function verifyBrowserRecovery(input: {
     page.on("request", (request: any) => {
       if (request.url().endsWith("/browser/action")) actions.push(request.postDataJSON());
     });
-    await page.goto(input.previewUrl);
-    await page.getByRole("img", { name: "Live bot browser" }).waitFor({ timeout: 30_000 });
+    // Await the UI's actual ready state below, rather than unrelated page
+    // resources (such as a font) delaying the window load event.
+    await page.goto(input.previewUrl, { waitUntil: "commit", timeout: 30_000 });
+    try {
+      await page.getByRole("img", { name: "Live bot browser" }).waitFor({ timeout: 120_000 });
+    } catch (error) {
+      console.error("Browser preview state:", (await page.locator("body").innerText({ timeout: 5_000 })).slice(0, 2_000));
+      await page.screenshot({ path: input.screenshotPath });
+      throw error;
+    }
     await page.getByRole("button", { name: "Take control", exact: true }).click();
     await page.getByRole("button", { name: "Return to bot", exact: true }).waitFor();
     await page.getByRole("textbox", { name: "Browser address" }).fill(input.testPage);

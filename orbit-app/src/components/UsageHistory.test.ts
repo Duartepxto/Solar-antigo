@@ -8,6 +8,21 @@ const group = (key: string, label: string, over: Partial<UsageSummary["groups"][
 });
 
 describe("usage history table", () => {
+  it("keeps one token unit across rows and total when only some rows know their cache split", () => {
+    const summary: UsageSummary = {
+      from: "2026-10-01", to: "2026-10-10", groupBy: "bot",
+      groups: [group("known", "Known", { input: 100, output: 10, cachedInput: 80 }), group("unknown", "Unknown", { input: 200, output: 20, cachedInput: undefined })],
+      total: group("total", "total", { input: 300, output: 30, cachedInput: undefined }),
+    };
+    const html = renderToStaticMarkup(createElement(UsageHistoryTable, { summary }));
+    expect(html).not.toContain("New tokens");
+    expect(html).toContain(">110</span>");
+    expect(html).toContain(">220</span>");
+    expect(html).toContain(">330</span>");
+    // The row retains its known cache breakdown without changing the column's unit.
+    expect(html).toContain("80 of the input re-read from cache");
+  });
+
   it("shows cached and full token totals for the selected history period", () => {
     const total = group("total", "total", { input: 499_000_000, output: 600_000, cachedInput: 497_500_000 });
     const summary: UsageSummary = { from: "2026-09-01", to: "2026-09-30", groupBy: "bot", groups: [total], total };

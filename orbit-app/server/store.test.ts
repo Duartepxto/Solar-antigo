@@ -617,7 +617,7 @@ describe("Store", () => {
       costUsd: null,
       turns: 1,
     });
-    // a driver that never reports the cached share leaves it unchanged
+    // A missing share invalidates a full aggregate cache breakdown.
     store.addTaskUsage(bot.id, bot.threadId, { input: 800, output: 100, costUsd: null });
     store.addTaskUsage(bot.id, bot.threadId, { input: Number.NaN, output: -20, cachedInput: -5, costUsd: null });
     // Providers occasionally report a cache count larger than input; keep the
@@ -630,10 +630,10 @@ describe("Store", () => {
     expect(reloaded.taskByThread(bot.id, bot.threadId)?.usage).toMatchObject({
       input: 2010,
       output: 400,
-      cachedInput: 1010,
       costUsd: null,
       turns: 4,
     });
+    expect(reloaded.taskByThread(bot.id, bot.threadId)?.usage).not.toHaveProperty("cachedInput");
     // the last turn stands on its own, and the context reading survives a turn that did not report one
     const withContext = store.addTaskUsage(bot.id, bot.threadId, { input: 300, output: 40, cachedInput: 250, costUsd: null, context: { tokens: 142_000, window: 272_000 } });
     expect(withContext).toMatchObject({ lastTurn: { input: 300, output: 40, cachedInput: 250, costUsd: null }, context: { tokens: 142_000, window: 272_000 } });
@@ -2178,6 +2178,30 @@ describe("Store redacts bot-authored secrets on write", () => {
 });
 
 describe("Store task usage", () => {
+  it("keeps cache coverage unknown across mixed measured and unmeasured turns, in either order", () => {
+    for (const knownFirst of [true, false]) {
+      const store = new Store(selection);
+      const bot = store.createBot();
+      const known = { input: 100, output: 5, cachedInput: 80, costUsd: null };
+      const unknown = { input: 100, output: 5, costUsd: null };
+      store.addTaskUsage(bot.id, bot.threadId, knownFirst ? known : unknown);
+      const total = store.addTaskUsage(bot.id, bot.threadId, knownFirst ? unknown : known);
+      expect(total).toMatchObject({ input: 200, output: 10 });
+      expect(total).not.toHaveProperty("cachedInput");
+      expect(new Store(selection).taskByThread(bot.id, bot.threadId)?.usage).not.toHaveProperty("cachedInput");
+    }
+  });
+
+  it("distinguishes explicitly measured zero input from an unmeasured turn", () => {
+    const store = new Store(selection);
+    const bot = store.createBot();
+    store.addTaskUsage(bot.id, bot.threadId, { input: 100, output: 5, cachedInput: 80, costUsd: null });
+    expect(store.addTaskUsage(bot.id, bot.threadId, { input: 0, output: 0, cachedInput: 0, costUsd: null })).toMatchObject({ input: 100, cachedInput: 80 });
+    expect(store.addTaskUsage(bot.id, bot.threadId, { input: 0, output: 0, costUsd: null })).not.toHaveProperty("cachedInput");
+    expect(store.addTaskUsage(bot.id, bot.threadId, { costUsd: null })).not.toHaveProperty("cachedInput");
+    expect(store.addTaskUsage(bot.id, bot.threadId, { input: 100, output: 5, cachedInput: 80, costUsd: null })).not.toHaveProperty("cachedInput");
+  });
+
   beforeEach(() => {
     rmSync(DATA_DIR, { recursive: true, force: true });
   });

@@ -2,6 +2,7 @@
 // server/routes/. Pure helpers only: nothing here reads harness state, so a
 // route module can import them directly.
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { StringDecoder } from "node:string_decoder";
 
 const jsonHooks = new WeakMap<ServerResponse, (body: unknown) => unknown>();
 const parsedBodies = new WeakMap<IncomingMessage, unknown>();
@@ -30,11 +31,15 @@ export function json(res: ServerResponse, status: number, body: unknown) {
 export function readBody(req: IncomingMessage, limit = 1_000_000): Promise<any> {
   return new Promise((resolve, reject) => {
     let data = "";
+    // A network chunk may stop inside a multibyte character. Decoding each
+    // Buffer independently silently replaces Portuguese accents and emoji.
+    const decoder = new StringDecoder("utf8");
     let bytes = 0;
     let done = false;
     const fail = (status: number, msg: string) => {
       if (done) return;
       done = true;
+      data = "";
       const err = Object.assign(new Error(msg), { status });
       reject(err);
     };
@@ -47,10 +52,11 @@ export function readBody(req: IncomingMessage, limit = 1_000_000): Promise<any> 
         // receiving the useful 413 response.
         return fail(413, "body too large");
       }
-      data += c;
+      data += typeof c === "string" ? c : decoder.write(c);
     });
     req.on("end", () => {
       if (done) return;
+      data += decoder.end();
       let body: any;
       try {
         body = data ? JSON.parse(data) : {};

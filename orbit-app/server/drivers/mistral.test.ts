@@ -112,6 +112,20 @@ describe("Mistral provider", () => {
     }
   });
 
+  it("prices only aliases that the live catalog associates with a known concrete model", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ data: [
+      { id: "mistral-large-4", aliases: ["mistral-large-latest"], capabilities: { completion_chat: true } },
+      { id: "mistral-unknown", capabilities: { completion_chat: true } },
+    ] })));
+    const instance = await create();
+    try {
+      await instance.refreshModels?.();
+      expect(instance.models.options.find(model => model.id === "mistral-large-latest")?.pricing)
+        .toMatchObject({ inputPerMillion: 0.68, cachedInputPerMillion: 0.07, outputPerMillion: 2.09 });
+      expect(instance.models.options.find(model => model.id === "mistral-unknown")).not.toHaveProperty("pricing");
+    } finally { await instance.dispose(); }
+  });
+
   it("extracts chunked text for non-streamed generation too", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url) => String(url).endsWith("/models")
       ? Response.json({ data: [] })

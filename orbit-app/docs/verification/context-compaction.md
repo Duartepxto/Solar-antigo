@@ -67,8 +67,11 @@ previous summary forward. Source text is split without breaking UTF-8; the
 old head/tail cut that skipped the middle is removed. Multiple batches may
 use multiple helper calls inside the same overall timeout. Summaries
 are capped at 6,000 bytes and retain recent source corrections. The helper may
-incur provider usage; its one-shot cost is not separately reported by the current
-provider interface. Summaries are not verified facts and can omit details.
+incur provider usage. When the driver reports it through `onUsage`, each helper
+call is booked independently in the monthly ledger under the actual helper
+model, with a budget check before the call. Missing measurements or a provider
+that does not report helper usage still limit the ledger's coverage; they are
+not proof of a free call. Summaries are not verified facts and can omit details.
 
 This slice covers direct threads. It does not add channel compaction, change
 provider-native compaction, prove live-model summary quality, or ship native

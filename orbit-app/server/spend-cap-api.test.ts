@@ -144,6 +144,42 @@ describe("spend cap and prices through real turns", () => {
     expect(rows()[0]!.costSource).toBe(costSource);
   }, 60_000);
 
+  it.each(["bot", "channel"])("returns an accepted %s send receipt at the cap without starting or charging another turn", async (surface) => {
+    const { bot } = await control(["new-bot", "--name", "Receipt at cap"]);
+    let endpoint = `/api/bots/${bot.id}/messages`;
+    let threadId = bot.threadId;
+    let waitArgs = ["--bot", bot.id];
+    if (surface === "channel") {
+      const created = await api("/api/groups", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "Receipt channel", memberIds: [bot.id],
+          setup: { bulletin: "", defaultResponder: { kind: "member", botId: bot.id } } }),
+      });
+      expect(created.status).toBe(201);
+      const { group } = await created.json() as any;
+      endpoint = `/api/groups/${group.id}/messages`;
+      threadId = group.threadId;
+      waitArgs = ["--channel", group.id];
+    }
+    expect((await put({ budgets: { monthlyUsd: 0.01 } })).status).toBe(200);
+    const body = { text: "Run this once", threadId, sendId: "receipt-at-cap-0001" };
+    const resend = (value = body) => api(endpoint, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(value),
+    });
+    const accepted = await resend();
+    expect(accepted.status).toBe(202);
+    const original = await accepted.json() as any;
+    expect((await control(["wait", ...waitArgs, "--timeout", "30"])).status).toBe("settled");
+    const retry = await resend();
+    expect(retry.status).toBe(202);
+    expect(await retry.json()).toMatchObject({ message: { id: original.message.id } });
+    const refused = await resend({ ...body, sendId: "receipt-at-cap-0002" });
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toMatchObject({ code: "spend_cap" });
+    const usage = await (await api("/api/usage")).json() as any;
+    expect(usage.total.turns).toBe(1);
+    expect(usage.total.costUsd).toBeCloseTo(0.01);
+  }, 60_000);
+
   it("refuses the next turn once the month reaches the cap, prices turns, and lets a raised cap through", async () => {
     const edition = (await (await api("/api/edition")).json()) as { edition: string; features: string[] };
     expect(edition).toMatchObject({ edition: "enterprise", features: ["billing", "budgets"] });

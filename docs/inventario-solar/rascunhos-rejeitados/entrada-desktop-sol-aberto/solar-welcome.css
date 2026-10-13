@@ -1,0 +1,121 @@
+.solar-welcome {
+  --welcome-ink: var(--color-ink, #f2f3f5);
+  --welcome-muted: var(--solar-muted, #a1a7b3);
+  --welcome-gold: var(--color-accent, #ddbd89);
+  --welcome-field: var(--color-app, #050607);
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: safe center;
+  padding: 32px;
+  overflow-y: auto;
+  background: var(--welcome-field);
+  color: var(--welcome-ink);
+  font-family: var(--font-sans);
+  color-scheme: dark;
+}
+.solar-welcome--embedded { position: relative; height: 100%; min-height: 0; padding: 0; }
+.solar-welcome--native { padding: 0; }
+.solar-welcome-frame { width: min(100%, 980px); min-height: min(648px, 100%); outline: none; }
+.solar-welcome-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 64px; padding: 0 0 24px; -webkit-app-region: drag; }
+.solar-welcome-brand { display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 600; letter-spacing: -.035em; }
+.solar-welcome-brand img { width: 32px; height: 32px; object-fit: contain; }
+.solar-welcome-brand > svg { width: 36px; height: 36px; color: var(--welcome-gold); }
+.solar-welcome-skip { min-height: 44px; padding: 0 12px; border-radius: 8px; color: var(--welcome-muted); font-size: 12px; -webkit-app-region: no-drag; }
+.solar-welcome-skip:hover { color: var(--welcome-ink); background: color-mix(in srgb, var(--welcome-ink) 5%, transparent); }
+.solar-welcome-layout { display: grid; grid-template-columns: minmax(240px, .88fr) minmax(0, 1.12fr); gap: 68px; }
+.solar-welcome-guide { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+.solar-welcome-story h2 { max-width: 12ch; margin: 8px 0 14px; font-size: clamp(28px, 3vw, 38px); font-weight: 500; letter-spacing: -.035em; line-height: 1.16; text-wrap: balance; }
+.solar-welcome-story > p { max-width: 34ch; margin: 0; color: var(--welcome-muted); font-size: 13px; line-height: 1.7; }
+.solar-welcome-illustration { display: block; width: min(100%, 310px); height: 180px; margin: 2px 0 14px -20px; overflow: visible; }
+.solar-welcome-paths { stroke: var(--welcome-gold); stroke-width: .8; stroke-opacity: .2; }
+.solar-welcome-paths circle { stroke-opacity: .1; }
+.solar-welcome-sun { fill: var(--welcome-gold); stroke: var(--welcome-gold); stroke-width: 1.5; stroke-linecap: round; }
+.solar-welcome-planets { fill: var(--welcome-field); stroke: var(--welcome-gold); stroke-width: 1.5; }
+.solar-welcome-fragments { fill: var(--welcome-gold); opacity: .65; }
+.solar-welcome-progress { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.solar-welcome-progress li { display: flex; align-items: center; gap: 12px; min-height: 34px; color: var(--welcome-muted); font-size: 12px; }
+.solar-welcome-step-marker { display: grid; place-items: center; width: 23px; height: 23px; flex-shrink: 0; border: 1px solid color-mix(in srgb, var(--welcome-ink) 15%, transparent); border-radius: 50%; font-size: 10px; font-variant-numeric: tabular-nums; }
+.solar-welcome-progress li[aria-current] { color: var(--welcome-ink); font-weight: 600; }
+.solar-welcome-progress li[aria-current] .solar-welcome-step-marker { border-color: var(--welcome-gold); color: var(--welcome-field); background: var(--welcome-gold); }
+.solar-welcome-progress li[data-complete] .solar-welcome-step-marker { color: var(--welcome-gold); border-color: color-mix(in srgb, var(--welcome-gold) 35%, transparent); }
+.solar-welcome-setup { display: flex; flex-direction: column; min-width: 0; min-height: 484px; background: var(--color-panel, #15191f); border: 1px solid color-mix(in srgb, var(--welcome-ink) 8%, transparent); border-radius: 18px; }
+.solar-welcome-content { padding: 32px 32px 22px; min-width: 0; flex: 1; }
+.solar-welcome-count { margin: 0 0 22px; color: var(--welcome-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.solar-welcome-content > h1 { margin: 0; color: var(--welcome-ink); font-size: clamp(23px, 2.2vw, 29px); line-height: 1.2; font-weight: 550; letter-spacing: -.025em; text-wrap: balance; }
+.solar-welcome-step { min-width: 0; margin-top: 20px; }
+.solar-welcome-step p { text-align: start; }
+.solar-welcome-step .stagger { align-items: stretch; }
+.solar-welcome-step input[type=text], .solar-welcome-step input[type=email], .solar-welcome-step select { min-height: 44px; border-radius: 9px; }
+.solar-welcome-step input::placeholder { color: var(--welcome-muted); }
+.solar-welcome-step input { caret-color: var(--welcome-gold); }
+.solar-welcome-step button { min-height: 44px; }
+.solar-welcome-overview ul { margin: 0; padding: 0; list-style: none; }
+.solar-welcome-overview li { display: flex; align-items: start; gap: 14px; padding: 16px 0; border-bottom: 1px solid color-mix(in srgb, var(--welcome-ink) 8%, transparent); }
+.solar-welcome-overview li:first-child { padding-top: 0; }
+.solar-welcome-overview li:last-child { border: 0; }
+.solar-welcome-overview li > svg { flex-shrink: 0; margin-top: 2px; color: var(--welcome-gold); }
+.solar-welcome-overview h2 { margin: 0 0 7px; font-size: 14px; font-weight: 550; line-height: 1.5; }
+.solar-welcome-overview p { margin: 0; color: var(--welcome-muted); font-size: 12px; line-height: 1.65; }
+.solar-welcome-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; min-height: 80px; padding: 16px 32px; border-top: 1px solid color-mix(in srgb, var(--welcome-ink) 8%, transparent); }
+.solar-welcome-back { display: flex; align-items: center; gap: 8px; min-height: 44px; color: var(--welcome-muted); font-size: 12px; }
+.solar-welcome-back:hover { color: var(--welcome-ink); }
+.solar-welcome-primary { display: flex; align-items: center; min-width: 0; }
+.solar-welcome [data-primary] { min-height: 44px; min-width: 112px; padding: 0 20px; border-radius: 9px; background: var(--welcome-gold); color: var(--color-accent-ink, #191b20); font-size: 13px; }
+.solar-welcome [data-primary]:hover:not(:disabled) { background: color-mix(in srgb, var(--welcome-gold) 88%, white); }
+.solar-welcome button { cursor: pointer; }
+.solar-welcome button:disabled { cursor: default; }
+.solar-welcome :is(button, input, select, a):focus-visible { outline: 2px solid var(--welcome-gold); outline-offset: 4px; }
+.solar-welcome-step .animate-rise { animation: none; }
+.solar-welcome-details { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 24px; color: var(--welcome-muted); font-size: 11px; }
+.solar-welcome-details > span { display: flex; align-items: center; gap: 7px; }
+.solar-welcome ::selection { background: color-mix(in srgb, var(--welcome-gold) 32%, transparent); color: var(--welcome-ink); }
+.solar-welcome { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--welcome-ink) 20%, transparent) transparent; }
+.solar-welcome--native .solar-welcome-frame { padding: 20px 28px; width: 100%; min-height: 100%; }
+.solar-welcome--native .solar-welcome-layout { gap: 32px; }
+.solar-welcome--native .solar-welcome-header { padding-bottom: 12px; }
+.solar-welcome--native .solar-welcome-illustration { height: 140px; }
+.solar-welcome--native .solar-welcome-story h2 { font-size: 28px; }
+.solar-welcome--native .solar-welcome-progress li { min-height: 30px; }
+@media (max-width: 740px) {
+  .solar-welcome { padding: 20px; place-items: start center; }
+  .solar-welcome-frame { min-height: 0; max-width: 520px; }
+  .solar-welcome-layout { display: flex; flex-direction: column; gap: 24px; }
+  .solar-welcome-guide { gap: 18px; }
+  .solar-welcome-story h2 { max-width: 22ch; margin-top: 4px; font-size: 28px; }
+  .solar-welcome-story > p { max-width: 46ch; }
+  .solar-welcome-frame:not([data-beat=hello]) .solar-welcome-story { display: none; }
+  .solar-welcome-illustration { display: none; }
+  .solar-welcome-progress { flex-direction: row; gap: 6px; }
+  .solar-welcome-progress li { flex: 1; min-width: 0; }
+  .solar-welcome-progress li > span:last-child { display: none; }
+  .solar-welcome-step-marker { width: 100%; height: 4px; border: none; border-radius: 2px; background: color-mix(in srgb, var(--welcome-ink) 15%, transparent); overflow: hidden; font-size: 0; }
+  .solar-welcome-step-marker svg { display: none; }
+  .solar-welcome-progress li[data-complete] .solar-welcome-step-marker { background: color-mix(in srgb, var(--welcome-gold) 45%, transparent); }
+  .solar-welcome-setup { min-height: 360px; border-radius: 14px; }
+  .solar-welcome-content { padding: 24px 24px 20px; }
+  .solar-welcome-count { margin-bottom: 16px; }
+  .solar-welcome-footer { padding: 12px 24px; min-height: 72px; gap: 12px; }
+  .solar-welcome-details { gap: 12px; margin: 20px 0 12px; font-size: 10px; }
+  .solar-welcome--native .solar-welcome-frame { padding: 0; }
+}
+@media (min-width: 741px) and (max-height: 760px) {
+  .solar-welcome { padding: 20px; }
+  .solar-welcome-frame { min-height: 600px; }
+  .solar-welcome-header { padding-bottom: 16px; min-height: 56px; }
+  .solar-welcome-story h2 { font-size: 32px; }
+  .solar-welcome-illustration { height: 140px; }
+  .solar-welcome-progress li { min-height: 30px; }
+  .solar-welcome-content { padding: 26px 30px 20px; }
+  .solar-welcome-footer { min-height: 72px; }
+  .solar-welcome-details { margin-top: 18px; }
+  .solar-welcome--native { padding: 0; }
+}
+@media (max-width: 380px) {
+  .solar-welcome { padding: 16px; }
+  .solar-welcome-content { padding: 22px 18px; }
+  .solar-welcome-footer { padding-inline: 18px; }
+  .solar-welcome-brand { font-size: 19px; }
+  .solar-welcome-skip { padding-inline: 4px; }
+}

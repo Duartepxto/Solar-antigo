@@ -14,9 +14,9 @@ describe("experimental feature flags", () => {
     expect(skillAuthoringEnabled({ features: { skillAuthoring: false } })).toBe(false);
   });
 
-  it("keeps the experimental browser off until explicitly enabled", () => {
+  it("offers the private browser after config loads, preserving explicit opt-out", () => {
     expect(builtInBrowserEnabled(null)).toBe(false);
-    expect(builtInBrowserEnabled({})).toBe(false);
+    expect(builtInBrowserEnabled({})).toBe(true);
     expect(builtInBrowserEnabled({ features: { browser: false } })).toBe(false);
     expect(builtInBrowserEnabled({ features: { browser: true } })).toBe(true);
   });

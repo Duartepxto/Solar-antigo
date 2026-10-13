@@ -1,0 +1,79 @@
+package com.orbit.companion.ui
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.orbit.companion.R
+
+/** Solar's open sun, sharing the geometry of docs/solar-brand/solar-emblem-gold.svg. */
+private fun DrawScope.openSun(color: Color) {
+    val stroke = Stroke(width = 2.5f, cap = StrokeCap.Round)
+    drawCircle(color, 8f, Offset(32f, 32f), style = stroke)
+    val rays = listOf(
+        Offset(32f, 17f) to Offset(32f, 20f), Offset(32f, 44f) to Offset(32f, 47f),
+        Offset(17f, 32f) to Offset(20f, 32f), Offset(44f, 32f) to Offset(47f, 32f),
+        Offset(21.4f, 21.4f) to Offset(23.5f, 23.5f), Offset(40.5f, 40.5f) to Offset(42.6f, 42.6f),
+        Offset(21.4f, 42.6f) to Offset(23.5f, 40.5f), Offset(40.5f, 23.5f) to Offset(42.6f, 21.4f),
+    )
+    rays.forEach { (start, end) -> drawLine(color, start, end, 2.5f, StrokeCap.Round) }
+    drawArc(color, 135f, 180f, false, Offset(8f, 8f), Size(48f, 48f), style = stroke)
+    drawArc(color, 15f, 75f, false, Offset(8f, 8f), Size(48f, 48f), style = stroke)
+    drawCircle(color, 3.5f, Offset(48.97f, 15.03f))
+    drawCircle(color, 2.5f, Offset(15.03f, 48.97f))
+}
+
+@Composable
+internal fun SolarEntryMark(modifier: Modifier = Modifier) {
+    val accent = MaterialTheme.colorScheme.primary
+    Canvas(modifier.size(40.dp)) {
+        withTransform({ scale(size.width / 64f, size.height / 64f, Offset.Zero) }) { openSun(accent) }
+    }
+}
+
+@Composable
+internal fun SolarEntryBrand(modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        SolarEntryMark()
+        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** Decorative brand illustration, never a fabricated roster or active connection. */
+@Composable
+internal fun SolarEntryIllustration(modifier: Modifier = Modifier) {
+    val accent = MaterialTheme.colorScheme.primary
+    val line = MaterialTheme.colorScheme.outline.copy(alpha = .55f)
+    Canvas(modifier) {
+        val factor = minOf(size.width / 320f, size.height / 144f)
+        withTransform({
+            translate((size.width - 320f * factor) / 2, (size.height - 144f * factor) / 2)
+            scale(factor, factor, Offset.Zero)
+        }) {
+            drawLine(line, Offset(38f, 107f), Offset(171f, 72f), 1f)
+            drawLine(line, Offset(77f, 34f), Offset(171f, 72f), 1f)
+            drawLine(line, Offset(171f, 72f), Offset(277f, 35f), 1f)
+            drawCircle(line, 55f, Offset(171f, 72f), style = Stroke(1f))
+            drawCircle(accent.copy(alpha = .45f), 7f, Offset(77f, 34f), style = Stroke(1.5f))
+            drawCircle(accent, 4f, Offset(38f, 107f))
+            drawCircle(accent.copy(alpha = .7f), 5f, Offset(277f, 35f))
+            drawCircle(accent.copy(alpha = .5f), 2f, Offset(238f, 122f))
+            withTransform({ translate(123f, 24f); scale(1.5f, 1.5f, Offset.Zero) }) { openSun(accent) }
+        }
+    }
+}
