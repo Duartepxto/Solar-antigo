@@ -66,6 +66,7 @@ if(import.meta.env.VITE_SOLAR_DESIGN_TITLE==='Solar — Design PC'){
 }
 installLiquidGlass();
 function Preview(){
+  useEffect(()=>{const update=()=>{document.documentElement.dataset.demoHidden=String(document.hidden);};update();document.addEventListener('visibilitychange',update);return()=>document.removeEventListener('visibilitychange',update);},[]);
   const [spatialOpen,setSpatialOpen]=useState(false);
   const openSpatial=()=>{document.documentElement.dataset.solarSpatial='true';window.dispatchEvent(new Event('solar:spatial-active'));setSpatialOpen(true);};
   const closeSpatial=()=>{delete document.documentElement.dataset.solarSpatial;window.dispatchEvent(new Event('solar:spatial-active'));setSpatialOpen(false);};

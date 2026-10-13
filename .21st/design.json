@@ -5,6 +5,8 @@
     "Preserve native solar renderer and all onboarding state contracts.",
     "Reuse local primitives; external 21st CLI was blocked by automatic approval review.",
     "Use the exact original three-quarter-view Sun from the approved image, split into vector-clipped body, eyes and particles; animate gaze and gentle particle drift without regenerating its appearance.",
-    "Keep the approved original Sun artwork; match Solar gaze and blinking, add localized surface-block lift/flow and visibly circulating outer fragments, with reduced-motion and hidden-document pauses."
+    "Keep the approved original Sun artwork; match Solar gaze and blinking, add localized surface-block lift/flow and visibly circulating outer fragments, with reduced-motion and hidden-document pauses.",
+    "13 October 2026: user chose two importance levels, then refined the navigation to irregular distances and individual straight/wavy particle links. No visible circular menu rings; keep the Sun and chat.",
+    "13 October 2026: remove redundant workspace branding and decorative panel Suns; keep identifying agent avatars. Original intro Sun travels on a small ellipse. Execution UI reports only current-turn steps and distinguishes unresolved failures from proven recovery."
   ]
 }
