@@ -1,4 +1,6 @@
-# Solar antigo: HTML autónomo
+# Solar: previews HTML autónomos
+
+Versões ativas: `Solar.html` (PC), `Solar-entrada.html` (apresentação preservada), `Solar-mobile.html` (mobile) e `Solar-notch.html` (notch do PC, separada). Os ficheiros antigos são histórico de design. A revisão atual e os limites estão em [COMPANIONS.md](COMPANIONS.md).
 
 Exportação visual da versão local anterior ao Solar V0, no projeto `orbit-app` (Solar 0.2.2). Os componentes, estilos, materiais 3D e animações vêm desse projeto; o Solar V0 não foi usado nesta exportação.
 

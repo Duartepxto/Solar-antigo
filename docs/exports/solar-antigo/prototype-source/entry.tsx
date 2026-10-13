@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState, useCallback, useRef } from 'react';
 import {WelcomeFlow} from '../../src/components/onboarding/WelcomeFlow';
 import {SpatialSettings} from './SpatialSettings';
+import {SolarMobilePreview,SolarNotchPreview} from './CompanionPreview';
 import {demoBots,demoEngine,demoConfig,demoReducer,installDemoFetch,cycleTransfer,emitTransfer,newDemoBot} from './demoRuntime';
 import { createRoot } from 'react-dom/client';
 import { BotEditorStore, initialState, reducer } from '../../src/state/store';
@@ -33,6 +34,7 @@ const bot = (id, name, section = '', chiefOfStaff = false) => ({
 });
 const live=import.meta.env.VITE_SOLAR_LIVE;
 const intro=location.pathname.endsWith('Solar-entrada.html');
+const companion=location.pathname.endsWith('Solar-mobile.html')?'mobile':location.pathname.endsWith('Solar-notch.html')?'notch':null;
 const bots = live?demoBots:[bot('jarvis', 'Jarvis'), bot('design', 'Design', 'Design', true), bot('research', 'Pesquisa', 'Design'), bot('build', 'Desenvolvimento', 'Desenvolvimento', true)];
 const engine = { id:'demo', instanceId:'demo', driverKind:'codex', displayName:'Solar · demonstração', driverId:'codex', label:'Solar · demonstração', name:'Solar · demonstração',
   snapshot:{ state:'available', version:'demo' }, capabilities:{}, models:{default:'solar-demo',options:[{id:'solar-demo',label:'Modelo de demonstração'}]}, permissionModes:[] };
@@ -73,12 +75,13 @@ function Preview(){
   useEffect(()=>{if(!import.meta.env.VITE_SOLAR_CANVAS)return;const navigate=(event:Event)=>{if((event as CustomEvent).detail?.to==='you'){event.stopImmediatePropagation();openSpatial();}};window.addEventListener('solar:settings-open',openSpatial);window.addEventListener('orbit:navigate',navigate,true);return()=>{window.removeEventListener('solar:settings-open',openSpatial);window.removeEventListener('orbit:navigate',navigate,true);};},[]);
   const [paletteRequest,setPaletteRequest]=useState(0),[paletteOpen,setPaletteOpen]=useState(false);
   const [state, send]=useReducer(live?demoReducer:reducer,{...initialState,bots,sections:['Design','Desenvolvimento'],instances:[live?demoEngine:engine],config:live?demoConfig:config,connected:true,selectedId:'jarvis',routinesLoadState:'loaded'} as any);
-  useEffect(()=>{if(!live||intro)return;let step=0;const id=setInterval(()=>{send({type:'demoTick',step} as any);cycleTransfer(step++);},2600);return()=>clearInterval(id);},[]);
+  useEffect(()=>{if(!live||intro||companion)return;let step=0;const id=setInterval(()=>{if(document.hidden)return;send({type:'demoTick',step} as any);cycleTransfer(step++);},2600);return()=>clearInterval(id);},[]);
   useEffect(()=>{if(!live)return;const listener=(event:Event)=>{const {id,text}= (event as CustomEvent).detail;send({type:'demoReply',id,text} as any);};window.addEventListener('solar:demo-reply',listener);return()=>window.removeEventListener('solar:demo-reply',listener);},[]);
   useEffect(()=>{if(!live)return;try{localStorage.setItem('solar.demo.identities',JSON.stringify(Object.fromEntries(state.bots.map(b=>[b.id,{name:b.name,previewSkin:(b as any).previewSkin||''}]))));}catch{}},[state.bots]);
   const stateRef=useRef(state);stateRef.current=state;
+  const replyTokens=useRef(new Map<string,string>());
   const dispatch=useCallback((action:any)=>{
-    if(live){if(action.type==='newBot'){const next={...newDemoBot(action.role?.name||action.role?.title||'Novo agente',action.section||''),previewSkin:action.previewSkin||''};send({type:'botAdded',bot:next} as any);action.onCreated?.(next);return;}if(action.type==='toggleAppSettings'){window.dispatchEvent(new CustomEvent('solar:demo-settings',{detail:'engine'}));return;}send(action);if(action.type==='send'){const target=action.botId==='jarvis'?'build':'jarvis';emitTransfer(action.botId,target);send({type:'demoPatch',id:target,patch:{busy:true,activity:'working'}} as any);setTimeout(()=>{window.dispatchEvent(new CustomEvent('solar:demo-reply',{detail:{id:action.botId,text:action.botId==='jarvis'?'Recebi a tua tarefa. Deleguei a preparação em Desenvolvimento e pedi a Qualidade para verificar o resultado. Este fluxo está a ser simulado no HTML.':'Recebi a tua mensagem. Vou preparar o trabalho e partilhar o resultado com Jarvis. Este fluxo está a ser simulado no HTML.'}}));send({type:'demoReply',id:target,text:'Recebi o pedido da equipa e preparei a verificação. Resultado demonstrativo.'} as any);emitTransfer(target,action.botId,true);},4200);}return;}
+    if(live){if(action.type==='newBot'){const next={...newDemoBot(action.role?.name||action.role?.title||'Novo agente',action.section||''),previewSkin:action.previewSkin||''};send({type:'botAdded',bot:next} as any);action.onCreated?.(next);return;}if(action.type==='interrupt')replyTokens.current.delete(action.botId);if(action.type==='toggleAppSettings'){window.dispatchEvent(new CustomEvent('solar:demo-settings',{detail:'engine'}));return;}send(action);if(action.type==='send'){const token=crypto.randomUUID(),thread=stateRef.current.bots.find(b=>b.id===action.botId)?.threadId;replyTokens.current.set(action.botId,token);const target=action.botId==='jarvis'?'build':'jarvis';emitTransfer(action.botId,target);send({type:'demoPatch',id:target,patch:{busy:true,activity:'working'}} as any);setTimeout(()=>{if(replyTokens.current.get(action.botId)!==token||stateRef.current.bots.find(b=>b.id===action.botId)?.threadId!==thread)return;replyTokens.current.delete(action.botId);window.dispatchEvent(new CustomEvent('solar:demo-reply',{detail:{id:action.botId,text:action.botId==='jarvis'?'Recebi a tua tarefa. Deleguei a preparação em Desenvolvimento e pedi a Qualidade para verificar o resultado. Este fluxo está a ser simulado no HTML.':'Recebi a tua mensagem. Vou preparar o trabalho e partilhar o resultado com Jarvis. Este fluxo está a ser simulado no HTML.'}}));send({type:'demoReply',id:target,text:'Recebi o pedido da equipa e preparei a verificação. Resultado demonstrativo.'} as any);emitTransfer(target,action.botId,true);},4200);}return;}
     if(action.type==='send'){
       const current=stateRef.current.bots.find(b=>b.id===action.botId);
       if(!current)return;
@@ -87,6 +90,7 @@ function Preview(){
     }else send(action);
   },[]);
   if(intro)return <DesktopCapabilitiesProvider><BotEditorStore value={{state,dispatch,flushBotPatches:async()=>null,refreshInstances:async()=>{},refreshModels:async()=>{}}}><WelcomeFlow bot={state.bots.find(b=>b.id==='jarvis')??null} dictation={true} reel={true} replay={true} onDone={()=>{location.href='Solar.html';}}/></BotEditorStore></DesktopCapabilitiesProvider>;
+  if(companion)return <DesktopCapabilitiesProvider><BotEditorStore value={{state,dispatch,flushBotPatches:async()=>null,refreshInstances:async()=>{},refreshModels:async()=>{}}}>{companion==='mobile'?<SolarMobilePreview/>:<SolarNotchPreview/>}</BotEditorStore></DesktopCapabilitiesProvider>;
   return <DesktopCapabilitiesProvider><BotEditorStore value={{state,dispatch,flushBotPatches:async()=>null,refreshInstances:async()=>{},refreshModels:async()=>{}}}><ThreadRefsProvider><div className={'solar-prototype-base'+(spatialOpen?' is-suspended':'')} aria-hidden={spatialOpen||undefined} inert={spatialOpen||undefined}><OrbitShell onSearch={()=>setPaletteRequest(n=>n+1)} paletteOpen={paletteOpen}/></div>{spatialOpen&&<SpatialSettings onClose={closeSpatial} onReplay={()=>dispatch({type:'toggleWelcome',open:true})}/>}<CommandPalette onOpenChange={setPaletteOpen} openRequest={paletteRequest}/>{state.shortcutsOpen&&<KeyboardShortcutsModal open onClose={()=>dispatch({type:'toggleShortcuts',open:false})}/>}</ThreadRefsProvider><WelcomeGate viewer={LOCAL_VIEWER}/>{!live&&<GuidedTour/>}</BotEditorStore></DesktopCapabilitiesProvider>;
 }
 createRoot(document.getElementById('root')!).render(<Preview/>);

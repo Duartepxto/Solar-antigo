@@ -1,6 +1,6 @@
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-const root=process.cwd(), file=resolve(root,'../docs/exports/solar-antigo',process.env.SOLAR_DESIGN_VARIANT==='live'?'Solar.html':process.env.SOLAR_DESIGN_VARIANT==='canvas'?'Solar Canvas PC.html':process.env.SOLAR_DESIGN_VARIANT==='desktop'?'Solar Design PC.html':'Solar antigo.html');
+const root=process.cwd(), file=process.env.SOLAR_BUILD_OUTPUT?resolve(root,process.env.SOLAR_BUILD_OUTPUT):resolve(root,'../docs/exports/solar-antigo',process.env.SOLAR_DESIGN_VARIANT==='live'?'Solar.html':process.env.SOLAR_DESIGN_VARIANT==='canvas'?'Solar Canvas PC.html':process.env.SOLAR_DESIGN_VARIANT==='desktop'?'Solar Design PC.html':'Solar antigo.html');
 const images={};
 for(const name of await readdir(resolve(root,'public/solar/textures'))){
   if(!/^2k_.*\.jpg$/.test(name))continue;

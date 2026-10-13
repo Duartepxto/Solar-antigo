@@ -3,7 +3,7 @@ import {createRequire} from 'node:module';
 import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url),viteRequire=createRequire(require.resolve('vite'));
 const {transform}=viteRequire('esbuild');
-const input=(await readFile(new URL('./demoRuntime.ts',import.meta.url),'utf8')).replace("import {reducer} from '../../src/state/store';","const reducer=(state)=>state;");
+const input=(await readFile(new URL('./demoRuntime.ts',import.meta.url),'utf8')).replace("import {memoryOverview,memoryFile,memoryJournal} from './demoMemory';",'').replace("import {reducer} from '../../src/state/store';","const reducer=(state)=>state;");
 const {code}=await transform(input,{loader:'ts',format:'esm'});
 const {demoReducer,demoBots}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
 let state={bots:structuredClone(demoBots)};

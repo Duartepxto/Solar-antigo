@@ -1,0 +1,9 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+const file='.orbit-scratch/design-export/build.mjs';
+let s=readFileSync(file,'utf8');
+s=s.replace("value:'Planetas e partículas'","value:'Nome e skin'").replace("['workspace','voice','memory','usage','phone']","['workspace','appearance','voice','memory','usage','phone']");
+s=s.replace("if(id.endsWith('/SolarMap.tsx'))return code.replaceAll", "if(id.endsWith('/SolarMap.tsx'))return code.replace(/const displayName = node.kind === 'planet'[^;]+;/,'const displayName = node.name;').replace(/\\{node.name\\}\\{displayTeam/g,\"{node.skin ? t('jarvis.solar.'+node.skin) : ''}{displayTeam\").replaceAll");
+writeFileSync(file,s);
+const entry='.orbit-scratch/design-export/entry.tsx';let e=readFileSync(entry,'utf8');e=e.replace("const next=newDemoBot(action.role?.name||'Novo agente',action.section||'');","const next={...newDemoBot(action.role?.name||'Novo agente',action.section||''),previewSkin:action.previewSkin||''};");
+e=e.replace('  const stateRef=useRef(state);',"  useEffect(()=>{if(!live)return;try{localStorage.setItem('solar.demo.identities',JSON.stringify(Object.fromEntries(state.bots.map(b=>[b.id,{name:b.name,previewSkin:(b as any).previewSkin||''}]))));}catch{}},[state.bots]);\n  const stateRef=useRef(state);");writeFileSync(entry,e);
+const runtime='.orbit-scratch/design-export/demoRuntime.ts';let r=readFileSync(runtime,'utf8');r=r.replace('export const demoEngine=',"try{if(typeof localStorage!=='undefined'){const saved=JSON.parse(localStorage.getItem('solar.demo.identities')||'{}');for(const bot of demoBots){const identity=saved[bot.id];if(identity){if(typeof identity.name==='string'&&identity.name.trim())bot.name=identity.name;if(typeof identity.previewSkin==='string')(bot as any).previewSkin=identity.previewSkin;}}}}catch{}\nexport const demoEngine=");writeFileSync(runtime,r);

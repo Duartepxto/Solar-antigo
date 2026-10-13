@@ -14,7 +14,7 @@ Artefacto: `Solar.html` — HTML autónomo para PC, 15,738,018 bytes e 72 recurs
 
 ## Limites deste artefacto
 
-É uma demonstração de design, sem IA, servidor, emparelhamento ou integrações reais. Os custos são fictícios. Voz usa o sintetizador do navegador e depende de vozes instaladas; não foi testada num dispositivo físico. Não foi implementada nem validada uma nova versão mobile neste trabalho. Alguns controlos herdados que exigem instalação, contas ou ficheiros do servidor pertencem à aplicação real e não equivalem a integrações implementadas no HTML.
+É uma demonstração de design, sem IA, servidor, emparelhamento ou integrações reais. Os custos são fictícios. A amostra pt-PT instalada foi testada neste computador. O preview mobile foi verificado no navegador em 390 × 844 e 360 × 780, ainda sem teste num telefone físico. A notch é uma demonstração independente, ainda sem overlay ou atalho global do Windows. Operações que exigem contas ou ficheiros do servidor pertencem à aplicação real. Ver [COMPANIONS.md](COMPANIONS.md) para a revisão atual.
 
 ## Retomar/reproduzir
 
@@ -25,6 +25,10 @@ node .orbit-scratch/design-export/sun-svg.mjs
 $env:SOLAR_DESIGN_VARIANT='live'
 node .orbit-scratch/design-export/build.mjs
 node .orbit-scratch/design-export/check-demo.mjs
+node .orbit-scratch/design-export/check-polish.mjs
+node .orbit-scratch/design-export/check-companion.mjs
 ```
+
+Copiar `Solar.html` para `Solar-entrada.html`, `Solar-mobile.html` e `Solar-notch.html` depois do build. O pathname escolhe a superfície. Se o Windows bloquear a escrita final, definir `SOLAR_PACK_OUTPUT` para um ficheiro temporário e copiá-lo com `Copy-Item` após a compressão.
 
 As instruções atuais e a futura comparação funcional com o Orbit estão em `DESIGN-ACTIVE.md`.
