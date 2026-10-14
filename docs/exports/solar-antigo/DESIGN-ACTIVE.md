@@ -1,5 +1,9 @@
 # Solar — instruções atuais do design
 
+## Feedback do utilizador — 14 de outubro de 2026
+
+O design atual da notch está rejeitado: está errado e deve ser refeito. Não o tratar como aprovado nem reutilizar esta direção visual. O utilizador enviará referências de inspiração antes da próxima tentativa. Conservar o preview apenas como histórico. Esta indicação prevalece sobre avaliações anteriores que tenham considerado a notch pronta para entrega.
+
 Esta orientação substitui as experiências anteriores Solar Design PC e Solar Canvas PC. O artefacto ativo é Solar.html: demonstração autónoma para PC, baseada no último Solar antigo. A aplicação Solar V0 não é modificada por este trabalho.
 
 - Preservar os planetas, as luas, o Sol, o mapa arrastável e o estilo dos ícones existentes.
