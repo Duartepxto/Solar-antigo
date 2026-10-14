@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwind from '@tailwindcss/vite';
 import { readFile,writeFile,mkdir,readdir } from 'node:fs/promises';
 import { resolve,extname } from 'node:path';
+import {clean} from './clean.mjs';
 const root=process.cwd(), scratch=resolve(root,'.orbit-scratch/design-export');
 const spatial=process.env.SOLAR_DESIGN_VARIANT==='canvas';
 const live=process.env.SOLAR_DESIGN_VARIANT==='live';
@@ -60,7 +61,7 @@ const refine={name:'solar-desktop-refinement',enforce:'pre',transform(code,id){
  }
 }};
 process.env.VITE_JARVIS_SOLAR='true';
-const results=await build({configFile:false,root,plugins:[refine,{name:'export-render-diagnostics',enforce:'pre',transform(code,id){if(id.endsWith('/SolarWorld.tsx'))return code.replace('.catch(() => { if (!cancelled)', '.catch((error) => { console.error("Solar renderer:",error); if (!cancelled)');}},react(),tailwind()],define:{__APP_VERSION__:JSON.stringify('0.2.2'),'import.meta.env.VITE_SOLAR_DESIGN_TITLE':JSON.stringify(title),'import.meta.env.VITE_SOLAR_CANVAS':JSON.stringify(spatial),'import.meta.env.VITE_SOLAR_LIVE':JSON.stringify(live)},resolve:{alias:{'@':resolve(root,'src')}},publicDir:false,build:{write:false,assetsInlineLimit:100000000,cssCodeSplit:false,minify:true,rollupOptions:{input:resolve(scratch,'entry.tsx'),output:{format:'iife',inlineDynamicImports:true}}}});
+const results=await build({configFile:false,root,plugins:[refine,clean,{name:'export-render-diagnostics',enforce:'pre',transform(code,id){if(id.endsWith('/SolarWorld.tsx'))return code.replace('.catch(() => { if (!cancelled)', '.catch((error) => { console.error("Solar renderer:",error); if (!cancelled)');}},react(),tailwind()],define:{__APP_VERSION__:JSON.stringify('0.2.2'),'import.meta.env.VITE_SOLAR_DESIGN_TITLE':JSON.stringify(title),'import.meta.env.VITE_SOLAR_CANVAS':JSON.stringify(spatial),'import.meta.env.VITE_SOLAR_LIVE':JSON.stringify(live)},resolve:{alias:{'@':resolve(root,'src')}},publicDir:false,build:{write:false,assetsInlineLimit:100000000,cssCodeSplit:false,minify:true,rollupOptions:{input:resolve(scratch,'entry.tsx'),output:{format:'iife',inlineDynamicImports:true}}}});
 const output=(Array.isArray(results)?results:[results]).flatMap(r=>r.output);
 let js=output.filter(a=>a.type==='chunk').map(a=>a.code).join('\n');
 let css=output.filter(a=>a.type==='asset'&&a.fileName.endsWith('.css')).map(a=>a.source).join('\n');
@@ -68,6 +69,7 @@ if(desktop)css+='\n'+await readFile(resolve(scratch,'desktop.css'),'utf8');
 if(!desktop)css+='\n.solar-prototype-base{display:flex;flex:1;min-width:0;height:100%;position:relative}';
 if(spatial)css+='\n'+await readFile(resolve(scratch,'spatial.css'),'utf8');
 if(live)css+='\n'+await readFile(resolve(scratch,'live.css'),'utf8');
+if(live)css+='\n'+await readFile(resolve(scratch,'clean.css'),'utf8');
 const mime={'.png':'image/png','.svg':'image/svg+xml','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf','.woff2':'font/woff2','.mp4':'video/mp4'};
 async function assets(dir){for(const e of await readdir(dir,{withFileTypes:true})){const p=resolve(dir,e.name);if(e.isDirectory())await assets(p);else{const rel='/'+p.slice(resolve(root,'public').length+1).replaceAll('\\','/');if(js.includes(rel)||css.includes(rel)){const data='data:'+(mime[extname(p)]??'application/octet-stream')+';base64,'+(await readFile(p)).toString('base64');js=js.split(rel).join(data);css=css.split(rel).join(data);}}}}
 await assets(resolve(root,'public'));

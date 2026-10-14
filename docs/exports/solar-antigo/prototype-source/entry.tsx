@@ -60,7 +60,7 @@ if(live)installDemoFetch();
 document.documentElement.setAttribute('data-solar','');
 document.body.classList.add('jarvis-solar');
 document.title=import.meta.env.VITE_SOLAR_DESIGN_TITLE || 'Solar antigo — design';
-if(import.meta.env.VITE_SOLAR_DESIGN_TITLE==='Solar — Design PC'){
+if(live||import.meta.env.VITE_SOLAR_DESIGN_TITLE==='Solar — Design PC'){
   try{document.documentElement.dataset.solarMotion=JSON.parse(localStorage.getItem('jarvis.solar.preferences.v1')||'null')?.motion===false?'off':'on';}catch{document.documentElement.dataset.solarMotion='on';}
   window.addEventListener('jarvis-solar-preferences',event=>{document.documentElement.dataset.solarMotion=(event as CustomEvent).detail.motion===false?'off':'on';});
 }
@@ -72,7 +72,7 @@ function Preview(){
   useEffect(()=>{if(!import.meta.env.VITE_SOLAR_CANVAS)return;const navigate=(event:Event)=>{if((event as CustomEvent).detail?.to==='you'){event.stopImmediatePropagation();openSpatial();}};window.addEventListener('solar:settings-open',openSpatial);window.addEventListener('orbit:navigate',navigate,true);return()=>{window.removeEventListener('solar:settings-open',openSpatial);window.removeEventListener('orbit:navigate',navigate,true);};},[]);
   const [paletteRequest,setPaletteRequest]=useState(0),[paletteOpen,setPaletteOpen]=useState(false);
   const [state, send]=useReducer(live?demoReducer:reducer,{...initialState,bots,sections:['Design','Desenvolvimento'],instances:[live?demoEngine:engine],config:live?demoConfig:config,connected:true,selectedId:'jarvis',routinesLoadState:'loaded'} as any);
-  useEffect(()=>{if(!live||intro)return;let step=0;const id=setInterval(()=>{send({type:'demoTick',step} as any);cycleTransfer(step++);},2600);return()=>clearInterval(id);},[]);
+  useEffect(()=>{if(!live||intro)return;let step=0;const id=setInterval(()=>{if(document.hidden)return;send({type:'demoTick',step} as any);cycleTransfer(step++);},6500);return()=>clearInterval(id);},[]);
   useEffect(()=>{if(!live)return;const listener=(event:Event)=>{const {id,text}= (event as CustomEvent).detail;send({type:'demoReply',id,text} as any);};window.addEventListener('solar:demo-reply',listener);return()=>window.removeEventListener('solar:demo-reply',listener);},[]);
   useEffect(()=>{if(!live)return;try{localStorage.setItem('solar.demo.identities',JSON.stringify(Object.fromEntries(state.bots.map(b=>[b.id,{name:b.name,previewSkin:(b as any).previewSkin||''}]))));}catch{}},[state.bots]);
   const stateRef=useRef(state);stateRef.current=state;

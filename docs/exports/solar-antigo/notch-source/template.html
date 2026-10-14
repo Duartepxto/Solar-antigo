@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Solar — Notch</title><style>__NOTCH_CSS__</style></head>
+<body>
+ <main class="desktop-preview" aria-label="Protótipo independente da notch do Solar">
+  <div class="desktop-bar"><span>Solar</span><time id="clock"></time></div>
+  <section class="notch" data-expanded="false" data-scene="working" aria-label="Solar Notch">
+   <button class="notch-compact" id="notch-toggle" aria-label="Expandir Solar Notch" aria-expanded="false" aria-controls="notch-panel">
+    <span class="mini-team" aria-hidden="true"><img data-agent="sun" alt=""><img data-agent="mercury" alt=""><img data-agent="moon-ice" alt=""></span>
+    <span class="compact-copy"><strong id="compact-agent">Desenvolvimento</strong><span id="compact-task">A executar os testes</span></span>
+    <span class="compact-signal" id="compact-signal"></span><span class="collapse-icon" data-icon="chevron"></span>
+   </button>
+   <div class="notch-panel" id="notch-panel" hidden>
+    <header class="notch-navigation"><div role="tablist" aria-label="Conteúdo da notch"><button id="now-tab" role="tab" aria-selected="true" aria-controls="now-panel">Agora</button><button id="history-tab" role="tab" aria-selected="false" aria-controls="history-panel" tabindex="-1">Histórico</button></div><span id="team-count">3 agentes · 1 a trabalhar</span><button id="close-notch" aria-label="Recolher Solar Notch" data-icon="minimize"></button></header>
+    <div id="now-panel" role="tabpanel" aria-labelledby="now-tab">
+     <div class="agent-stage"><div class="character"><img id="main-character" data-agent="mercury" alt="Desenvolvimento"><span class="character-light"></span></div><div class="character-caption"><strong id="character-name">Desenvolvimento</strong><span id="character-status">A trabalhar</span></div></div>
+     <div class="task-stage"><div class="task-heading"><span id="task-context">Solar / interface</span><span class="engine">Codex</span></div><h1 id="task-title">Verificar a última alteração</h1><div id="scene-content"></div></div>
+    </div>
+    <div id="history-panel" role="tabpanel" aria-labelledby="history-tab" hidden><ol id="history-list"></ol><p class="history-empty" id="history-empty">As decisões e os resultados desta demonstração aparecem aqui.</p></div>
+    <footer class="notch-footer"><span class="footer-agents"><button data-focus="sun" aria-label="Ver atividade de Jarvis"><img data-agent="sun" alt=""><span>Jarvis</span></button><button data-focus="mercury" aria-label="Ver atividade de Desenvolvimento" aria-pressed="true"><img data-agent="mercury" alt=""><span>Desenvolvimento</span></button><button data-focus="moon-ice" aria-label="Ver atividade de Qualidade"><img data-agent="moon-ice" alt=""><span>Qualidade</span></button></span><span class="demo-label">Demonstração</span></footer>
+   </div>
+  </section>
+  <div class="workspace" aria-label="Espaço de trabalho ilustrativo"><header><span class="window-dots"><i></i><i></i><i></i></span><span>Solar / interface</span><span data-icon="folder"></span></header><div class="workspace-tabs"><button id="file-tab" aria-pressed="true"><span data-icon="file"></span>app.ts</button><button id="terminal-tab" aria-pressed="false"><span data-icon="terminal"></span>Terminal</button><small>Pré-visualização local</small></div><div class="workspace-content" id="workspace-file"><div class="code-line"><span>1</span><code>export function total(items) {</code></div><div class="code-line removed"><span>2</span><code>− return items.length;</code></div><div class="code-line added"><span>2</span><code>+ return items.reduce((sum, item) =&gt; sum + item.price, 0);</code></div><div class="code-line"><span>3</span><code>}</code></div><div class="editor-note"><span data-icon="file"></span><p>Uma alteração. Uma verificação.<br>O agente acompanha o trabalho na notch.</p></div></div><div class="workspace-content terminal-view" id="workspace-terminal" hidden><p><span>~/solar</span> npm test</p><pre id="terminal-output">A preparar a verificação…</pre></div><footer><span id="workspace-status">Desenvolvimento está a testar a alteração.</span><span>app.ts</span></footer></div>
+  <section class="preview-controls" aria-label="Estados da demonstração"><p>Solar Notch <span>· protótipo independente</span></p><div class="scene-picker" role="group" aria-label="Pré-visualizar estado"><button data-scene="working" aria-pressed="true">A trabalhar</button><button data-scene="approval" aria-pressed="false">Precisa de ti</button><button data-scene="checking" aria-pressed="false">A verificar</button><button data-scene="failed" aria-pressed="false">Com erro</button><button data-scene="done" aria-pressed="false">Concluído</button></div><small>Clica na notch para abrir. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>P</kbd> para mostrar ou ocultar.<br>Todos os comandos, testes e decisões são simulados.</small></section>
+ </main>
+ <script>__NOTCH_JS__</script>
+</body></html>
